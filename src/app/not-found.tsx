@@ -1,4 +1,3 @@
-import SiteHeader from "@/components/SiteHeader";
 export default function NotFound() {
   return (
     <div
@@ -9,7 +8,11 @@ export default function NotFound() {
       }}
     >
       {/* Header label at the top */}
-      <SiteHeader animated={false} toTop visible topPaddingPx={28} onClick={() => { window.location.href = '/'; }} />
+      <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-center" style={{ paddingTop: '28px' }}>
+        <a href="/" className="lowercase text-base" style={{ color: '#6B5654', textDecoration: 'none' }}>
+          laurent del rey
+        </a>
+      </header>
 
       {/* Centered 404 message */}
       <div className="flex items-center justify-center" style={{ height: '100%', pointerEvents: 'none' }}>
