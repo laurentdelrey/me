@@ -1,20 +1,22 @@
-"use client";
+import { Metadata } from "next";
 
-import { motion } from "framer-motion";
-import SiteHeader from "@/components/SiteHeader";
+export const metadata: Metadata = {
+  title: "Privacy Policy - Endless Summer",
+  description: "Privacy Policy for the Endless Summer iOS application",
+};
 
 export default function PrivacyPolicy() {
   return (
     <>
-      <SiteHeader animated={false} visible={true} />
+      <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-center py-7">
+        <a href="/" className="lowercase text-base" style={{ color: '#6B5654', textDecoration: 'none' }}>
+          laurent del rey
+        </a>
+      </header>
 
       <main className="min-h-screen relative z-10 overflow-y-auto" style={{ background: '#3f2d2c' }}>
         <div className="max-w-2xl mx-auto px-6 py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <div className="animate-fadeInUp">
             <h1 className="text-white lowercase text-3xl mb-8 text-shadow" style={{ fontWeight: 500 }}>
               privacy policy
             </h1>
@@ -145,7 +147,7 @@ export default function PrivacyPolicy() {
                 </p>
               </section>
             </div>
-          </motion.div>
+          </div>
         </div>
       </main>
     </>
