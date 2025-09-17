@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
             privacy policy
           </h1>
 
-          <div className="text-white lowercase text-shadow text-center" style={{ fontSize: '1.125rem', lineHeight: '1.75' }}>
+          <div className="text-white lowercase text-shadow" style={{ fontSize: '1.125rem', lineHeight: '1.75', textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
             <p style={{ color: '#FFB48F', marginBottom: '2rem' }}>
               effective date: september 17, 2025
             </p>
@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
               when you use our service and the choices you have associated with that data.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               information collection and use
             </h2>
 
@@ -42,7 +42,7 @@ export default function PrivacyPolicy() {
               to provide customer support, and to detect, prevent and address technical issues.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               data storage and security
             </h2>
 
@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
               except as described in this privacy policy.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               third-party services
             </h2>
 
@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
               we encourage you to review their privacy policies to understand how they handle your data.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               data retention
             </h2>
 
@@ -92,7 +92,7 @@ export default function PrivacyPolicy() {
               you may delete individual images at any time through the app interface.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               your data protection rights
             </h2>
 
@@ -110,7 +110,7 @@ export default function PrivacyPolicy() {
               or directly to you, under certain conditions.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               children's privacy
             </h2>
 
@@ -122,7 +122,7 @@ export default function PrivacyPolicy() {
               without verification of parental consent, we take steps to remove that information from our servers.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               analytics
             </h2>
 
@@ -134,7 +134,7 @@ export default function PrivacyPolicy() {
               you can opt out of analytics collection in the app settings.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               changes to this privacy policy
             </h2>
 
@@ -145,7 +145,7 @@ export default function PrivacyPolicy() {
               changes to this privacy policy are effective when they are posted on this page.
             </p>
 
-            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-white text-xl" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               contact us
             </h2>
 
