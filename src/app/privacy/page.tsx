@@ -123,6 +123,22 @@ export default function PrivacyPolicy() {
             </p>
 
             <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
+              face data
+            </h2>
+
+            <p style={{ marginBottom: '2rem' }}>
+              summer collects selfie photos for ai-powered image generation. selfies are
+              processed by a third-party ai service and are not stored by the app or the ai
+              provider after processing.
+            </p>
+
+            <p style={{ marginBottom: '2rem' }}>
+              users can optionally save one selfie for the "room service" feature to enable
+              automated image generation. saved selfies are stored securely with encryption
+              until updated or removed by the user.
+            </p>
+
+            <h2 className="text-white text-xl text-center" style={{ fontWeight: 500, marginTop: '3rem', marginBottom: '1.5rem' }}>
               analytics
             </h2>
 
