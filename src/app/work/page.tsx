@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
 import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
+import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 import tweetsData from "@/data/tweets.json";
 import type { Tweet } from "@/components/EraGallery";
 
@@ -22,6 +23,12 @@ const ERA_RANGES: Record<string, [number, number]> = {
   free: [2021, 2024],
   snap: [2018, 2020],
 };
+
+// Extract start year from section's years string (e.g. "2018 – 2023" → 2018)
+function getStartYear(years: string): number | null {
+  const match = years.match(/(\d{4})/);
+  return match ? parseInt(match[1]) : null;
+}
 
 function getTweetsForEra(sectionId: string): Tweet[] {
   const range = ERA_RANGES[sectionId];
@@ -556,6 +563,24 @@ export default function WorkPage() {
       <main className={`h-screen relative z-10 overflow-hidden ${mounted && mapLoaded ? 'animate-fadeIn' : 'opacity-0'}`}>
 
         <VerticalScrollProgress containerRef={scrollContainerRef} />
+
+        {/* Rolling year — top left, always visible */}
+        {(() => {
+          const year = getStartYear(currentSection?.years || "");
+          return year ? (
+            <div
+              className="fixed z-30 pointer-events-none"
+              style={{
+                top: '32px',
+                left: '32px',
+              }}
+            >
+              <div className="text-white/25" style={{ fontSize: '0.75rem', fontWeight: 400, letterSpacing: '0.05em' }}>
+                <SlidingNumber value={year} />
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         <div
           ref={scrollContainerRef}
