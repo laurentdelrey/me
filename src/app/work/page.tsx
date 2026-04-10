@@ -518,24 +518,27 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    // Disable snap and smooth scroll — just jump directly
-    container.style.scrollSnapType = 'none';
-    container.style.scrollBehavior = 'auto';
-    // Calculate target offset
-    let top = 0;
-    let sibling = container.firstElementChild;
-    let count = 0;
-    while (sibling && count < index) {
-      top += (sibling as HTMLElement).offsetHeight;
-      sibling = sibling.nextElementSibling;
-      count++;
-    }
-    container.scrollTop = top;
-    // Re-enable snap on next frame
-    requestAnimationFrame(() => {
-      container.style.scrollSnapType = 'y mandatory';
-      container.style.scrollBehavior = '';
-    });
+    // Fade out, jump, fade in
+    container.style.transition = 'opacity 0.2s ease';
+    container.style.opacity = '0';
+    setTimeout(() => {
+      container.style.scrollSnapType = 'none';
+      container.style.scrollBehavior = 'auto';
+      let top = 0;
+      let sibling = container.firstElementChild;
+      let count = 0;
+      while (sibling && count < index) {
+        top += (sibling as HTMLElement).offsetHeight;
+        sibling = sibling.nextElementSibling;
+        count++;
+      }
+      container.scrollTop = top;
+      requestAnimationFrame(() => {
+        container.style.scrollSnapType = 'y mandatory';
+        container.style.scrollBehavior = '';
+        container.style.opacity = '1';
+      });
+    }, 200);
   };
 
   return (
@@ -558,6 +561,7 @@ export default function WorkPage() {
         visible={headerVisible && mounted}
         startY={headerStartY}
         topPaddingPx={28}
+        color={activeSection > 0 ? '#ffffff' : '#6B5654'}
         onClick={() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -568,7 +572,7 @@ export default function WorkPage() {
       {/* Rolling date — OUTSIDE main to avoid overflow:hidden clipping */}
       {(() => {
         const date = visibleDate || currentSection?.startDate;
-        if (!date) return null;
+        if (!date || activeSection === 0) return null;
         const [year, month, day] = date;
         return (
           <div

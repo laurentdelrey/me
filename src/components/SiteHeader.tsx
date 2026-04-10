@@ -9,6 +9,7 @@ type SiteHeaderProps = {
   startY?: number; // starting offset from top when centered
   topPaddingPx?: number;
   onClick?: () => void; // optional click handler
+  color?: string; // text color override
 };
 
 export default function SiteHeader({
@@ -18,6 +19,7 @@ export default function SiteHeader({
   startY = 240,
   topPaddingPx = 16,
   onClick,
+  color,
 }: SiteHeaderProps) {
   const Container: any = animated ? motion.div : "div";
 
@@ -45,7 +47,8 @@ export default function SiteHeader({
           fontSize: "1rem",
           lineHeight: "1.5",
           fontWeight: 400,
-          color: "#6B5654",
+          color: color || "#6B5654",
+          transition: "color 0.5s ease",
           margin: 0,
           background: "transparent",
           border: "none",
