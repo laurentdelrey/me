@@ -7,15 +7,6 @@ import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
 import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
-import tweets from "@/data/tweets.json";
-
-type Tweet = {
-  id: string;
-  date: string;
-  text: string;
-  media: { type: string; localFile: string; width: number; height: number; blobUrl?: string }[];
-  hidden?: boolean;
-};
 
 // Dynamic import to avoid SSR issues with Mapbox
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -92,8 +83,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   free_media: (
     <>
-      {/* Gallery of all tweet media; map stays at Santa Monica */}
-      <WorkGallery />
+      {/* WorkGallery rendered inline in the component for onScrollYear access */}
     </>
   ),
   snap: (
@@ -410,6 +400,7 @@ export default function WorkPage() {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const timelineTrackRef = useRef<HTMLDivElement>(null);
   const [timelineTranslateX, setTimelineTranslateX] = useState(0);
+  const [galleryYear, setGalleryYear] = useState("");
   const currentSection = sections[activeSection];
 
   const timelineSections = sections.filter((s: any) => s.inTimeline !== false);
@@ -571,13 +562,13 @@ export default function WorkPage() {
                 style={{
                   scrollSnapAlign: section.id === 'free_media' ? 'start' : 'center',
                   minHeight: section.id === 'free_media' ? '200vh' : '100vh',
-                  height: section.id === 'free_media' ? 'auto' : '100vh',
+                  height: section.id === 'free_media' ? 'auto' : (section.id === 'free' ? '85vh' : '100vh'),
                   boxSizing: 'border-box'
                 }}
               >
               {section.id === 'free_media' ? (
                 <div className="w-full h-full">
-                  {getContent(activeSection)[section.id]}
+                  <WorkGallery onScrollYear={setGalleryYear} />
                 </div>
               ) : (
                 <div style={{
@@ -591,33 +582,6 @@ export default function WorkPage() {
                   paddingBottom: '0',
                   boxSizing: 'border-box'
                 }}>
-                  {/* Gallery peek at bottom of free ideas section */}
-                  {section.id === 'free' && (
-                    <div
-                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                      style={{
-                        height: '120px',
-                        overflow: 'hidden',
-                        maskImage: 'linear-gradient(to top, transparent 0%, rgba(0,0,0,0.3) 100%)',
-                        WebkitMaskImage: 'linear-gradient(to top, transparent 0%, rgba(0,0,0,0.3) 100%)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 0, transform: 'translateY(20px)' }}>
-                        {(tweets as Tweet[])
-                          .filter((t) => !t.hidden && t.media[0]?.blobUrl && t.media[0].type === 'photo')
-                          .slice(0, 6)
-                          .map((t) => (
-                            <img
-                              key={t.id}
-                              src={t.media[0].blobUrl}
-                              alt=""
-                              style={{ width: '16.666%', height: '100px', objectFit: 'cover', display: 'block' }}
-                            />
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
                   {(section.id === 'tribe' || section.id === 'hustle') && (
                     <AwardGrid section={section.id} containerRef={scrollContainerRef} />
                   )}
@@ -672,9 +636,10 @@ export default function WorkPage() {
         <div
           className="fixed bottom-0 left-0 right-0 z-20 flex items-center"
           style={{
-            height: '100px',
+            height: '140px',
             overflow: 'hidden',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, transparent 100%)',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 50%, transparent 100%)',
+            paddingBottom: '12px',
           }}
           ref={timelineContainerRef}
         >
@@ -711,7 +676,11 @@ export default function WorkPage() {
                   }}
                 >
                   <span className="block">
-                    {index === 0 ? 'scroll to start ↓' : (section.years || '')}
+                    {index === 0 ? 'scroll to start ↓' : (
+                      section.id === 'free' && galleryYear && (currentSection?.id === 'free' || currentSection?.id === 'free_media')
+                        ? `${galleryYear}`
+                        : (section.years || '')
+                    )}
                   </span>
                 </button>
               );

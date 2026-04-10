@@ -29,32 +29,6 @@ type Tweet = {
   hidden?: boolean;
 };
 
-// Scroll commentary — increasingly self-aware as you go back in time
-const SCROLL_COMMENTS = [
-  { at: 0, text: "the latest" },
-  { at: 0.1, text: "still recent" },
-  { at: 0.2, text: "warming up" },
-  { at: 0.3, text: "getting into it" },
-  { at: 0.4, text: "the experimental phase" },
-  { at: 0.5, text: "ok you're deep now" },
-  { at: 0.6, text: "it gets weird here" },
-  { at: 0.65, text: "sorry in advance" },
-  { at: 0.7, text: "i was figuring things out" },
-  { at: 0.75, text: "questionable taste era" },
-  { at: 0.8, text: "please don't judge" },
-  { at: 0.85, text: "oh no" },
-  { at: 0.9, text: "the early days..." },
-  { at: 0.95, text: "you really scrolled all the way" },
-  { at: 1, text: "that's it. go back up <3" },
-];
-
-function getScrollComment(progress: number): string {
-  let comment = SCROLL_COMMENTS[0].text;
-  for (const c of SCROLL_COMMENTS) {
-    if (progress >= c.at) comment = c.text;
-  }
-  return comment;
-}
 
 function GalleryCard({
   tweet,
@@ -102,9 +76,8 @@ function GalleryCard({
   );
 }
 
-export default function WorkGallery() {
+export default function WorkGallery({ onScrollYear }: { onScrollYear?: (year: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const [visibleTweet, setVisibleTweet] = useState<Tweet | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => {
@@ -148,6 +121,25 @@ export default function WorkGallery() {
     }
   }, [hoveredTweet]);
 
+  // Report current year based on scroll position
+  useEffect(() => {
+    if (!onScrollYear || displayTweets.length === 0) return;
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const totalHeight = containerRef.current.scrollHeight;
+      const scrolled = -rect.top;
+      const progress = Math.max(0, Math.min(1, scrolled / Math.max(1, totalHeight - window.innerHeight)));
+      // Map progress to tweet index
+      const idx = Math.min(displayTweets.length - 1, Math.floor(progress * displayTweets.length));
+      const year = displayTweets[idx]?.date?.substring(0, 4) || "";
+      onScrollYear(year);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [onScrollYear, displayTweets]);
+
   // Keyboard shortcut: H to toggle hidden
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -176,24 +168,6 @@ export default function WorkGallery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [hoveredTweet]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerHeight = containerRef.current.scrollHeight;
-      const viewportHeight = window.innerHeight;
-      const scrolled = -rect.top;
-      const totalScrollable = containerHeight - viewportHeight;
-      const progress = Math.max(0, Math.min(1, scrolled / totalScrollable));
-      setScrollProgress(progress);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollComment = getScrollComment(scrollProgress);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -268,28 +242,6 @@ export default function WorkGallery() {
           </div>
         )}
       </motion.div>
-
-      {/* Scroll commentary — right side, tracks with progress */}
-      <div
-        className="fixed z-40 pointer-events-none"
-        style={{
-          right: "16px",
-          top: `${Math.max(15, Math.min(85, scrollProgress * 100))}%`,
-          transform: "translateY(-50%)",
-          transition: "top 0.3s ease-out",
-        }}
-      >
-        <p
-          className="text-white/30 text-xs lowercase"
-          style={{
-            writingMode: "vertical-rl",
-            textOrientation: "mixed",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {scrollComment}
-        </p>
-      </div>
 
       <style jsx>{`
         @media (max-width: 768px) {
