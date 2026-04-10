@@ -573,65 +573,208 @@ export default function WorkPage() {
                 key={section.id}
                 ref={el => { sectionRefs.current[index] = el; }}
                 style={{
-                  scrollSnapAlign: 'start',
+                  scrollSnapAlign: sectionHasGallery ? 'start' : 'center',
                   minHeight: '100vh',
                   height: sectionHasGallery ? 'auto' : '100vh',
                   boxSizing: 'border-box',
                 }}
               >
-                {/* Text content — always 100vh centered */}
-                <div
-                  className="flex flex-col items-center justify-center relative"
-                  style={{
-                    width: '100%',
-                    height: '100vh',
-                    paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
-                    paddingBottom: '0',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {(section.id === 'tribe' || section.id === 'hustle') && (
-                    <AwardGrid section={section.id} containerRef={scrollContainerRef} />
-                  )}
+                {/* Desktop: side-by-side layout for sections with gallery */}
+                {sectionHasGallery ? (
+                  <>
+                    {/* Text + gallery side by side in a sticky/flow layout */}
+                    <div className="parallel-section" style={{ display: 'flex', minHeight: '100vh' }}>
+                      {/* Left: career text — sticky so it stays visible while gallery scrolls */}
+                      <div
+                        className="parallel-left"
+                        style={{
+                          width: '45%',
+                          position: 'sticky',
+                          top: 0,
+                          height: '100vh',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
+                          boxSizing: 'border-box',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {(section.id === 'tribe' || section.id === 'hustle') && (
+                          <AwardGrid section={section.id} containerRef={scrollContainerRef} />
+                        )}
 
-                  <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
-                    {section.label && (
-                      <div className="section-xpad" style={{ marginBottom: '10px' }}>
-                        <h2 className="text-white lowercase text-shadow section-title" style={{
-                          fontSize: '1rem',
-                          lineHeight: '1.5',
-                          fontWeight: 500,
-                        }}>
-                          {section.label}
-                        </h2>
+                        <div style={{ maxWidth: '400px', width: '100%', position: 'relative', zIndex: 10 }}>
+                          {section.label && (
+                            <div className="section-xpad" style={{ marginBottom: '10px' }}>
+                              <h2 className="text-white lowercase text-shadow section-title" style={{
+                                fontSize: '1rem',
+                                lineHeight: '1.5',
+                                fontWeight: 500,
+                              }}>
+                                {section.label}
+                              </h2>
+                            </div>
+                          )}
+
+                          <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
+                            {getContent(activeSection)[section.id]}
+                          </div>
+
+                          {section.city && (
+                            <div className="section-xpad">
+                              <p className="lowercase section-location" style={{
+                                fontSize: '1.05rem',
+                                color: '#6B5654',
+                              }}>
+                                {section.city}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
 
-                    <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
-                      {getContent(activeSection)[section.id]}
+                      {/* Right: gallery — scrolls naturally */}
+                      <div
+                        className="parallel-right"
+                        style={{
+                          width: '55%',
+                          paddingTop: '60px',
+                          paddingBottom: '60px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <EraGallery
+                          tweets={eraTweets}
+                          onHover={setHoveredTweet}
+                          onLeave={() => setHoveredTweet(null)}
+                        />
+                      </div>
                     </div>
 
-                    {section.city && (
-                      <div className="section-xpad">
-                        <p className="lowercase section-location" style={{
-                          fontSize: '1.05rem',
-                          color: '#6B5654',
-                        }}>
-                          {section.city}
-                        </p>
+                    {/* Mobile: horizontal scroll strip below text */}
+                    <div className="mobile-gallery-strip" style={{ display: 'none' }}>
+                      <div
+                        className="flex flex-col items-center justify-center relative"
+                        style={{
+                          width: '100%',
+                          minHeight: '100vh',
+                          paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        <div style={{ maxWidth: '400px', width: '100%', position: 'relative', zIndex: 10 }}>
+                          {section.label && (
+                            <div className="section-xpad" style={{ marginBottom: '10px' }}>
+                              <h2 className="text-white lowercase text-shadow section-title" style={{
+                                fontSize: '1rem', lineHeight: '1.5', fontWeight: 500,
+                              }}>
+                                {section.label}
+                              </h2>
+                            </div>
+                          )}
+                          <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
+                            {getContent(activeSection)[section.id]}
+                          </div>
+                          {section.city && (
+                            <div className="section-xpad">
+                              <p className="lowercase section-location" style={{ fontSize: '1.05rem', color: '#6B5654' }}>
+                                {section.city}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Era gallery strip — flows below the text */}
-                {sectionHasGallery && (
-                  <EraGallery
-                    tweets={eraTweets}
-                    label="free ideas"
-                    onHover={setHoveredTweet}
-                    onLeave={() => setHoveredTweet(null)}
-                  />
+                      {/* Horizontal scroll strip */}
+                      <div
+                        className="hide-scrollbar"
+                        style={{
+                          overflowX: 'auto',
+                          overflowY: 'hidden',
+                          whiteSpace: 'nowrap',
+                          padding: '0 16px 40px',
+                        }}
+                      >
+                        {eraTweets.map((tweet) => {
+                          const m = tweet.media[0];
+                          if (!m?.blobUrl) return null;
+                          return (
+                            <a
+                              key={tweet.id}
+                              href={`https://x.com/laurentdelrey/status/${tweet.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-no-cursor-expand
+                              style={{
+                                display: 'inline-block',
+                                width: '200px',
+                                height: '200px',
+                                marginRight: '4px',
+                                flexShrink: 0,
+                                overflow: 'hidden',
+                                verticalAlign: 'top',
+                              }}
+                            >
+                              {m.type === 'video' ? (
+                                <video src={m.blobUrl} muted loop autoPlay playsInline
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <img src={m.blobUrl} alt={tweet.text} loading="lazy"
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              )}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Regular section — full width centered text */
+                  <div
+                    className="flex flex-col items-center justify-center relative"
+                    style={{
+                      width: '100%',
+                      height: '100vh',
+                      paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
+                      paddingBottom: '0',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    {(section.id === 'tribe' || section.id === 'hustle') && (
+                      <AwardGrid section={section.id} containerRef={scrollContainerRef} />
+                    )}
+
+                    <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
+                      {section.label && (
+                        <div className="section-xpad" style={{ marginBottom: '10px' }}>
+                          <h2 className="text-white lowercase text-shadow section-title" style={{
+                            fontSize: '1rem',
+                            lineHeight: '1.5',
+                            fontWeight: 500,
+                          }}>
+                            {section.label}
+                          </h2>
+                        </div>
+                      )}
+
+                      <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
+                        {getContent(activeSection)[section.id]}
+                      </div>
+
+                      {section.city && (
+                        <div className="section-xpad">
+                          <p className="lowercase section-location" style={{
+                            fontSize: '1.05rem',
+                            color: '#6B5654',
+                          }}>
+                            {section.city}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             );
