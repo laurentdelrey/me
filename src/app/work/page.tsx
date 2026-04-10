@@ -93,13 +93,13 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
             rel="noopener noreferrer"
             style={{ color: '#60C4FF', textDecoration: 'none' }}
             className="hover:underline"
-          >instagram</a> to pursue that vision on <a
+          >instagram</a> to do similar things directly within the <a
             href="https://www.threads.net/@laurentdelrey"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#60C4FF', textDecoration: 'none' }}
             className="hover:underline"
-          >threads</a>.
+          >threads</a> product team.
         </p>
       </AnimatedText>
     </div>
@@ -800,9 +800,6 @@ export default function WorkPage() {
                           flexShrink: 0,
                         }}
                       >
-                        <p className="text-white/15 text-xs lowercase" style={{ padding: '0 0 16px', letterSpacing: '0.03em' }}>
-                          a selection of free ideas i shared around that time
-                        </p>
                         <EraGallery
                           tweets={eraTweets}
                           onHover={setHoveredTweet}
@@ -956,14 +953,23 @@ export default function WorkPage() {
           }}
         />
 
-        {/* Bottom gradient — taller to hide mapbox logo */}
+        {/* Bottom gradient with gallery label */}
         <div
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
             height: '220px',
             background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.5) 50%, transparent 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-        />
+        >
+          {hasGallery(currentSection?.id) && (
+            <p className="text-white text-xs lowercase" style={{ letterSpacing: '0.03em', marginTop: '80px' }}>
+              a selection of ideas i shared around that time on social
+            </p>
+          )}
+        </div>
       </main>
     </>
   );
