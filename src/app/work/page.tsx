@@ -518,9 +518,14 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    // Fade out, jump, fade in
-    container.style.transition = 'opacity 0.2s ease';
+    // Determine direction for slide
+    const goingDown = index > activeSection;
+    const slideOut = goingDown ? '-30px' : '30px';
+    const slideIn = goingDown ? '30px' : '-30px';
+    // Slide + fade out
+    container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
     container.style.opacity = '0';
+    container.style.transform = `translateY(${slideOut})`;
     setTimeout(() => {
       container.style.scrollSnapType = 'none';
       container.style.scrollBehavior = 'auto';
@@ -533,12 +538,17 @@ export default function WorkPage() {
         count++;
       }
       container.scrollTop = top;
+      // Position for slide in from opposite direction
+      container.style.transition = 'none';
+      container.style.transform = `translateY(${slideIn})`;
       requestAnimationFrame(() => {
         container.style.scrollSnapType = 'y mandatory';
         container.style.scrollBehavior = '';
+        container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
       });
-    }, 200);
+    }, 250);
   };
 
   return (
@@ -572,7 +582,7 @@ export default function WorkPage() {
       {/* Rolling date — OUTSIDE main to avoid overflow:hidden clipping */}
       {(() => {
         const date = visibleDate || currentSection?.startDate;
-        if (!date || activeSection === 0) return null;
+        if (!date || !mapLoaded) return null;
         const [year, month, day] = date;
         return (
           <div
