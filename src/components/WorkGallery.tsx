@@ -139,9 +139,7 @@ export default function WorkGallery() {
     []
   );
 
-  // Show hidden items too (dimmed) so you can un-hide them
-  // But in production (no keyboard handler), hidden ones are filtered out
-  const displayTweets = allTweets;
+  const displayTweets = allTweets.filter((t) => !hiddenIds.has(t.id));
 
   // Keyboard shortcut: H to toggle hidden
   useEffect(() => {
