@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import React from "react";
+import { motion } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
@@ -514,10 +515,16 @@ export default function WorkPage() {
   }, [activeSection]);
 
   const scrollToSection = (index: number) => {
-    sectionRefs.current[index]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
+    const el = sectionRefs.current[index];
+    const container = scrollContainerRef.current;
+    if (!el || !container) return;
+    // Calculate the offset of the element within the scroll container
+    let offset = 0;
+    for (let i = 0; i < index; i++) {
+      const s = sectionRefs.current[i];
+      offset += s ? s.offsetHeight : container.clientHeight;
+    }
+    container.scrollTo({ top: offset, behavior: 'smooth' });
   };
 
   return (
@@ -571,24 +578,35 @@ export default function WorkPage() {
               <SlidingNumber value={day} padStart />
             </div>
 
-            {/* Hover dropdown — era shortcuts */}
-            <div
-              style={{
-                overflow: 'hidden',
-                maxHeight: dateHovered ? '300px' : '0px',
+            {/* Hover dropdown — era shortcuts with spring animation */}
+            <motion.div
+              initial={false}
+              animate={{
+                height: dateHovered ? 'auto' : 0,
                 opacity: dateHovered ? 1 : 0,
-                transition: 'max-height 0.3s ease, opacity 0.2s ease',
-                paddingTop: dateHovered ? '12px' : '0px',
               }}
+              transition={{
+                height: { type: 'spring', stiffness: 300, damping: 30 },
+                opacity: { duration: 0.15 },
+              }}
+              style={{ overflow: 'hidden' }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {sections
                   .filter((s) => s.years && s.years !== '' && s.years !== '@')
-                  .map((s) => {
+                  .map((s, i) => {
                     const isActive = s.id === currentSection?.id;
                     return (
-                      <button
+                      <motion.button
                         key={s.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={dateHovered ? { opacity: isActive ? 1 : 0.35, x: 0 } : { opacity: 0, x: -8 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 300,
+                          damping: 25,
+                          delay: dateHovered ? i * 0.03 : 0,
+                        }}
                         onClick={() => {
                           const idx = sections.findIndex((sec) => sec.id === s.id);
                           scrollToSection(idx);
@@ -598,23 +616,20 @@ export default function WorkPage() {
                         style={{
                           fontSize: '0.7rem',
                           color: '#ffffff',
-                          opacity: isActive ? 1 : 0.35,
                           fontWeight: isActive ? 500 : 400,
                           cursor: 'pointer',
                           background: 'none',
                           border: 'none',
                           padding: 0,
-                          transition: 'opacity 0.15s',
                         }}
-                        onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '0.8'; }}
-                        onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = isActive ? '1' : '0.35'; }}
+                        whileHover={{ opacity: 0.8 }}
                       >
                         {s.label} · {s.years}
-                      </button>
+                      </motion.button>
                     );
                   })}
               </div>
-            </div>
+            </motion.div>
           </div>
         );
       })()}
@@ -855,11 +870,20 @@ export default function WorkPage() {
           }}
         />
 
-        {/* Bottom gradient — no timeline text */}
+        {/* Top gradient */}
+        <div
+          className="fixed top-0 left-0 right-0 z-15 pointer-events-none"
+          style={{
+            height: '120px',
+            background: 'linear-gradient(to bottom, rgba(63, 45, 44, 1) 0%, transparent 100%)',
+          }}
+        />
+
+        {/* Bottom gradient — taller to hide mapbox logo */}
         <div
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
-            height: '120px',
+            height: '160px',
             background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, transparent 100%)',
           }}
         />
