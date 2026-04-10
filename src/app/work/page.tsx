@@ -81,7 +81,13 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
     <div style={{ maxWidth: '480px' }} className="section-xpad">
       <AnimatedText delay={100} sectionIndex={1} isActive={activeSection === 1}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
-          i recently joined <a
+          i joined the <a
+            href="https://www.meta.com/superintelligence/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#60C4FF', textDecoration: 'none' }}
+            className="hover:underline"
+          >meta</a> super intelligence lab in january. since then i've been jamming with frontier models to design original social experiences mostly on ios and web sometimes. i recently joined <a
             href="https://www.instagram.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -93,7 +99,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
             rel="noopener noreferrer"
             style={{ color: '#60C4FF', textDecoration: 'none' }}
             className="hover:underline"
-          >threads</a>. jamming with frontier models to design original social experiences on ios and web.
+          >threads</a>.
         </p>
       </AnimatedText>
     </div>
@@ -794,6 +800,9 @@ export default function WorkPage() {
                           flexShrink: 0,
                         }}
                       >
+                        <p className="text-white/15 text-xs lowercase" style={{ padding: '0 0 16px', letterSpacing: '0.03em' }}>
+                          a selection of free ideas i shared around that time
+                        </p>
                         <EraGallery
                           tweets={eraTweets}
                           onHover={setHoveredTweet}
