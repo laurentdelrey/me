@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import tweets from "@/data/tweets.json";
 
 function formatDate(dateStr: string) {
@@ -28,16 +28,39 @@ type Tweet = {
   hidden?: boolean;
 };
 
+// Scroll commentary messages — gets more self-deprecating as you go back in time
+const SCROLL_COMMENTS = [
+  { at: 0, text: "the latest" },
+  { at: 0.1, text: "still recent" },
+  { at: 0.2, text: "warming up" },
+  { at: 0.3, text: "getting into it" },
+  { at: 0.4, text: "the experimental phase" },
+  { at: 0.5, text: "ok you're deep now" },
+  { at: 0.6, text: "it gets weird here" },
+  { at: 0.65, text: "sorry in advance" },
+  { at: 0.7, text: "i was figuring things out" },
+  { at: 0.75, text: "questionable taste era" },
+  { at: 0.8, text: "please don't judge" },
+  { at: 0.85, text: "oh no" },
+  { at: 0.9, text: "the early days..." },
+  { at: 0.95, text: "you really scrolled all the way" },
+  { at: 1, text: "that's it. go back up <3" },
+];
+
+function getScrollComment(progress: number): string {
+  let comment = SCROLL_COMMENTS[0].text;
+  for (const c of SCROLL_COMMENTS) {
+    if (progress >= c.at) comment = c.text;
+  }
+  return comment;
+}
+
 function GalleryCard({
   tweet,
-  isHovered,
-  isHidden,
   onMouseEnter,
   onMouseLeave,
 }: {
   tweet: Tweet;
-  isHovered: boolean;
-  isHidden: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
@@ -56,7 +79,6 @@ function GalleryCard({
       data-tweet-id={tweet.id}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ opacity: isHidden ? 0.15 : 1, transition: "opacity 0.3s" }}
     >
       {isVideo ? (
         <video
@@ -75,49 +97,6 @@ function GalleryCard({
           className="w-full h-auto object-cover block"
         />
       )}
-
-      {/* Hover overlay */}
-      <div
-        className="absolute inset-0 flex flex-col justify-end transition-opacity duration-200"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)",
-          padding: "20px 16px",
-          opacity: isHovered ? 1 : 0,
-        }}
-      >
-        {tweet.text && (
-          <p className="text-white text-sm leading-relaxed lowercase line-clamp-4">
-            {tweet.text}
-          </p>
-        )}
-
-        {/* Self-replies with staggered bubble-up */}
-        {tweet.replies?.map((reply, i) => (
-          <p
-            key={i}
-            className="text-white/60 text-xs leading-relaxed lowercase mt-2 line-clamp-2 reply-bubble"
-            style={{
-              animationDelay: `${300 + i * 200}ms`,
-              opacity: 0,
-              animation: isHovered
-                ? `reply-bubble 0.3s ease-out ${300 + i * 200}ms forwards`
-                : "none",
-            }}
-          >
-            ↳ {reply}
-          </p>
-        ))}
-
-        <p className="text-white/40 text-xs mt-2">{formatDate(tweet.date)}</p>
-      </div>
-
-      {/* Hidden badge */}
-      {isHidden && (
-        <div className="absolute top-2 right-2 bg-red-500/80 text-white text-xs px-2 py-0.5 rounded">
-          hidden
-        </div>
-      )}
     </a>
   );
 }
@@ -125,7 +104,8 @@ function GalleryCard({
 export default function WorkGallery() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => {
     const hidden = new Set<string>();
     for (const t of tweets as Tweet[]) {
@@ -141,21 +121,30 @@ export default function WorkGallery() {
 
   const displayTweets = allTweets.filter((t) => !hiddenIds.has(t.id));
 
+  // Track mouse position for cursor tooltip
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   // Keyboard shortcut: H to toggle hidden
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "h" || e.key === "H") {
-        if (!hoveredId) return;
+        if (!hoveredTweet) return;
         e.preventDefault();
+        const id = hoveredTweet.id;
 
         setHiddenIds((prev) => {
           const next = new Set(prev);
-          if (next.has(hoveredId)) {
-            next.delete(hoveredId);
+          if (next.has(id)) {
+            next.delete(id);
           } else {
-            next.add(hoveredId);
+            next.add(id);
           }
-          // Log to console so we can grab the list
           console.log(
             "[WorkGallery] Hidden IDs:",
             JSON.stringify([...next])
@@ -167,7 +156,7 @@ export default function WorkGallery() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hoveredId]);
+  }, [hoveredTweet]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -186,6 +175,8 @@ export default function WorkGallery() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const scrollComment = getScrollComment(scrollProgress);
+
   return (
     <div ref={containerRef} className="w-full h-full relative">
       <div
@@ -197,7 +188,6 @@ export default function WorkGallery() {
         }}
         className="gallery-grid"
       >
-        {/* Split into 2 columns: even indices left, odd indices right */}
         {[0, 1].map((col) => (
           <div key={col} style={{ flex: 1, minWidth: 0 }}>
             {displayTweets
@@ -206,14 +196,70 @@ export default function WorkGallery() {
                 <GalleryCard
                   key={tweet.id}
                   tweet={tweet}
-                  isHovered={hoveredId === tweet.id}
-                  isHidden={hiddenIds.has(tweet.id)}
-                  onMouseEnter={() => setHoveredId(tweet.id)}
-                  onMouseLeave={() => setHoveredId(null)}
+                  onMouseEnter={() => setHoveredTweet(tweet)}
+                  onMouseLeave={() => setHoveredTweet(null)}
                 />
               ))}
           </div>
         ))}
+      </div>
+
+      {/* Cursor tooltip — follows mouse, shows tweet text */}
+      {hoveredTweet && hoveredTweet.text && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: mousePos.x + 16,
+            top: mousePos.y + 16,
+            maxWidth: "280px",
+          }}
+        >
+          <div
+            style={{
+              background: "rgba(0,0,0,0.85)",
+              borderRadius: "8px",
+              padding: "10px 12px",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <p className="text-white text-xs leading-relaxed lowercase line-clamp-3">
+              {hoveredTweet.text}
+            </p>
+            {hoveredTweet.replies?.map((reply, i) => (
+              <p
+                key={i}
+                className="text-white/50 text-xs leading-relaxed lowercase mt-1.5 line-clamp-2"
+              >
+                ↳ {reply}
+              </p>
+            ))}
+            <p className="text-white/30 text-xs mt-1.5">
+              {formatDate(hoveredTweet.date)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Scroll commentary — anchored to right side */}
+      <div
+        className="fixed z-40 pointer-events-none"
+        style={{
+          right: "16px",
+          top: `${Math.max(15, Math.min(85, scrollProgress * 100))}%`,
+          transform: "translateY(-50%)",
+          transition: "top 0.3s ease-out",
+        }}
+      >
+        <p
+          className="text-white/40 text-xs lowercase"
+          style={{
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {scrollComment}
+        </p>
       </div>
 
       {/* Progress bar */}
@@ -231,16 +277,6 @@ export default function WorkGallery() {
         @media (max-width: 768px) {
           :global(.gallery-grid) {
             flex-direction: column !important;
-          }
-        }
-        @keyframes reply-bubble {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 0.6;
-            transform: translateY(0);
           }
         }
       `}</style>

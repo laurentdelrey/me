@@ -7,6 +7,15 @@ import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
 import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
+import tweets from "@/data/tweets.json";
+
+type Tweet = {
+  id: string;
+  date: string;
+  text: string;
+  media: { type: string; localFile: string; width: number; height: number; blobUrl?: string }[];
+  hidden?: boolean;
+};
 
 // Dynamic import to avoid SSR issues with Mapbox
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -582,6 +591,33 @@ export default function WorkPage() {
                   paddingBottom: '0',
                   boxSizing: 'border-box'
                 }}>
+                  {/* Gallery peek at bottom of free ideas section */}
+                  {section.id === 'free' && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                      style={{
+                        height: '120px',
+                        overflow: 'hidden',
+                        maskImage: 'linear-gradient(to top, transparent 0%, rgba(0,0,0,0.3) 100%)',
+                        WebkitMaskImage: 'linear-gradient(to top, transparent 0%, rgba(0,0,0,0.3) 100%)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 0, transform: 'translateY(20px)' }}>
+                        {(tweets as Tweet[])
+                          .filter((t) => !t.hidden && t.media[0]?.blobUrl)
+                          .slice(0, 6)
+                          .map((t) => (
+                            <img
+                              key={t.id}
+                              src={t.media[0].blobUrl}
+                              alt=""
+                              style={{ width: '16.666%', height: '100px', objectFit: 'cover', display: 'block' }}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
                   {(section.id === 'tribe' || section.id === 'hustle') && (
                     <AwardGrid section={section.id} containerRef={scrollContainerRef} />
                   )}
@@ -635,7 +671,11 @@ export default function WorkPage() {
 
         <div
           className="fixed bottom-0 left-0 right-0 z-20 flex items-center"
-          style={{ height: '100px', overflow: 'hidden' }}
+          style={{
+            height: '100px',
+            overflow: 'hidden',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 0.95) 0%, rgba(63, 45, 44, 0.7) 60%, transparent 100%)',
+          }}
           ref={timelineContainerRef}
         >
           <div
