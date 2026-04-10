@@ -965,7 +965,15 @@ export default function WorkPage() {
           }}
         >
           {hasGallery(currentSection?.id) && (
-            <p className="text-white text-xs lowercase" style={{ letterSpacing: '0.03em', marginTop: '80px' }}>
+            <p className="text-white lowercase" style={{
+              fontSize: '1rem',
+              fontWeight: 500,
+              position: 'absolute',
+              right: 0,
+              width: '55%',
+              textAlign: 'center',
+              bottom: '24px',
+            }}>
               a selection of ideas i shared around that time on social
             </p>
           )}
