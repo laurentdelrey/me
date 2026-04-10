@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
 import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
+import tweetsData from "@/data/tweets.json";
 
 // Dynamic import to avoid SSR issues with Mapbox
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -585,6 +586,40 @@ export default function WorkPage() {
                     <AwardGrid section={section.id} containerRef={scrollContainerRef} />
                   )}
 
+                  {/* Gallery peek at bottom of free ideas section */}
+                  {section.id === 'free' && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                      style={{
+                        height: '15vh',
+                        overflow: 'hidden',
+                        maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 100%)',
+                        padding: '0 12%',
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 0 }}>
+                        {[0, 1].map((col) => (
+                          <div key={col} style={{ flex: 1, minWidth: 0 }}>
+                            {(tweetsData as any[])
+                              .filter((t: any) => !t.hidden && t.media[0]?.blobUrl && t.media[0].type === 'photo')
+                              .filter((_: any, i: number) => i % 2 === col)
+                              .slice(0, 2)
+                              .map((t: any) => (
+                                <img
+                                  key={t.id}
+                                  src={t.media[0].blobUrl}
+                                  alt=""
+                                  className="w-full h-auto block"
+                                  style={{ objectFit: 'cover' }}
+                                />
+                              ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
                     {section.label && (
                   <div
@@ -666,8 +701,9 @@ export default function WorkPage() {
                   }}
                   className={`lowercase whitespace-nowrap timeline-text ${isCurrent ? 'timeline-active' : ''}`}
                   style={{
-                    fontSize: isCurrent ? '1rem' : '0.9rem',
-                    color: isCurrent ? '#ffffff' : '#6B5654',
+                    fontSize: isCurrent ? '1rem' : '0.85rem',
+                    color: '#ffffff',
+                    opacity: isCurrent ? 1 : 0.4,
                     padding: '4px 12px',
                     fontWeight: isCurrent ? 500 : 400,
                     cursor: 'pointer',

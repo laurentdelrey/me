@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { motion, useMotionValue, useSpring, useInView } from "motion/react";
 import tweets from "@/data/tweets.json";
 
 function formatDate(dateStr: string) {
@@ -29,8 +29,7 @@ type Tweet = {
   hidden?: boolean;
 };
 
-
-function GalleryCard({
+function RevealCard({
   tweet,
   onMouseEnter,
   onMouseLeave,
@@ -39,21 +38,27 @@ function GalleryCard({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "0px 0px -80px 0px" });
   const firstMedia = tweet.media[0];
   if (!firstMedia?.blobUrl) return null;
 
   const isVideo = firstMedia.type === "video";
 
   return (
-    <a
+    <motion.a
+      ref={ref}
       href={`https://x.com/laurentdelrey/status/${tweet.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="gallery-card group relative block overflow-hidden break-inside-avoid mb-0"
+      className="gallery-card group relative block overflow-hidden"
       data-no-cursor-expand
       data-tweet-id={tweet.id}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
     >
       {isVideo ? (
         <video
@@ -72,8 +77,23 @@ function GalleryCard({
           className="w-full h-auto object-cover block"
         />
       )}
-    </a>
+    </motion.a>
   );
+}
+
+// Group tweets by year, preserving order
+function groupByYear(items: Tweet[]): { year: string; tweets: Tweet[] }[] {
+  const groups: { year: string; tweets: Tweet[] }[] = [];
+  let currentYear = "";
+  for (const t of items) {
+    const year = t.date.substring(0, 4);
+    if (year !== currentYear) {
+      groups.push({ year, tweets: [] });
+      currentYear = year;
+    }
+    groups[groups.length - 1].tweets.push(t);
+  }
+  return groups;
 }
 
 export default function WorkGallery() {
@@ -94,8 +114,13 @@ export default function WorkGallery() {
   );
 
   const displayTweets = allTweets.filter((t) => !hiddenIds.has(t.id));
+  const yearGroups = useMemo(() => groupByYear(displayTweets), [displayTweets]);
 
-  // Spring-based tooltip position (same inertia feel as the cursor)
+  // Year range for intro
+  const firstYear = displayTweets[displayTweets.length - 1]?.date.substring(0, 4) || "";
+  const lastYear = displayTweets[0]?.date.substring(0, 4) || "";
+
+  // Spring-based tooltip position
   const tooltipX = useMotionValue(0);
   const tooltipY = useMotionValue(0);
   const springConfig = { stiffness: 300, damping: 30 };
@@ -111,7 +136,7 @@ export default function WorkGallery() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [tooltipX, tooltipY]);
 
-  // Delayed tooltip content transition — show/hide with a small fade
+  // Delayed tooltip content transition
   useEffect(() => {
     if (hoveredTweet) {
       setVisibleTweet(hoveredTweet);
@@ -149,35 +174,58 @@ export default function WorkGallery() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [hoveredTweet]);
 
-
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      <div
-        style={{
-          padding: "0 12% 80px 12%",
-          minHeight: "100vh",
-          display: "flex",
-          gap: "0px",
-        }}
-        className="gallery-grid"
-      >
-        {[0, 1].map((col) => (
-          <div key={col} style={{ flex: 1, minWidth: 0 }}>
-            {displayTweets
-              .filter((_, i) => i % 2 === col)
-              .map((tweet) => (
-                <GalleryCard
-                  key={tweet.id}
-                  tweet={tweet}
-                  onMouseEnter={() => setHoveredTweet(tweet)}
-                  onMouseLeave={() => setHoveredTweet(null)}
-                />
+      <div style={{ padding: "0 12% 80px 12%", minHeight: "100vh" }}>
+
+        {/* Intro count */}
+        <div style={{ padding: "40px 0 32px", textAlign: "center" }}>
+          <p className="text-white/20 text-xs lowercase tracking-widest">
+            {displayTweets.length} ideas · {firstYear}–{lastYear}
+          </p>
+        </div>
+
+        {/* Year groups with dividers */}
+        {yearGroups.map((group) => (
+          <div key={group.year}>
+            {/* Year divider */}
+            <div
+              style={{
+                padding: "24px 0 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" }} />
+              <span className="text-white/20 text-xs lowercase tracking-widest">
+                {group.year}
+              </span>
+              <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" }} />
+            </div>
+
+            {/* 2-column masonry for this year */}
+            <div style={{ display: "flex", gap: "0px" }} className="gallery-grid">
+              {[0, 1].map((col) => (
+                <div key={col} style={{ flex: 1, minWidth: 0 }}>
+                  {group.tweets
+                    .filter((_, i) => i % 2 === col)
+                    .map((tweet) => (
+                      <RevealCard
+                        key={tweet.id}
+                        tweet={tweet}
+                        onMouseEnter={() => setHoveredTweet(tweet)}
+                        onMouseLeave={() => setHoveredTweet(null)}
+                      />
+                    ))}
+                </div>
               ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Cursor tooltip — spring-animated, follows mouse with inertia */}
+      {/* Cursor tooltip — spring-animated */}
       <motion.div
         className="fixed pointer-events-none z-50"
         style={{
