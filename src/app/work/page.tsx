@@ -518,13 +518,7 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    // Calculate the offset of the element within the scroll container
-    let offset = 0;
-    for (let i = 0; i < index; i++) {
-      const s = sectionRefs.current[i];
-      offset += s ? s.offsetHeight : container.clientHeight;
-    }
-    container.scrollTo({ top: offset, behavior: 'smooth' });
+    container.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
   };
 
   return (
@@ -607,14 +601,15 @@ export default function WorkPage() {
                           damping: 25,
                           delay: dateHovered ? i * 0.03 : 0,
                         }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const idx = sections.findIndex((sec) => sec.id === s.id);
                           scrollToSection(idx);
-                          setDateHovered(false);
+                          setTimeout(() => setDateHovered(false), 100);
                         }}
                         className="lowercase text-left"
                         style={{
-                          fontSize: '0.7rem',
+                          fontSize: '0.8rem',
                           color: '#ffffff',
                           fontWeight: isActive ? 500 : 400,
                           cursor: 'none',
@@ -883,8 +878,8 @@ export default function WorkPage() {
         <div
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
-            height: '160px',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, transparent 100%)',
+            height: '220px',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.5) 50%, transparent 100%)',
           }}
         />
       </main>
