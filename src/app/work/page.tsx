@@ -470,18 +470,25 @@ export default function WorkPage() {
         setActiveSection(newActiveSection);
       }
 
-      // Track visible tweet date for sections with galleries
+      // Track visible tweet date — only when scrolled into gallery portion
+      // Recalculate accumulatedHeight up to the active section
+      let sectionTop = 0;
+      for (let i = 0; i < newActiveSection; i++) {
+        const el = sectionRefs.current[i];
+        sectionTop += el ? el.offsetHeight : containerHeight;
+      }
+
       const section = sections[newActiveSection];
       if (section && hasGallery(section.id)) {
         const sectionEl = sectionRefs.current[newActiveSection];
         if (sectionEl) {
-          const sectionTop = accumulatedHeight;
-          // Text portion is 100vh, gallery starts after that
-          const galleryStart = sectionTop + containerHeight;
+          const galleryStart = sectionTop + containerHeight; // after 100vh text
           const eraTweets = getTweetsForEra(section.id);
-          if (eraTweets.length > 0 && scrollTop > galleryStart - containerHeight) {
+
+          if (eraTweets.length > 0 && scrollTop >= galleryStart) {
+            // We're in the gallery portion
             const galleryHeight = sectionEl.offsetHeight - containerHeight;
-            const galleryScroll = Math.max(0, scrollTop - sectionTop);
+            const galleryScroll = scrollTop - galleryStart;
             const progress = Math.min(1, galleryScroll / Math.max(1, galleryHeight));
             const idx = Math.min(eraTweets.length - 1, Math.floor(progress * eraTweets.length));
             const d = eraTweets[idx]?.date;
@@ -489,6 +496,9 @@ export default function WorkPage() {
               const parts = d.split("-");
               setVisibleDate([parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]);
             }
+          } else {
+            // Still in text portion — show section start date
+            setVisibleDate(null);
           }
         }
       } else {
@@ -537,81 +547,81 @@ export default function WorkPage() {
         }}
       />
 
+      {/* Rolling date — OUTSIDE main to avoid overflow:hidden clipping */}
+      {(() => {
+        const date = visibleDate || currentSection?.startDate;
+        if (!date) return null;
+        const [year, month, day] = date;
+        return (
+          <div
+            className="fixed"
+            data-no-cursor-expand
+            style={{ top: '32px', left: '32px', zIndex: 9998, cursor: 'default' }}
+            onMouseEnter={() => setDateHovered(true)}
+            onMouseLeave={() => setDateHovered(false)}
+          >
+            <div
+              className="text-white"
+              style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+            >
+              <SlidingNumber value={year} />
+              <span className="text-white/30">.</span>
+              <SlidingNumber value={month} padStart />
+              <span className="text-white/30">.</span>
+              <SlidingNumber value={day} padStart />
+            </div>
+
+            {/* Hover dropdown — era shortcuts */}
+            <div
+              style={{
+                overflow: 'hidden',
+                maxHeight: dateHovered ? '300px' : '0px',
+                opacity: dateHovered ? 1 : 0,
+                transition: 'max-height 0.3s ease, opacity 0.2s ease',
+                paddingTop: dateHovered ? '12px' : '0px',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sections
+                  .filter((s) => s.years && s.years !== '' && s.years !== '@')
+                  .map((s) => {
+                    const isActive = s.id === currentSection?.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          const idx = sections.findIndex((sec) => sec.id === s.id);
+                          scrollToSection(idx);
+                          setDateHovered(false);
+                        }}
+                        className="lowercase text-left"
+                        style={{
+                          fontSize: '0.7rem',
+                          color: '#ffffff',
+                          opacity: isActive ? 1 : 0.35,
+                          fontWeight: isActive ? 500 : 400,
+                          cursor: 'pointer',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          transition: 'opacity 0.15s',
+                        }}
+                        onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '0.8'; }}
+                        onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = isActive ? '1' : '0.35'; }}
+                      >
+                        {s.label} · {s.years}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <main className={`h-screen relative z-10 overflow-hidden ${mounted && mapLoaded ? 'animate-fadeIn' : 'opacity-0'}`}>
 
         <VerticalScrollProgress containerRef={scrollContainerRef} />
-
-        {/* Rolling date — top left, always visible, hover for era shortcuts */}
-        {(() => {
-          const date = visibleDate || currentSection?.startDate;
-          if (!date) return null;
-          const [year, month, day] = date;
-          return (
-            <div
-              className="fixed z-[60]"
-              data-no-cursor-expand
-              style={{ top: '32px', left: '32px', cursor: 'default' }}
-              onMouseEnter={() => setDateHovered(true)}
-              onMouseLeave={() => setDateHovered(false)}
-            >
-              {/* Date display */}
-              <div
-                className="text-white cursor-pointer"
-                style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <SlidingNumber value={year} />
-                <span className="text-white/30">.</span>
-                <SlidingNumber value={month} padStart />
-                <span className="text-white/30">.</span>
-                <SlidingNumber value={day} padStart />
-              </div>
-
-              {/* Hover dropdown — era shortcuts */}
-              <div
-                style={{
-                  overflow: 'hidden',
-                  maxHeight: dateHovered ? '300px' : '0px',
-                  opacity: dateHovered ? 1 : 0,
-                  transition: 'max-height 0.3s ease, opacity 0.2s ease',
-                }}
-              >
-                <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {sections
-                    .filter((s) => s.years && s.years !== '' && s.years !== '@')
-                    .map((s) => {
-                      const isActive = s.id === currentSection?.id;
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => {
-                            const idx = sections.findIndex((sec) => sec.id === s.id);
-                            scrollToSection(idx);
-                            setDateHovered(false);
-                          }}
-                          className="lowercase text-left"
-                          style={{
-                            fontSize: '0.7rem',
-                            color: '#ffffff',
-                            opacity: isActive ? 1 : 0.35,
-                            fontWeight: isActive ? 500 : 400,
-                            cursor: 'pointer',
-                            background: 'none',
-                            border: 'none',
-                            padding: 0,
-                            transition: 'opacity 0.15s',
-                          }}
-                          onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '0.8'; }}
-                          onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = isActive ? '1' : '0.35'; }}
-                        >
-                          {s.label} · {s.years}
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
 
         <div
           ref={scrollContainerRef}
