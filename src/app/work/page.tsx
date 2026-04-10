@@ -604,7 +604,7 @@ export default function WorkPage() {
                     >
                       <div style={{ display: 'flex', gap: 0, transform: 'translateY(20px)' }}>
                         {(tweets as Tweet[])
-                          .filter((t) => !t.hidden && t.media[0]?.blobUrl)
+                          .filter((t) => !t.hidden && t.media[0]?.blobUrl && t.media[0].type === 'photo')
                           .slice(0, 6)
                           .map((t) => (
                             <img
@@ -674,7 +674,7 @@ export default function WorkPage() {
           style={{
             height: '100px',
             overflow: 'hidden',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 0.95) 0%, rgba(63, 45, 44, 0.7) 60%, transparent 100%)',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, transparent 100%)',
           }}
           ref={timelineContainerRef}
         >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { motion, useMotionValue, useSpring } from "motion/react";
 import tweets from "@/data/tweets.json";
 
 function formatDate(dateStr: string) {
@@ -28,7 +29,7 @@ type Tweet = {
   hidden?: boolean;
 };
 
-// Scroll commentary messages — gets more self-deprecating as you go back in time
+// Scroll commentary — increasingly self-aware as you go back in time
 const SCROLL_COMMENTS = [
   { at: 0, text: "the latest" },
   { at: 0.1, text: "still recent" },
@@ -105,7 +106,7 @@ export default function WorkGallery() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [visibleTweet, setVisibleTweet] = useState<Tweet | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => {
     const hidden = new Set<string>();
     for (const t of tweets as Tweet[]) {
@@ -121,14 +122,31 @@ export default function WorkGallery() {
 
   const displayTweets = allTweets.filter((t) => !hiddenIds.has(t.id));
 
-  // Track mouse position for cursor tooltip
+  // Spring-based tooltip position (same inertia feel as the cursor)
+  const tooltipX = useMotionValue(0);
+  const tooltipY = useMotionValue(0);
+  const springConfig = { stiffness: 300, damping: 30 };
+  const tooltipXSpring = useSpring(tooltipX, springConfig);
+  const tooltipYSpring = useSpring(tooltipY, springConfig);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      tooltipX.set(e.clientX + 16);
+      tooltipY.set(e.clientY + 16);
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  }, [tooltipX, tooltipY]);
+
+  // Delayed tooltip content transition — show/hide with a small fade
+  useEffect(() => {
+    if (hoveredTweet) {
+      setVisibleTweet(hoveredTweet);
+    } else {
+      const timeout = setTimeout(() => setVisibleTweet(null), 150);
+      return () => clearTimeout(timeout);
+    }
+  }, [hoveredTweet]);
 
   // Keyboard shortcut: H to toggle hidden
   useEffect(() => {
@@ -204,43 +222,54 @@ export default function WorkGallery() {
         ))}
       </div>
 
-      {/* Cursor tooltip — follows mouse, shows tweet text */}
-      {hoveredTweet && hoveredTweet.text && (
-        <div
-          className="fixed pointer-events-none z-50"
-          style={{
-            left: mousePos.x + 16,
-            top: mousePos.y + 16,
-            maxWidth: "280px",
-          }}
-        >
+      {/* Cursor tooltip — spring-animated, follows mouse with inertia */}
+      <motion.div
+        className="fixed pointer-events-none z-50"
+        style={{
+          left: 0,
+          top: 0,
+          x: tooltipXSpring,
+          y: tooltipYSpring,
+          maxWidth: "260px",
+          opacity: visibleTweet ? 1 : 0,
+          transition: "opacity 0.15s ease-out",
+        }}
+      >
+        {visibleTweet && (
           <div
             style={{
-              background: "rgba(0,0,0,0.85)",
+              background: "rgba(63, 45, 44, 0.9)",
               borderRadius: "8px",
               padding: "10px 12px",
               backdropFilter: "blur(8px)",
             }}
           >
-            <p className="text-white text-xs leading-relaxed lowercase line-clamp-3">
-              {hoveredTweet.text}
-            </p>
-            {hoveredTweet.replies?.map((reply, i) => (
-              <p
-                key={i}
-                className="text-white/50 text-xs leading-relaxed lowercase mt-1.5 line-clamp-2"
-              >
-                ↳ {reply}
+            <motion.div
+              key={visibleTweet.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <p className="text-white/90 text-xs leading-relaxed lowercase line-clamp-3">
+                {visibleTweet.text}
               </p>
-            ))}
-            <p className="text-white/30 text-xs mt-1.5">
-              {formatDate(hoveredTweet.date)}
-            </p>
+              {visibleTweet.replies?.map((reply, i) => (
+                <p
+                  key={i}
+                  className="text-white/40 text-xs leading-relaxed lowercase mt-1.5 line-clamp-2"
+                >
+                  ↳ {reply}
+                </p>
+              ))}
+              <p className="text-white/25 text-xs mt-1.5">
+                {formatDate(visibleTweet.date)}
+              </p>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </motion.div>
 
-      {/* Scroll commentary — anchored to right side */}
+      {/* Scroll commentary — right side, tracks with progress */}
       <div
         className="fixed z-40 pointer-events-none"
         style={{
@@ -251,7 +280,7 @@ export default function WorkGallery() {
         }}
       >
         <p
-          className="text-white/40 text-xs lowercase"
+          className="text-white/30 text-xs lowercase"
           style={{
             writingMode: "vertical-rl",
             textOrientation: "mixed",
@@ -260,17 +289,6 @@ export default function WorkGallery() {
         >
           {scrollComment}
         </p>
-      </div>
-
-      {/* Progress bar */}
-      <div
-        className="fixed bottom-0 left-0 right-0 h-1 bg-gray-800/30 z-30"
-        style={{ pointerEvents: "none" }}
-      >
-        <div
-          className="h-full bg-white transition-transform duration-150 ease-out"
-          style={{ width: `${scrollProgress * 100}%` }}
-        />
       </div>
 
       <style jsx>{`
