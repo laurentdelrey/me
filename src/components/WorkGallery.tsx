@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import tweets from "@/data/tweets.json";
 
 function formatDate(dateStr: string) {
@@ -24,6 +24,8 @@ type Tweet = {
   media: MediaItem[];
   favoriteCount: number;
   retweetCount: number;
+  replies?: string[];
+  hidden?: boolean;
 };
 
 function GalleryCard({ tweet }: { tweet: Tweet }) {
@@ -37,8 +39,7 @@ function GalleryCard({ tweet }: { tweet: Tweet }) {
       href={`https://x.com/laurentdelrey/status/${tweet.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative block overflow-hidden"
-      style={{ aspectRatio: `${firstMedia.width} / ${firstMedia.height}` }}
+      className="group relative block overflow-hidden break-inside-avoid mb-4"
     >
       {isVideo ? (
         <video
@@ -47,32 +48,43 @@ function GalleryCard({ tweet }: { tweet: Tweet }) {
           loop
           autoPlay
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-auto object-cover block"
         />
       ) : (
         <img
           src={firstMedia.blobUrl}
           alt={tweet.text}
           loading="lazy"
-          className="w-full h-full object-cover"
+          className="w-full h-auto object-cover block"
         />
       )}
 
-      {/* Caption overlay */}
-      {tweet.text && (
-        <div
-          className="absolute inset-x-0 bottom-0 p-4 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)",
-          }}
-        >
-          <p className="text-white text-sm leading-relaxed line-clamp-3 lowercase">
+      {/* Hover overlay with tweet text + replies */}
+      <div
+        className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)",
+        }}
+      >
+        {tweet.text && (
+          <p className="text-white text-sm leading-relaxed lowercase line-clamp-4">
             {tweet.text}
           </p>
-          <p className="text-white/50 text-xs mt-1">{formatDate(tweet.date)}</p>
-        </div>
-      )}
+        )}
+
+        {/* Self-replies (thread continuation) */}
+        {tweet.replies?.map((reply, i) => (
+          <p
+            key={i}
+            className="text-white/70 text-xs leading-relaxed lowercase mt-2 line-clamp-2"
+          >
+            ↳ {reply}
+          </p>
+        ))}
+
+        <p className="text-white/40 text-xs mt-2">{formatDate(tweet.date)}</p>
+      </div>
     </a>
   );
 }
@@ -80,6 +92,11 @@ function GalleryCard({ tweet }: { tweet: Tweet }) {
 export default function WorkGallery() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  const visibleTweets = useMemo(
+    () => (tweets as Tweet[]).filter((t) => !t.hidden && t.media[0]?.blobUrl),
+    []
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,13 +118,15 @@ export default function WorkGallery() {
   return (
     <div ref={containerRef} className="w-full h-full relative">
       <div
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
         style={{
           padding: "80px 12%",
           minHeight: "100vh",
+          columnCount: 2,
+          columnGap: "16px",
         }}
+        className="masonry-grid"
       >
-        {(tweets as Tweet[]).map((tweet) => (
+        {visibleTweets.map((tweet) => (
           <GalleryCard key={tweet.id} tweet={tweet} />
         ))}
       </div>
@@ -122,6 +141,14 @@ export default function WorkGallery() {
           style={{ width: `${scrollProgress * 100}%` }}
         />
       </div>
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .masonry-grid {
+            column-count: 1 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
