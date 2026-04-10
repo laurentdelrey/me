@@ -426,13 +426,6 @@ export default function WorkPage() {
   // Determine if current section has a gallery
   const hasGallery = (sectionId: string) => ERA_RANGES[sectionId] !== undefined;
 
-  // Reset visible date when moving to a non-gallery section
-  useEffect(() => {
-    if (!hasGallery(currentSection?.id)) {
-      setVisibleDate(null);
-    }
-  }, [activeSection]);
-
   useEffect(() => {
     setMounted(true);
     setTimeout(() => {
@@ -462,7 +455,6 @@ export default function WorkPage() {
         const sectionEl = sectionRefs.current[i];
         const sectionHeight = sectionEl ? sectionEl.offsetHeight : containerHeight;
 
-        // Switch at the midpoint of each section
         if (scrollTop < accumulatedHeight + sectionHeight / 2) {
           currentSectionIndex = i;
           break;
@@ -476,6 +468,31 @@ export default function WorkPage() {
 
       if (newActiveSection !== activeSection) {
         setActiveSection(newActiveSection);
+      }
+
+      // Track visible tweet date for sections with galleries
+      const section = sections[newActiveSection];
+      if (section && hasGallery(section.id)) {
+        const sectionEl = sectionRefs.current[newActiveSection];
+        if (sectionEl) {
+          const sectionTop = accumulatedHeight;
+          // Text portion is 100vh, gallery starts after that
+          const galleryStart = sectionTop + containerHeight;
+          const eraTweets = getTweetsForEra(section.id);
+          if (eraTweets.length > 0 && scrollTop > galleryStart - containerHeight) {
+            const galleryHeight = sectionEl.offsetHeight - containerHeight;
+            const galleryScroll = Math.max(0, scrollTop - sectionTop);
+            const progress = Math.min(1, galleryScroll / Math.max(1, galleryHeight));
+            const idx = Math.min(eraTweets.length - 1, Math.floor(progress * eraTweets.length));
+            const d = eraTweets[idx]?.date;
+            if (d) {
+              const parts = d.split("-");
+              setVisibleDate([parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]);
+            }
+          }
+        }
+      } else {
+        setVisibleDate(null);
       }
     };
 
@@ -531,8 +548,9 @@ export default function WorkPage() {
           const [year, month, day] = date;
           return (
             <div
-              className="fixed z-30"
-              style={{ top: '32px', left: '32px' }}
+              className="fixed z-[60]"
+              data-no-cursor-expand
+              style={{ top: '32px', left: '32px', cursor: 'default' }}
               onMouseEnter={() => setDateHovered(true)}
               onMouseLeave={() => setDateHovered(false)}
             >
@@ -687,7 +705,6 @@ export default function WorkPage() {
                           tweets={eraTweets}
                           onHover={setHoveredTweet}
                           onLeave={() => setHoveredTweet(null)}
-                          onVisibleDate={setVisibleDate}
                         />
                       </div>
                     </div>
