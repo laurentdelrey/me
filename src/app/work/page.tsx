@@ -518,9 +518,10 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    // Disable snap during programmatic scroll to prevent it fighting us
+    // Disable snap and smooth scroll — just jump directly
     container.style.scrollSnapType = 'none';
-    // Sum heights of all preceding siblings
+    container.style.scrollBehavior = 'auto';
+    // Calculate target offset
     let top = 0;
     let sibling = container.firstElementChild;
     let count = 0;
@@ -529,11 +530,12 @@ export default function WorkPage() {
       sibling = sibling.nextElementSibling;
       count++;
     }
-    container.scrollTo({ top, behavior: 'smooth' });
-    // Re-enable snap after scroll completes
-    setTimeout(() => {
+    container.scrollTop = top;
+    // Re-enable snap on next frame
+    requestAnimationFrame(() => {
       container.style.scrollSnapType = 'y mandatory';
-    }, 1000);
+      container.style.scrollBehavior = '';
+    });
   };
 
   return (
