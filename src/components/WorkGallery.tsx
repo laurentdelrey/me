@@ -195,23 +195,25 @@ export default function WorkGallery() {
           padding: "80px 12%",
           minHeight: "100vh",
           display: "flex",
-          flexWrap: "wrap",
+          gap: "0px",
         }}
         className="gallery-grid"
       >
-        {displayTweets.map((tweet) => (
-          <div
-            key={tweet.id}
-            className="gallery-grid-item"
-            style={{ width: "50%", boxSizing: "border-box" }}
-          >
-            <GalleryCard
-              tweet={tweet}
-              isHovered={hoveredId === tweet.id}
-              isHidden={hiddenIds.has(tweet.id)}
-              onMouseEnter={() => setHoveredId(tweet.id)}
-              onMouseLeave={() => setHoveredId(null)}
-            />
+        {/* Split into 2 columns: even indices left, odd indices right */}
+        {[0, 1].map((col) => (
+          <div key={col} style={{ flex: 1, minWidth: 0 }}>
+            {displayTweets
+              .filter((_, i) => i % 2 === col)
+              .map((tweet) => (
+                <GalleryCard
+                  key={tweet.id}
+                  tweet={tweet}
+                  isHovered={hoveredId === tweet.id}
+                  isHidden={hiddenIds.has(tweet.id)}
+                  onMouseEnter={() => setHoveredId(tweet.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                />
+              ))}
           </div>
         ))}
       </div>
@@ -229,8 +231,8 @@ export default function WorkGallery() {
 
       <style jsx>{`
         @media (max-width: 768px) {
-          :global(.gallery-grid-item) {
-            width: 100% !important;
+          :global(.gallery-grid) {
+            flex-direction: column !important;
           }
         }
         @keyframes reply-bubble {
