@@ -35,6 +35,12 @@ body {
   min-height: 100vh;
 }
 
+/* Hide Mapbox logo and attribution */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
 /* Hide scrollbar but keep functionality */
 .hide-scrollbar {
   scrollbar-width: none;

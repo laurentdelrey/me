@@ -518,7 +518,16 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    container.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+    // Sum heights of all preceding siblings for accurate offset
+    let top = 0;
+    let sibling = container.firstElementChild;
+    let count = 0;
+    while (sibling && count < index) {
+      top += (sibling as HTMLElement).offsetHeight;
+      sibling = sibling.nextElementSibling;
+      count++;
+    }
+    container.scrollTo({ top, behavior: 'smooth' });
   };
 
   return (
