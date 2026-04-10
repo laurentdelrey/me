@@ -81,13 +81,19 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
     <div style={{ maxWidth: '480px' }} className="section-xpad">
       <AnimatedText delay={100} sectionIndex={1} isActive={activeSection === 1}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
-          i joined the <a
-            href="https://www.meta.com/superintelligence/?srsltid=AfmBOopHTK7ev-Yn8V8JQUmsakQSZZPMkmujYBP_nwU114z_P0agW6NN"
+          i recently joined <a
+            href="https://www.instagram.com"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#60C4FF', textDecoration: 'none' }}
             className="hover:underline"
-          >meta</a> super intelligence lab in january. since then i've been jamming with frontier models to design original social experiences mostly on ios and web sometimes.
+          >instagram</a> to pursue that vision on <a
+            href="https://www.threads.net/@laurentdelrey"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#60C4FF', textDecoration: 'none' }}
+            className="hover:underline"
+          >threads</a>. jamming with frontier models to design original social experiences on ios and web.
         </p>
       </AnimatedText>
     </div>
@@ -615,13 +621,13 @@ export default function WorkPage() {
         return (
           <div
             className="fixed"
-            data-no-cursor-expand
             style={{ top: '32px', left: '32px', zIndex: 9998, cursor: 'none' }}
             onMouseEnter={() => setDateHovered(true)}
             onMouseLeave={() => setDateHovered(false)}
           >
             <div
               className="text-white"
+              data-no-cursor-expand
               style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'none' }}
             >
               <SlidingNumber value={year} />
