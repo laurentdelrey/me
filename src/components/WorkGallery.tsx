@@ -194,20 +194,25 @@ export default function WorkGallery() {
         style={{
           padding: "80px 12%",
           minHeight: "100vh",
-          columnCount: 2,
-          columnGap: "0px",
+          display: "flex",
+          flexWrap: "wrap",
         }}
-        className="masonry-grid"
+        className="gallery-grid"
       >
         {displayTweets.map((tweet) => (
-          <GalleryCard
+          <div
             key={tweet.id}
-            tweet={tweet}
-            isHovered={hoveredId === tweet.id}
-            isHidden={hiddenIds.has(tweet.id)}
-            onMouseEnter={() => setHoveredId(tweet.id)}
-            onMouseLeave={() => setHoveredId(null)}
-          />
+            className="gallery-grid-item"
+            style={{ width: "50%", boxSizing: "border-box" }}
+          >
+            <GalleryCard
+              tweet={tweet}
+              isHovered={hoveredId === tweet.id}
+              isHidden={hiddenIds.has(tweet.id)}
+              onMouseEnter={() => setHoveredId(tweet.id)}
+              onMouseLeave={() => setHoveredId(null)}
+            />
+          </div>
         ))}
       </div>
 
@@ -224,8 +229,8 @@ export default function WorkGallery() {
 
       <style jsx>{`
         @media (max-width: 768px) {
-          .masonry-grid {
-            column-count: 1 !important;
+          :global(.gallery-grid-item) {
+            width: 100% !important;
           }
         }
         @keyframes reply-bubble {
