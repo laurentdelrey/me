@@ -58,10 +58,11 @@ export default function GalleryTooltip({ tweet }: { tweet: Tweet | null }) {
       {visibleTweet && (
         <div
           style={{
-            background: "rgba(63, 45, 44, 0.9)",
-            borderRadius: "8px",
+            background: "rgba(63, 45, 44, 0.95)",
+            borderRadius: 0,
             padding: "10px 12px",
-            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
           }}
         >
           <motion.div

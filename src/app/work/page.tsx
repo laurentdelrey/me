@@ -724,7 +724,7 @@ export default function WorkPage() {
                           {section.label && (
                             <div className="section-xpad" style={{ marginBottom: '10px' }}>
                               <h2 className="text-white lowercase text-shadow section-title" style={{
-                                fontSize: '0.8rem',
+                                fontSize: '1rem',
                                 lineHeight: '1.5',
                                 fontWeight: 500,
                               }}>
