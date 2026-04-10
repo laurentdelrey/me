@@ -76,7 +76,7 @@ function GalleryCard({
   );
 }
 
-export default function WorkGallery({ onScrollYear }: { onScrollYear?: (year: string) => void }) {
+export default function WorkGallery() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const [visibleTweet, setVisibleTweet] = useState<Tweet | null>(null);
@@ -121,25 +121,6 @@ export default function WorkGallery({ onScrollYear }: { onScrollYear?: (year: st
     }
   }, [hoveredTweet]);
 
-  // Report current year based on scroll position
-  useEffect(() => {
-    if (!onScrollYear || displayTweets.length === 0) return;
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const totalHeight = containerRef.current.scrollHeight;
-      const scrolled = -rect.top;
-      const progress = Math.max(0, Math.min(1, scrolled / Math.max(1, totalHeight - window.innerHeight)));
-      // Map progress to tweet index
-      const idx = Math.min(displayTweets.length - 1, Math.floor(progress * displayTweets.length));
-      const year = displayTweets[idx]?.date?.substring(0, 4) || "";
-      onScrollYear(year);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [onScrollYear, displayTweets]);
-
   // Keyboard shortcut: H to toggle hidden
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -173,7 +154,7 @@ export default function WorkGallery({ onScrollYear }: { onScrollYear?: (year: st
     <div ref={containerRef} className="w-full h-full relative">
       <div
         style={{
-          padding: "80px 12%",
+          padding: "0 12% 80px 12%",
           minHeight: "100vh",
           display: "flex",
           gap: "0px",

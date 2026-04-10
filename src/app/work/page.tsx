@@ -400,7 +400,6 @@ export default function WorkPage() {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const timelineTrackRef = useRef<HTMLDivElement>(null);
   const [timelineTranslateX, setTimelineTranslateX] = useState(0);
-  const [galleryYear, setGalleryYear] = useState("");
   const currentSection = sections[activeSection];
 
   const timelineSections = sections.filter((s: any) => s.inTimeline !== false);
@@ -562,13 +561,13 @@ export default function WorkPage() {
                 style={{
                   scrollSnapAlign: section.id === 'free_media' ? 'start' : 'center',
                   minHeight: section.id === 'free_media' ? '200vh' : '100vh',
-                  height: section.id === 'free_media' ? 'auto' : (section.id === 'free' ? '85vh' : '100vh'),
+                  height: section.id === 'free_media' ? 'auto' : '100vh',
                   boxSizing: 'border-box'
                 }}
               >
               {section.id === 'free_media' ? (
                 <div className="w-full h-full">
-                  <WorkGallery onScrollYear={setGalleryYear} />
+                  <WorkGallery />
                 </div>
               ) : (
                 <div style={{
@@ -634,12 +633,12 @@ export default function WorkPage() {
         />
 
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 flex items-center"
+          className="fixed bottom-0 left-0 right-0 z-20 flex items-end"
           style={{
             height: '140px',
             overflow: 'hidden',
             background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 50%, transparent 100%)',
-            paddingBottom: '12px',
+            paddingBottom: '20px',
           }}
           ref={timelineContainerRef}
         >
@@ -676,11 +675,7 @@ export default function WorkPage() {
                   }}
                 >
                   <span className="block">
-                    {index === 0 ? 'scroll to start ↓' : (
-                      section.id === 'free' && galleryYear && (currentSection?.id === 'free' || currentSection?.id === 'free_media')
-                        ? `${galleryYear}`
-                        : (section.years || '')
-                    )}
+                    {index === 0 ? 'scroll to start ↓' : (section.years || '')}
                   </span>
                 </button>
               );
