@@ -39,18 +39,27 @@ export function IPadCursor() {
         target.onclick !== null;
 
       if (isClickable) {
-        const clickableElement = 
-          target.closest('button') || 
-          target.closest('a') || 
+        const clickableElement =
+          target.closest('button') ||
+          target.closest('a') ||
           target;
-        
-        setHoveredElement(clickableElement as HTMLElement);
-        const bounds = (clickableElement as HTMLElement).getBoundingClientRect();
-        setElementBounds(bounds);
+
+        // Skip cursor expansion for elements with data-no-cursor-expand
+        const shouldExpand = clickableElement &&
+          !(clickableElement as HTMLElement).hasAttribute('data-no-cursor-expand') &&
+          !(clickableElement as HTMLElement).closest('[data-no-cursor-expand]');
+
+        if (shouldExpand) {
+          setHoveredElement(clickableElement as HTMLElement);
+          const bounds = (clickableElement as HTMLElement).getBoundingClientRect();
+          setElementBounds(bounds);
+        }
         setIsPointer(true);
-        
+
         // Hide default cursor on hover
-        (clickableElement as HTMLElement).style.cursor = 'none';
+        if (clickableElement) {
+          (clickableElement as HTMLElement).style.cursor = 'none';
+        }
       }
     };
 
