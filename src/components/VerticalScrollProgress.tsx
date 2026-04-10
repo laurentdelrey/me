@@ -34,11 +34,11 @@ export function VerticalScrollProgress({
       className={className}
       style={{
         position: 'fixed',
-        left: '32px',
-        top: '52px',
-        width: '1px',
-        height: 'calc(100vh - 52px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        left: 0,
+        top: 0,
+        width: '2px',
+        height: '100vh',
+        backgroundColor: '#ffffff',
         transformOrigin: 'top',
         scaleY,
         zIndex: 50,

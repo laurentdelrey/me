@@ -563,13 +563,13 @@ export default function WorkPage() {
           <div
             className="fixed"
             data-no-cursor-expand
-            style={{ top: '32px', left: '32px', zIndex: 9998, cursor: 'default' }}
+            style={{ top: '32px', left: '32px', zIndex: 9998, cursor: 'none' }}
             onMouseEnter={() => setDateHovered(true)}
             onMouseLeave={() => setDateHovered(false)}
           >
             <div
               className="text-white"
-              style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+              style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'none' }}
             >
               <SlidingNumber value={year} />
               <span className="text-white/30">.</span>
@@ -617,7 +617,7 @@ export default function WorkPage() {
                           fontSize: '0.7rem',
                           color: '#ffffff',
                           fontWeight: isActive ? 500 : 400,
-                          cursor: 'pointer',
+                          cursor: 'none',
                           background: 'none',
                           border: 'none',
                           padding: 0,
@@ -690,7 +690,7 @@ export default function WorkPage() {
                           {section.label && (
                             <div className="section-xpad" style={{ marginBottom: '10px' }}>
                               <h2 className="text-white lowercase text-shadow section-title" style={{
-                                fontSize: '1rem',
+                                fontSize: '0.8rem',
                                 lineHeight: '1.5',
                                 fontWeight: 500,
                               }}>
