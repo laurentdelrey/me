@@ -518,7 +518,9 @@ export default function WorkPage() {
     const el = sectionRefs.current[index];
     const container = scrollContainerRef.current;
     if (!el || !container) return;
-    // Sum heights of all preceding siblings for accurate offset
+    // Disable snap during programmatic scroll to prevent it fighting us
+    container.style.scrollSnapType = 'none';
+    // Sum heights of all preceding siblings
     let top = 0;
     let sibling = container.firstElementChild;
     let count = 0;
@@ -528,6 +530,10 @@ export default function WorkPage() {
       count++;
     }
     container.scrollTo({ top, behavior: 'smooth' });
+    // Re-enable snap after scroll completes
+    setTimeout(() => {
+      container.style.scrollSnapType = 'y mandatory';
+    }, 1000);
   };
 
   return (
@@ -579,6 +585,14 @@ export default function WorkPage() {
               <SlidingNumber value={month} padStart />
               <span className="text-white/30">.</span>
               <SlidingNumber value={day} padStart />
+              <motion.span
+                className="text-white/30"
+                style={{ fontSize: '0.6rem', marginLeft: '4px', display: 'inline-block' }}
+                animate={{ rotate: dateHovered ? 180 : 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                ▼
+              </motion.span>
             </div>
 
             {/* Hover dropdown — era shortcuts with spring animation */}
