@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 type MediaItem = {
   type: string;
   localFile: string;
@@ -70,16 +72,47 @@ export default function EraGallery({
   tweets,
   onHover,
   onLeave,
+  onVisibleDate,
 }: {
   tweets: Tweet[];
   label?: string;
   onHover: (tweet: Tweet) => void;
   onLeave: () => void;
+  onVisibleDate?: (date: [number, number, number]) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Report date of currently visible tweet based on scroll position
+  useEffect(() => {
+    if (!onVisibleDate || tweets.length === 0) return;
+
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportH = window.innerHeight;
+
+      // How far through this gallery are we?
+      const totalH = containerRef.current.offsetHeight;
+      const scrolled = viewportH / 2 - rect.top; // midpoint of viewport relative to gallery top
+      const progress = Math.max(0, Math.min(1, scrolled / totalH));
+
+      const idx = Math.min(tweets.length - 1, Math.floor(progress * tweets.length));
+      const d = tweets[idx]?.date;
+      if (d) {
+        const parts = d.split("-");
+        onVisibleDate([parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [onVisibleDate, tweets]);
+
   if (tweets.length === 0) return null;
 
   return (
-    <div style={{ width: "100%", boxSizing: "border-box" }}>
+    <div ref={containerRef} style={{ width: "100%", boxSizing: "border-box" }}>
       {/* 2-column masonry grid */}
       <div style={{ display: "flex", gap: "0px" }} className="era-gallery-grid">
         {[0, 1].map((col) => (

@@ -419,11 +419,19 @@ export default function WorkPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
+  const [visibleDate, setVisibleDate] = useState<[number, number, number] | null>(null);
+  const [dateHovered, setDateHovered] = useState(false);
   const currentSection = sections[activeSection];
 
   // Determine if current section has a gallery
   const hasGallery = (sectionId: string) => ERA_RANGES[sectionId] !== undefined;
 
+  // Reset visible date when moving to a non-gallery section
+  useEffect(() => {
+    if (!hasGallery(currentSection?.id)) {
+      setVisibleDate(null);
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     setMounted(true);
@@ -518,13 +526,15 @@ export default function WorkPage() {
 
         {/* Rolling date — top left, always visible, hover for era shortcuts */}
         {(() => {
-          const sd = currentSection?.startDate;
-          if (!sd) return null;
-          const [year, month, day] = sd;
+          const date = visibleDate || currentSection?.startDate;
+          if (!date) return null;
+          const [year, month, day] = date;
           return (
             <div
-              className="fixed z-30 group"
+              className="fixed z-30"
               style={{ top: '32px', left: '32px' }}
+              onMouseEnter={() => setDateHovered(true)}
+              onMouseLeave={() => setDateHovered(false)}
             >
               {/* Date display */}
               <div
@@ -540,15 +550,16 @@ export default function WorkPage() {
 
               {/* Hover dropdown — era shortcuts */}
               <div
-                className="overflow-hidden transition-all duration-200"
                 style={{
-                  maxHeight: '0px',
-                  opacity: 0,
+                  overflow: 'hidden',
+                  maxHeight: dateHovered ? '300px' : '0px',
+                  opacity: dateHovered ? 1 : 0,
+                  transition: 'max-height 0.3s ease, opacity 0.2s ease',
                 }}
               >
-                <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {sections
-                    .filter((s) => s.startDate && s.years && s.years !== '@')
+                    .filter((s) => s.years && s.years !== '' && s.years !== '@')
                     .map((s) => {
                       const isActive = s.id === currentSection?.id;
                       return (
@@ -557,6 +568,7 @@ export default function WorkPage() {
                           onClick={() => {
                             const idx = sections.findIndex((sec) => sec.id === s.id);
                             scrollToSection(idx);
+                            setDateHovered(false);
                           }}
                           className="lowercase text-left"
                           style={{
@@ -573,20 +585,12 @@ export default function WorkPage() {
                           onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '0.8'; }}
                           onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = isActive ? '1' : '0.35'; }}
                         >
-                          {s.years}
+                          {s.label} · {s.years}
                         </button>
                       );
                     })}
                 </div>
               </div>
-
-              {/* CSS hover to expand dropdown */}
-              <style jsx>{`
-                .group:hover > div:last-of-type {
-                  max-height: 300px !important;
-                  opacity: 1 !important;
-                }
-              `}</style>
             </div>
           );
         })()}
@@ -683,6 +687,7 @@ export default function WorkPage() {
                           tweets={eraTweets}
                           onHover={setHoveredTweet}
                           onLeave={() => setHoveredTweet(null)}
+                          onVisibleDate={setVisibleDate}
                         />
                       </div>
                     </div>
