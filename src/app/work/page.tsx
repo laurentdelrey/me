@@ -31,11 +31,12 @@ function getStartYear(years: string): number | null {
   return match ? parseInt(match[1]) : null;
 }
 
-function getTweetsForEra(sectionId: string): Tweet[] {
+function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
   const range = ERA_RANGES[sectionId];
   if (!range) return [];
   return (tweetsData as Tweet[]).filter((t) => {
     if (t.hidden || !t.media[0]?.blobUrl) return false;
+    if (hiddenIds?.has(t.id)) return false;
     const year = parseInt(t.date.substring(0, 4));
     return year >= range[0] && year <= range[1];
   });
@@ -427,6 +428,33 @@ export default function WorkPage() {
   // Determine if current section has a gallery
   const hasGallery = (sectionId: string) => ERA_RANGES[sectionId] !== undefined;
 
+  // H key to hide tweets
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => {
+    const hidden = new Set<string>();
+    for (const t of tweetsData as Tweet[]) {
+      if (t.hidden) hidden.add(t.id);
+    }
+    return hidden;
+  });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "h" || e.key === "H") && hoveredTweet) {
+        e.preventDefault();
+        const id = hoveredTweet.id;
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          console.log("[WorkGallery] Hidden IDs:", JSON.stringify([...next]));
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hoveredTweet]);
+
   useEffect(() => {
     setMounted(true);
     setTimeout(() => {
@@ -484,7 +512,7 @@ export default function WorkPage() {
         const sectionEl = sectionRefs.current[newActiveSection];
         if (sectionEl) {
           const galleryStart = sectionTop + containerHeight; // after 100vh text
-          const eraTweets = getTweetsForEra(section.id);
+          const eraTweets = getTweetsForEra(section.id, hiddenIds);
 
           if (eraTweets.length > 0 && scrollTop >= galleryStart) {
             // We're in the gallery portion
@@ -680,7 +708,7 @@ export default function WorkPage() {
           }}
         >
           {sections.map((section, index) => {
-            const eraTweets = getTweetsForEra(section.id);
+            const eraTweets = getTweetsForEra(section.id, hiddenIds);
             const sectionHasGallery = eraTweets.length > 0;
 
             return (

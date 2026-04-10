@@ -61,7 +61,7 @@ export default function GalleryTooltip({ tweet }: { tweet: Tweet | null }) {
             background: "rgba(63, 45, 44, 0.95)",
             borderRadius: 0,
             padding: "10px 12px",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
+            border: "0.5px solid rgba(255, 255, 255, 0.12)",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
           }}
         >
