@@ -41,15 +41,15 @@ function getTweetsForEra(sectionId: string): Tweet[] {
 }
 
 const sections = [
-  { id: "tldr", label: "TL;DR", years: "", location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca" },
-  { id: "meta", label: "meta", years: "2025 – ???", location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca" },
-  { id: "free", label: "free ideas", years: "2021 – ???", location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca" },
-  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca" },
-  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca" },
-  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france" },
-  { id: "lost", label: "Lost in the game", years: "2007 – 2012", location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france" },
-  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris" },
-  { id: "social", label: "@ Me", years: "@", location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "" },
+  { id: "tldr", label: "TL;DR", years: "", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca" },
+  { id: "meta", label: "meta", years: "2025 – ???", startDate: [2025, 1, 6] as [number, number, number], location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca" },
+  { id: "free", label: "free ideas", years: "2021 – ???", startDate: [2021, 4, 1] as [number, number, number], location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca" },
+  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", startDate: [2018, 8, 1] as [number, number, number], location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca" },
+  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", startDate: [2015, 3, 1] as [number, number, number], location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca" },
+  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", startDate: [2012, 6, 1] as [number, number, number], location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france" },
+  { id: "lost", label: "Lost in the game", years: "2007 – 2012", startDate: [2007, 9, 1] as [number, number, number], location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france" },
+  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", startDate: [2005, 1, 1] as [number, number, number], location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris" },
+  { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "" },
 ];
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
@@ -418,60 +418,12 @@ export default function WorkPage() {
   const [headerStartY, setHeaderStartY] = useState(240);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const timelineContainerRef = useRef<HTMLDivElement>(null);
-  const timelineTrackRef = useRef<HTMLDivElement>(null);
-  const [timelineTranslateX, setTimelineTranslateX] = useState(0);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const currentSection = sections[activeSection];
 
   // Determine if current section has a gallery
   const hasGallery = (sectionId: string) => ERA_RANGES[sectionId] !== undefined;
 
-  const timelineSections = sections.filter((s: any) => s.inTimeline !== false);
-  const timelineDisplayId = currentSection?.id;
-  const timelineActiveIndex = Math.max(0, timelineSections.findIndex((s) => s.id === timelineDisplayId));
-  const timelineReversed = true;
-
-  useEffect(() => {
-    const container = timelineContainerRef.current;
-    const track = timelineTrackRef.current;
-    if (!container || !track) return;
-
-    const children = Array.from(track.children) as HTMLElement[];
-    if (children.length === 0 || timelineActiveIndex < 0) return;
-
-    const styles = window.getComputedStyle(track);
-    const gapStr = styles.columnGap || styles.gap || '40px';
-    const gap = parseFloat(gapStr) || 40;
-
-    let runningX = 0;
-    const centers: number[] = [];
-    children.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      const width = rect.width;
-      const center = runningX + width / 2;
-      centers.push(center);
-      runningX += width + gap;
-    });
-
-    const containerCenter = (window.innerWidth || container.clientWidth) / 2;
-    const activeDomIndex = timelineReversed
-      ? Math.max(0, timelineSections.length - 1 - timelineActiveIndex)
-      : timelineActiveIndex;
-    const targetCenter = centers[activeDomIndex] ?? 0;
-    const offset = targetCenter - containerCenter;
-    setTimelineTranslateX(-offset);
-  }, [timelineActiveIndex, mounted, mapLoaded]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const container = timelineContainerRef.current;
-      if (!container) return;
-      setTimelineTranslateX((prev) => prev + 0);
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -564,22 +516,79 @@ export default function WorkPage() {
 
         <VerticalScrollProgress containerRef={scrollContainerRef} />
 
-        {/* Rolling year — top left, always visible */}
+        {/* Rolling date — top left, always visible, hover for era shortcuts */}
         {(() => {
-          const year = getStartYear(currentSection?.years || "");
-          return year ? (
+          const sd = currentSection?.startDate;
+          if (!sd) return null;
+          const [year, month, day] = sd;
+          return (
             <div
-              className="fixed z-30 pointer-events-none"
-              style={{
-                top: '32px',
-                left: '32px',
-              }}
+              className="fixed z-30 group"
+              style={{ top: '32px', left: '32px' }}
             >
-              <div className="text-white/25" style={{ fontSize: '0.75rem', fontWeight: 400, letterSpacing: '0.05em' }}>
+              {/* Date display */}
+              <div
+                className="text-white cursor-pointer"
+                style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
                 <SlidingNumber value={year} />
+                <span className="text-white/30">.</span>
+                <SlidingNumber value={month} padStart />
+                <span className="text-white/30">.</span>
+                <SlidingNumber value={day} padStart />
               </div>
+
+              {/* Hover dropdown — era shortcuts */}
+              <div
+                className="overflow-hidden transition-all duration-200"
+                style={{
+                  maxHeight: '0px',
+                  opacity: 0,
+                }}
+              >
+                <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {sections
+                    .filter((s) => s.startDate && s.years && s.years !== '@')
+                    .map((s) => {
+                      const isActive = s.id === currentSection?.id;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => {
+                            const idx = sections.findIndex((sec) => sec.id === s.id);
+                            scrollToSection(idx);
+                          }}
+                          className="lowercase text-left"
+                          style={{
+                            fontSize: '0.7rem',
+                            color: '#ffffff',
+                            opacity: isActive ? 1 : 0.35,
+                            fontWeight: isActive ? 500 : 400,
+                            cursor: 'pointer',
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '0.8'; }}
+                          onMouseLeave={(e) => { (e.target as HTMLElement).style.opacity = isActive ? '1' : '0.35'; }}
+                        >
+                          {s.years}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* CSS hover to expand dropdown */}
+              <style jsx>{`
+                .group:hover > div:last-of-type {
+                  max-height: 300px !important;
+                  opacity: 1 !important;
+                }
+              `}</style>
             </div>
-          ) : null;
+          );
         })()}
 
         <div
@@ -814,57 +823,14 @@ export default function WorkPage() {
           }}
         />
 
+        {/* Bottom gradient — no timeline text */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 flex items-end"
+          className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
-            height: '140px',
-            overflow: 'hidden',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 50%, transparent 100%)',
-            paddingBottom: '20px',
+            height: '120px',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, transparent 100%)',
           }}
-          ref={timelineContainerRef}
-        >
-          <div
-            ref={timelineTrackRef}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              gap: '40px',
-              transform: `translateX(${timelineTranslateX}px)`,
-              transition: 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)',
-              willChange: 'transform',
-            }}
-          >
-            {(timelineReversed ? [...timelineSections].reverse() : timelineSections).map((section, idx) => {
-              const index = timelineReversed ? timelineSections.length - 1 - idx : idx;
-              const isCurrent = timelineActiveIndex === index;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => {
-                    const realIndex = sections.findIndex((s) => s.id === section.id);
-                    scrollToSection(realIndex);
-                  }}
-                  className={`lowercase whitespace-nowrap timeline-text ${isCurrent ? 'timeline-active' : ''}`}
-                  style={{
-                    fontSize: isCurrent ? '1rem' : '0.85rem',
-                    color: '#ffffff',
-                    opacity: isCurrent ? 1 : 0.4,
-                    padding: '4px 12px',
-                    fontWeight: isCurrent ? 500 : 400,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span className="block">
-                    {index === 0 ? 'scroll to start ↓' : (section.years || '')}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        />
       </main>
     </>
   );
