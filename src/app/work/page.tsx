@@ -664,7 +664,7 @@ export default function WorkPage() {
               }}
               style={{ overflow: 'hidden' }}
             >
-              <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
                 {sections
                   .filter((s) => s.years && s.years !== '' && s.years !== '@')
                   .map((s, i) => {
