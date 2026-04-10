@@ -8,17 +8,35 @@ import { AnimatedText } from "@/components/AnimatedText";
 import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
 import tweetsData from "@/data/tweets.json";
+import type { Tweet } from "@/components/EraGallery";
 
 // Dynamic import to avoid SSR issues with Mapbox
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
-const WorkGallery = dynamic(() => import("@/components/WorkGallery"), { ssr: false });
+const EraGallery = dynamic(() => import("@/components/EraGallery"), { ssr: false });
+const GalleryTooltip = dynamic(() => import("@/components/GalleryTooltip"), { ssr: false });
 const AwardGrid = dynamic(() => import("@/components/AwardGrid"), { ssr: false });
+
+// Map section IDs to date ranges for tweet assignment
+const ERA_RANGES: Record<string, [number, number]> = {
+  meta: [2025, 2099],
+  free: [2021, 2024],
+  snap: [2018, 2020],
+};
+
+function getTweetsForEra(sectionId: string): Tweet[] {
+  const range = ERA_RANGES[sectionId];
+  if (!range) return [];
+  return (tweetsData as Tweet[]).filter((t) => {
+    if (t.hidden || !t.media[0]?.blobUrl) return false;
+    const year = parseInt(t.date.substring(0, 4));
+    return year >= range[0] && year <= range[1];
+  });
+}
 
 const sections = [
   { id: "tldr", label: "TL;DR", years: "", location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca" },
   { id: "meta", label: "meta", years: "2025 – ???", location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca" },
   { id: "free", label: "free ideas", years: "2021 – ???", location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca" },
-  { id: "free_media", label: "", years: "", location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "", inTimeline: false, fullBleed: true },
   { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca" },
   { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca" },
   { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france" },
@@ -82,14 +100,9 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
       </AnimatedText>
     </div>
   ),
-  free_media: (
-    <>
-      {/* WorkGallery rendered inline in the component for onScrollYear access */}
-    </>
-  ),
   snap: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={3} isActive={activeSection === 4}>
+      <AnimatedText delay={100} sectionIndex={3} isActive={activeSection === 3}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
           I've been a member of the core product design team at <a
             href="https://www.snap.com/"
@@ -106,7 +119,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   tribe: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={4} isActive={activeSection === 5}>
+      <AnimatedText delay={100} sectionIndex={4} isActive={activeSection === 4}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
           2 continents. 3 cities. 4 houses. 15 people. 4 products. 1 family.
           Tribe was a series of social experiments backed by <a
@@ -147,7 +160,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   hustle: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={5} isActive={activeSection === 6}>
+      <AnimatedText delay={100} sectionIndex={5} isActive={activeSection === 5}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
           I've released a bunch of side projects. From an <a
             href="https://www.instagram.com/balencyoga/"
@@ -290,7 +303,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   lost: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={6} isActive={activeSection === 7}>
+      <AnimatedText delay={100} sectionIndex={6} isActive={activeSection === 6}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
           I have a Master Degree in Finance. I've never studied Design at school.
           During my College years, I created a bunch of Tumblrs (<a
@@ -351,7 +364,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   kid: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={7} isActive={activeSection === 8}>
+      <AnimatedText delay={100} sectionIndex={7} isActive={activeSection === 7}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
           Born and raised in Paris, France. I started designing at 16 on a cracked version of Photoshop CS2.
           My first gigs were terrible logos & websites for my Counter Strike friends.
@@ -362,7 +375,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   social: (
     <div style={{ maxWidth: '480px' }} className="section-xpad">
-      <AnimatedText delay={100} sectionIndex={8} isActive={activeSection === 9}>
+      <AnimatedText delay={100} sectionIndex={8} isActive={activeSection === 8}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="lowercase text-left text-shadow">
           <span style={{ color: '#6B5654' }}>DMs are opened on</span> <a
             href="https://twitter.com/laurentdelrey"
@@ -401,10 +414,14 @@ export default function WorkPage() {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const timelineTrackRef = useRef<HTMLDivElement>(null);
   const [timelineTranslateX, setTimelineTranslateX] = useState(0);
+  const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const currentSection = sections[activeSection];
 
+  // Determine if current section has a gallery
+  const hasGallery = (sectionId: string) => ERA_RANGES[sectionId] !== undefined;
+
   const timelineSections = sections.filter((s: any) => s.inTimeline !== false);
-  const timelineDisplayId = currentSection?.id === 'free_media' ? 'free' : currentSection?.id;
+  const timelineDisplayId = currentSection?.id;
   const timelineActiveIndex = Math.max(0, timelineSections.findIndex((s) => s.id === timelineDisplayId));
   const timelineReversed = true;
 
@@ -475,22 +492,13 @@ export default function WorkPage() {
       let accumulatedHeight = 0;
 
       for (let i = 0; i < sections.length; i++) {
-        // Use actual element height for free_media since it grows with content
         const sectionEl = sectionRefs.current[i];
-        const sectionHeight = sections[i].id === 'free_media' && sectionEl
-          ? sectionEl.offsetHeight
-          : containerHeight;
+        const sectionHeight = sectionEl ? sectionEl.offsetHeight : containerHeight;
 
-        if (sections[i].id === 'free_media') {
-          if (scrollTop < accumulatedHeight + sectionHeight - 50) {
-            currentSectionIndex = i;
-            break;
-          }
-        } else {
-          if (scrollTop < accumulatedHeight + sectionHeight / 2) {
-            currentSectionIndex = i;
-            break;
-          }
+        // Switch at the midpoint of each section
+        if (scrollTop < accumulatedHeight + sectionHeight / 2) {
+          currentSectionIndex = i;
+          break;
         }
 
         accumulatedHeight += sectionHeight;
@@ -530,6 +538,8 @@ export default function WorkPage() {
         onLoad={() => setMapLoaded(true)}
       />
 
+      <GalleryTooltip tweet={hoveredTweet} />
+
       <SiteHeader
         animated
         toTop={mapLoaded}
@@ -554,99 +564,58 @@ export default function WorkPage() {
             scrollSnapType: 'y mandatory'
           }}
         >
-          {sections.map((section, index) => (
+          {sections.map((section, index) => {
+            const eraTweets = getTweetsForEra(section.id);
+            const sectionHasGallery = eraTweets.length > 0;
+
+            return (
               <div
                 key={section.id}
                 ref={el => { sectionRefs.current[index] = el; }}
-                className={section.id === 'free_media' ? '' : 'flex flex-col items-center justify-center relative'}
                 style={{
-                  scrollSnapAlign: section.id === 'free_media' ? 'start' : 'center',
-                  minHeight: section.id === 'free_media' ? '200vh' : '100vh',
-                  height: section.id === 'free_media' ? 'auto' : '100vh',
-                  boxSizing: 'border-box'
+                  scrollSnapAlign: 'start',
+                  minHeight: '100vh',
+                  height: sectionHasGallery ? 'auto' : '100vh',
+                  boxSizing: 'border-box',
                 }}
               >
-              {section.id === 'free_media' ? (
-                <div className="w-full h-full">
-                  <WorkGallery />
-                </div>
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
-                  paddingBottom: '0',
-                  boxSizing: 'border-box'
-                }}>
+                {/* Text content — always 100vh centered */}
+                <div
+                  className="flex flex-col items-center justify-center relative"
+                  style={{
+                    width: '100%',
+                    height: '100vh',
+                    paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
+                    paddingBottom: '0',
+                    boxSizing: 'border-box',
+                  }}
+                >
                   {(section.id === 'tribe' || section.id === 'hustle') && (
                     <AwardGrid section={section.id} containerRef={scrollContainerRef} />
                   )}
 
-                  {/* Gallery peek at bottom of free ideas section */}
-                  {section.id === 'free' && (
-                    <div
-                      className="absolute bottom-0 left-0 right-0 pointer-events-none"
-                      style={{
-                        height: '15vh',
-                        overflow: 'hidden',
-                        maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 100%)',
-                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 100%)',
-                        padding: '0 12%',
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 0 }}>
-                        {[0, 1].map((col) => (
-                          <div key={col} style={{ flex: 1, minWidth: 0 }}>
-                            {(tweetsData as any[])
-                              .filter((t: any) => !t.hidden && t.media[0]?.blobUrl && t.media[0].type === 'photo')
-                              .filter((_: any, i: number) => i % 2 === col)
-                              .slice(0, 2)
-                              .map((t: any) => (
-                                <img
-                                  key={t.id}
-                                  src={t.media[0].blobUrl}
-                                  alt=""
-                                  className="w-full h-auto block"
-                                  style={{ objectFit: 'cover' }}
-                                />
-                              ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
                     {section.label && (
-                  <div
-                    className="section-xpad"
-                    style={{ marginBottom: '10px' }}
-                  >
-                    <h2 className="text-white lowercase text-shadow section-title" style={{
-                      fontSize: '1rem',
-                      lineHeight: '1.5',
-                      fontWeight: 500
-                    }}>
+                      <div className="section-xpad" style={{ marginBottom: '10px' }}>
+                        <h2 className="text-white lowercase text-shadow section-title" style={{
+                          fontSize: '1rem',
+                          lineHeight: '1.5',
+                          fontWeight: 500,
+                        }}>
                           {section.label}
                         </h2>
                       </div>
                     )}
 
-            <div className="section-content section-xpad" style={{
-              marginBottom: '10px'
-            }}>
+                    <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
                       {getContent(activeSection)[section.id]}
                     </div>
 
-            {section.city && (
-              <div className="section-xpad">
-                <p className="lowercase section-location" style={{
-                  fontSize: '1.05rem',
-                          color: '#6B5654'
+                    {section.city && (
+                      <div className="section-xpad">
+                        <p className="lowercase section-location" style={{
+                          fontSize: '1.05rem',
+                          color: '#6B5654',
                         }}>
                           {section.city}
                         </p>
@@ -654,16 +623,26 @@ export default function WorkPage() {
                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Era gallery strip — flows below the text */}
+                {sectionHasGallery && (
+                  <EraGallery
+                    tweets={eraTweets}
+                    label="free ideas"
+                    onHover={setHoveredTweet}
+                    onLeave={() => setHoveredTweet(null)}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div
           className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-700"
           style={{
             background: `radial-gradient(ellipse at center, transparent 0%, rgba(63, 45, 44, 0.3) 35%, rgba(63, 45, 44, 0.7) 60%, rgba(63, 45, 44, 1) 80%)`,
-            opacity: currentSection.id === 'free_media' ? 0 : 1
+            opacity: hasGallery(currentSection?.id) ? 0.3 : 1
           }}
         />
 
