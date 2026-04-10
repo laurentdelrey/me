@@ -11,7 +11,7 @@ import { IPadCursor } from "@/components/IPadCursor";
 
 // Dynamic import to avoid SSR issues with Mapbox
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
-const VideoStack = dynamic(() => import("@/components/VideoStack"), { ssr: false });
+const WorkGallery = dynamic(() => import("@/components/WorkGallery"), { ssr: false });
 const AwardGrid = dynamic(() => import("@/components/AwardGrid"), { ssr: false });
 
 const sections = [
@@ -85,8 +85,8 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
   ),
   free_media: (
     <>
-      {/* Vertical stack of videos; map stays at Santa Monica */}
-      <VideoStack />
+      {/* Gallery of all tweet media; map stays at Santa Monica */}
+      <WorkGallery />
     </>
   ),
   snap: (
@@ -501,7 +501,8 @@ export default function Home() {
       let accumulatedHeight = 0;
       
       for (let i = 0; i < sections.length; i++) {
-        const sectionHeight = sections[i].id === 'free_media' ? containerHeight * 2 : containerHeight;
+        const sectionEl = sectionRefs.current[i];
+        const sectionHeight = sections[i].id === 'free_media' && sectionEl ? sectionEl.offsetHeight : containerHeight;
         
         // For free_media, only switch after we've scrolled past nearly all of it
         if (sections[i].id === 'free_media') {
