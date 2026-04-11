@@ -124,8 +124,7 @@ export function IPadCursor() {
         y: cursorPosition.y,
         translateX: '-50%',
         translateY: '-50%',
-        // When expanded: sit behind text. When dot: sit on top of everything.
-        zIndex: isExpanded ? 9998 : 10000,
+        zIndex: 9999,
       }}
       animate={{
         width: cursorSize.width,
@@ -145,8 +144,7 @@ export function IPadCursor() {
         }}
         animate={{
           border: isExpanded ? '0px solid transparent' : '1px solid rgba(255, 255, 255, 0.8)',
-          backgroundColor: isExpanded ? 'rgba(63, 45, 44, 0.95)' : 'transparent',
-          opacity: isExpanded ? 1 : 1,
+          backgroundColor: isExpanded ? 'rgba(255, 255, 255, 0.07)' : 'transparent',
         }}
         transition={{
           type: 'spring',
