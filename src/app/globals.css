@@ -35,6 +35,12 @@ body {
   min-height: 100vh;
 }
 
+/* Ensure clickable elements sit above the expanded cursor */
+a, button {
+  position: relative;
+  z-index: 2;
+}
+
 /* Hide Mapbox logo and attribution */
 .mapboxgl-ctrl-logo,
 .mapboxgl-ctrl-attrib {

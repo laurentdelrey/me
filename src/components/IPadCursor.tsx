@@ -117,8 +117,7 @@ export function IPadCursor() {
     <motion.div
       className="pointer-events-none fixed"
       style={{
-        zIndex: 9999,
-        mixBlendMode: isPointer && elementBounds ? 'multiply' : 'normal',
+        zIndex: isPointer && elementBounds ? 1 : 9999,
         left: 0,
         top: 0,
         x: cursorPosition.x,
