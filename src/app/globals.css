@@ -35,10 +35,10 @@ body {
   min-height: 100vh;
 }
 
-/* Ensure clickable elements sit above the expanded cursor */
+/* Ensure clickable elements sit above the expanded cursor (z-9998) */
 a, button {
   position: relative;
-  z-index: 2;
+  z-index: 9999;
 }
 
 /* Hide Mapbox logo and attribution */

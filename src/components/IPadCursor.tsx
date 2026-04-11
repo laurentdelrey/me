@@ -28,9 +28,9 @@ export function IPadCursor() {
     // Detect hoverable elements
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
+
       // Check if element is clickable (button, link, or has onClick)
-      const isClickable = 
+      const isClickable =
         target.tagName === 'BUTTON' ||
         target.tagName === 'A' ||
         target.closest('button') ||
@@ -53,14 +53,6 @@ export function IPadCursor() {
           setHoveredElement(clickableElement as HTMLElement);
           const bounds = (clickableElement as HTMLElement).getBoundingClientRect();
           setElementBounds(bounds);
-          // Apply brown background directly to the element
-          const el = clickableElement as HTMLElement;
-          el.style.backgroundColor = 'rgba(63, 45, 44, 0.9)';
-          el.style.borderRadius = '999px';
-          el.style.paddingLeft = '8px';
-          el.style.paddingRight = '8px';
-          el.style.marginLeft = '-8px';
-          el.style.transition = 'background-color 0.15s ease';
         }
         setIsPointer(true);
 
@@ -72,26 +64,17 @@ export function IPadCursor() {
     };
 
     const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
       const relatedTarget = e.relatedTarget as HTMLElement;
-      
+
       // Check if we're moving to another clickable element
-      const isMovingToClickable = 
+      const isMovingToClickable =
         relatedTarget?.tagName === 'BUTTON' ||
         relatedTarget?.tagName === 'A' ||
         relatedTarget?.closest('button') ||
         relatedTarget?.closest('a');
-      
+
       // Only reset if not moving to another clickable element
       if (!isMovingToClickable) {
-        // Remove brown background from previous element
-        if (hoveredElement) {
-          hoveredElement.style.backgroundColor = '';
-          hoveredElement.style.borderRadius = '';
-          hoveredElement.style.paddingLeft = '';
-          hoveredElement.style.paddingRight = '';
-          hoveredElement.style.marginLeft = '';
-        }
         setHoveredElement(null);
         setElementBounds(null);
         setIsPointer(false);
@@ -112,8 +95,10 @@ export function IPadCursor() {
     };
   }, [cursorX, cursorY, hoveredElement]);
 
+  const isExpanded = isPointer && !!elementBounds;
+
   // Calculate cursor size and shape based on hover state
-  const cursorSize = isPointer && elementBounds ? {
+  const cursorSize = isExpanded ? {
     width: elementBounds.width + 16,
     height: elementBounds.height + 8,
   } : {
@@ -121,7 +106,7 @@ export function IPadCursor() {
     height: 16,
   };
 
-  const cursorPosition = isPointer && elementBounds ? {
+  const cursorPosition = isExpanded ? {
     x: elementBounds.left + elementBounds.width / 2,
     y: elementBounds.top + elementBounds.height / 2,
   } : {
@@ -133,13 +118,14 @@ export function IPadCursor() {
     <motion.div
       className="pointer-events-none fixed"
       style={{
-        zIndex: 9999,
         left: 0,
         top: 0,
         x: cursorPosition.x,
         y: cursorPosition.y,
         translateX: '-50%',
         translateY: '-50%',
+        // When expanded: sit behind text. When dot: sit on top of everything.
+        zIndex: isExpanded ? 9998 : 10000,
       }}
       animate={{
         width: cursorSize.width,
@@ -158,9 +144,9 @@ export function IPadCursor() {
           borderRadius: '999px',
         }}
         animate={{
-          border: '1px solid rgba(255, 255, 255, 0.8)',
-          backgroundColor: 'transparent',
-          opacity: isPointer && elementBounds ? 0 : 1,
+          border: isExpanded ? '0px solid transparent' : '1px solid rgba(255, 255, 255, 0.8)',
+          backgroundColor: isExpanded ? 'rgba(63, 45, 44, 0.95)' : 'transparent',
+          opacity: isExpanded ? 1 : 1,
         }}
         transition={{
           type: 'spring',
