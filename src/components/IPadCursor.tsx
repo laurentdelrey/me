@@ -53,6 +53,14 @@ export function IPadCursor() {
           setHoveredElement(clickableElement as HTMLElement);
           const bounds = (clickableElement as HTMLElement).getBoundingClientRect();
           setElementBounds(bounds);
+          // Apply brown background directly to the element
+          const el = clickableElement as HTMLElement;
+          el.style.backgroundColor = 'rgba(63, 45, 44, 0.9)';
+          el.style.borderRadius = '999px';
+          el.style.paddingLeft = '8px';
+          el.style.paddingRight = '8px';
+          el.style.marginLeft = '-8px';
+          el.style.transition = 'background-color 0.15s ease';
         }
         setIsPointer(true);
 
@@ -76,6 +84,14 @@ export function IPadCursor() {
       
       // Only reset if not moving to another clickable element
       if (!isMovingToClickable) {
+        // Remove brown background from previous element
+        if (hoveredElement) {
+          hoveredElement.style.backgroundColor = '';
+          hoveredElement.style.borderRadius = '';
+          hoveredElement.style.paddingLeft = '';
+          hoveredElement.style.paddingRight = '';
+          hoveredElement.style.marginLeft = '';
+        }
         setHoveredElement(null);
         setElementBounds(null);
         setIsPointer(false);
@@ -117,7 +133,7 @@ export function IPadCursor() {
     <motion.div
       className="pointer-events-none fixed"
       style={{
-        zIndex: isPointer && elementBounds ? 1 : 9999,
+        zIndex: 9999,
         left: 0,
         top: 0,
         x: cursorPosition.x,
@@ -142,9 +158,9 @@ export function IPadCursor() {
           borderRadius: '999px',
         }}
         animate={{
-          border: isPointer && elementBounds ? 'none' : '1px solid rgba(255, 255, 255, 0.8)',
-          backgroundColor: isPointer && elementBounds ? 'rgba(63, 45, 44, 0.9)' : 'transparent',
-          opacity: isPointer ? 0.8 : 1,
+          border: '1px solid rgba(255, 255, 255, 0.8)',
+          backgroundColor: 'transparent',
+          opacity: isPointer && elementBounds ? 0 : 1,
         }}
         transition={{
           type: 'spring',
