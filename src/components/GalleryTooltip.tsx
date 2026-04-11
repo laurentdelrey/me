@@ -58,7 +58,7 @@ export default function GalleryTooltip({ tweet }: { tweet: Tweet | null }) {
       {visibleTweet && (
         <div
           style={{
-            background: "rgba(63, 45, 44, 0.95)",
+            background: "rgb(63, 45, 44)",
             borderRadius: 0,
             padding: "10px 12px",
             border: "0.5px solid rgba(255, 255, 255, 0.12)",

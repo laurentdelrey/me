@@ -967,7 +967,7 @@ export default function WorkPage() {
           {hasGallery(currentSection?.id) && (
             <p className="text-white lowercase" style={{
               fontSize: '1rem',
-              fontWeight: 500,
+              fontWeight: 400,
               position: 'absolute',
               right: 0,
               width: '55%',

@@ -135,15 +135,15 @@ export function IPadCursor() {
         mass: 0.5,
       }}
     >
-      <motion.div 
+      <motion.div
         className="w-full h-full"
         style={{
           borderRadius: '999px',
-          border: '1px solid rgba(255, 255, 255, 0.8)',
-          backgroundColor: 'transparent'
         }}
         animate={{
-          opacity: isPointer ? 0.6 : 1,
+          border: isPointer && elementBounds ? 'none' : '1px solid rgba(255, 255, 255, 0.8)',
+          backgroundColor: isPointer && elementBounds ? 'rgba(63, 45, 44, 0.9)' : 'transparent',
+          opacity: isPointer ? 0.8 : 1,
         }}
         transition={{
           type: 'spring',
