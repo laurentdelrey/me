@@ -687,7 +687,7 @@ export default function WorkPage() {
         visible={headerVisible && mounted}
         startY={headerStartY}
         topPaddingPx={28}
-        color={activeSection > 0 ? '#ffffff' : '#999999'}
+        color="#ffffff"
         onClick={() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });

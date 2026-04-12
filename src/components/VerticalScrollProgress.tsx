@@ -105,7 +105,7 @@ function TrackLabel({
         left: '28px',
         top,
         transform: 'translateY(-50%)',
-        opacity: isHovered ? (isActive ? 1 : 0.35) : 0,
+        opacity: isHovered ? 1 : 0,
         transition: 'opacity 0.2s ease, color 0.5s ease',
         whiteSpace: 'nowrap',
         pointerEvents: isHovered ? 'auto' : 'none',
