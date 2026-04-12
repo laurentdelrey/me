@@ -105,8 +105,8 @@ function TrackLabel({
         left: '16px',
         top,
         transform: 'translateY(-50%)',
-        opacity: isHovered ? (isActive ? 1 : 0.5) : 0,
-        transition: 'opacity 0.2s ease',
+        opacity: isHovered ? (isActive ? 1 : 0.35) : 0,
+        transition: 'opacity 0.2s ease, color 0.5s ease',
         whiteSpace: 'nowrap',
         pointerEvents: isHovered ? 'auto' : 'none',
         background: 'none',
@@ -114,7 +114,7 @@ function TrackLabel({
         padding: '2px 0',
         cursor: 'none',
         fontSize: '0.7rem',
-        color: track.color,
+        color: isActive ? track.color : '#ffffff',
         fontWeight: isActive ? 500 : 400,
         textTransform: 'lowercase',
       }}
@@ -207,7 +207,7 @@ export function VerticalScrollProgress({
         return (
           <div key={track.id}>
             <div style={{ position: 'absolute', left: x, top: 0, bottom: 0, width: trackWidth }}>
-              {/* Track background */}
+              {/* Track background — white by default, colored when active */}
               <div
                 style={{
                   position: 'absolute',
@@ -215,9 +215,9 @@ export function VerticalScrollProgress({
                   top: `${track.scrollStart * 100}%`,
                   bottom: `${(1 - track.scrollEnd) * 100}%`,
                   width: '100%',
-                  backgroundColor: track.color,
+                  backgroundColor: isActive ? track.color : '#ffffff',
                   opacity: isActive ? 0.5 : 0.12,
-                  transition: 'opacity 0.5s ease',
+                  transition: 'background-color 0.5s ease, opacity 0.5s ease',
                   borderRadius: '1px',
                 }}
               />
