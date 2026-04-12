@@ -25,18 +25,9 @@ function tracksOverlap(a: TimelineTrack, b: TimelineTrack): boolean {
   return a.scrollStart < b.scrollEnd && b.scrollStart < a.scrollEnd;
 }
 
-// Assign horizontal lanes: 0 = shared lane, offset only when overlapping
+// Simple lane assignment: "free" always gets lane 1, everything else lane 0
 function assignLanes(tracks: TimelineTrack[]): number[] {
-  const lanes: number[] = new Array(tracks.length).fill(0);
-  for (let i = 0; i < tracks.length; i++) {
-    for (let j = i + 1; j < tracks.length; j++) {
-      if (tracksOverlap(tracks[i], tracks[j])) {
-        // Push the later track to a new lane
-        lanes[j] = Math.max(lanes[j], lanes[i] + 1);
-      }
-    }
-  }
-  return lanes;
+  return tracks.map((t) => (t.id === 'free' ? 1 : 0));
 }
 
 function TrackFill({
@@ -200,8 +191,8 @@ export function VerticalScrollProgress({
       style={{
         position: 'fixed',
         left: '32px',
-        top: '52px',
-        height: 'calc(100vh - 52px)',
+        top: '70px',
+        height: 'calc(100vh - 70px)',
         width: '120px',
         zIndex: 50,
       }}

@@ -554,38 +554,68 @@ export default function WorkPage() {
     }
   }, [activeSection]);
 
-  // Compute timeline tracks using time-based positioning (not scroll-based)
-  // This makes proportions represent actual years, not content volume
+  // Compute timeline tracks from actual scroll positions
+  // "free ideas" spans across meta, free, and snap sections
   useEffect(() => {
     if (!mounted) return;
+    const computeTracks = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const totalHeight = container.scrollHeight;
+      if (totalHeight === 0) return;
 
-    const YEAR_MIN = 2005;
-    const YEAR_MAX = 2026;
-    const YEAR_SPAN = YEAR_MAX - YEAR_MIN;
+      // Measure each section's scroll position as 0-1
+      const positions: Record<string, { start: number; end: number }> = {};
+      let acc = 0;
+      for (let i = 0; i < sections.length; i++) {
+        const el = sectionRefs.current[i];
+        const h = el ? el.offsetHeight : container.clientHeight;
+        positions[sections[i].id] = {
+          start: acc / totalHeight,
+          end: (acc + h) / totalHeight,
+        };
+        acc += h;
+      }
 
-    // Map a year to 0-1 position (2005=0 at bottom, 2026=1 at top → inverted for scroll: 2026=0, 2005=1)
-    const yearToPos = (y: number) => 1 - (y - YEAR_MIN) / YEAR_SPAN;
+      const tracks: TimelineTrack[] = [];
 
-    const TIME_TRACKS: { id: string; label: string; color: string; startYear: number; endYear: number }[] = [
-      { id: 'meta', label: 'meta', color: '#60C4FF', startYear: 2025, endYear: 2026 },
-      { id: 'free', label: 'free ideas', color: '#FFB48F', startYear: 2019, endYear: 2026 },
-      { id: 'snap', label: 'snap', color: '#FFEE00', startYear: 2018, endYear: 2023 },
-      { id: 'tribe', label: 'tribe', color: '#B8FFA9', startYear: 2015, endYear: 2018 },
-      { id: 'hustle', label: 'hustle', color: '#F68364', startYear: 2012, endYear: 2014 },
-      { id: 'lost', label: 'lost', color: '#FFB48F', startYear: 2007, endYear: 2012 },
-      { id: 'kid', label: 'kid', color: '#ffffff', startYear: 2005, endYear: 2007 },
-    ];
+      // Career tracks — each maps to its own section
+      for (const s of sections) {
+        if (s.id === 'free' || s.id === 'social') continue;
+        const pos = positions[s.id];
+        if (!pos) continue;
+        tracks.push({
+          id: s.id,
+          label: s.label,
+          color: s.color,
+          scrollStart: pos.start,
+          scrollEnd: pos.end,
+        });
+      }
 
-    const tracks: TimelineTrack[] = TIME_TRACKS.map((t) => ({
-      id: t.id,
-      label: t.label,
-      color: t.color,
-      scrollStart: yearToPos(t.endYear),   // newer = higher = smaller scrollStart
-      scrollEnd: yearToPos(t.startYear),   // older = lower = larger scrollEnd
-    }));
+      // "free ideas" track spans from meta start through snap end
+      const metaPos = positions['meta'];
+      const snapPos = positions['snap'];
+      if (metaPos && snapPos) {
+        tracks.push({
+          id: 'free',
+          label: 'free ideas',
+          color: '#FFB48F',
+          scrollStart: metaPos.start,
+          scrollEnd: snapPos.end,
+        });
+      }
 
-    setTimelineTracks(tracks);
-  }, [mounted]);
+      setTimelineTracks(tracks);
+    };
+
+    const timer = setTimeout(computeTracks, 500);
+    window.addEventListener('resize', computeTracks);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', computeTracks);
+    };
+  }, [mounted, mapLoaded]);
 
   const scrollToSection = (index: number) => {
     const el = sectionRefs.current[index];
@@ -774,7 +804,7 @@ export default function WorkPage() {
         <div
           className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-700"
           style={{
-            background: `radial-gradient(ellipse at center, transparent 0%, rgba(63, 45, 44, 0.3) 35%, rgba(63, 45, 44, 0.7) 60%, rgba(63, 45, 44, 1) 80%)`,
+            background: `radial-gradient(ellipse at center, transparent 0%, rgba(191, 191, 191, 0.3) 35%, rgba(191, 191, 191, 0.7) 60%, rgba(191, 191, 191, 1) 80%)`,
             opacity: hasGallery(currentSection?.id) ? 0.3 : 1
           }}
         />
@@ -784,7 +814,7 @@ export default function WorkPage() {
           className="fixed top-0 left-0 right-0 z-15 pointer-events-none"
           style={{
             height: '180px',
-            background: 'linear-gradient(to bottom, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 30%, rgba(63, 45, 44, 0.2) 60%, transparent 100%)',
+            background: 'linear-gradient(to bottom, rgba(191, 191, 191, 1) 0%, rgba(191, 191, 191, 0.6) 30%, rgba(191, 191, 191, 0.2) 60%, transparent 100%)',
           }}
         />
 
@@ -793,7 +823,7 @@ export default function WorkPage() {
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
             height: '250px',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 30%, rgba(63, 45, 44, 0.2) 60%, transparent 100%)',
+            background: 'linear-gradient(to top, rgba(191, 191, 191, 1) 0%, rgba(191, 191, 191, 0.6) 30%, rgba(191, 191, 191, 0.2) 60%, transparent 100%)',
           }}
         />
       </main>
