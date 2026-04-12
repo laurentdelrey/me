@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { motion, useInView } from "motion/react";
 
 type MediaItem = {
   type: string;
@@ -22,49 +23,102 @@ export type Tweet = {
   hidden?: boolean;
 };
 
-function GalleryCard({
+// Deterministic hash from tweet ID for consistent random entrance
+function hashId(id: string): number {
+  let hash = 5381;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) + hash + id.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function getEntranceParams(id: string) {
+  const h = hashId(id);
+  const edge = h % 4;
+  const baseOffset = 300 + (h % 200);
+  const crossOffset = ((h >> 4) % 200) - 100;
+  const rotate = ((h >> 8) % 30) - 15;
+
+  switch (edge) {
+    case 0: return { x: -baseOffset, y: crossOffset, rotate };
+    case 1: return { x: baseOffset, y: crossOffset, rotate };
+    case 2: return { x: crossOffset, y: -baseOffset, rotate };
+    default: return { x: crossOffset, y: baseOffset, rotate };
+  }
+}
+
+function AnimatedCard({
   tweet,
+  index,
   onMouseEnter,
   onMouseLeave,
 }: {
   tweet: Tweet;
+  index: number;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
   const firstMedia = tweet.media[0];
   if (!firstMedia?.blobUrl) return null;
 
+  const entrance = getEntranceParams(tweet.id);
   const isVideo = firstMedia.type === "video";
 
   return (
-    <a
-      href={`https://x.com/laurentdelrey/status/${tweet.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="gallery-card block overflow-hidden"
-      data-no-cursor-expand
-      data-tweet-id={tweet.id}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+    <motion.div
+      ref={ref}
+      initial={{
+        opacity: 0,
+        x: entrance.x,
+        y: entrance.y,
+        rotate: entrance.rotate,
+        scale: 0.85,
+      }}
+      animate={
+        isInView
+          ? { opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }
+          : undefined
+      }
+      transition={{
+        type: "spring",
+        stiffness: 280,
+        damping: 18,
+        mass: 0.3,
+        delay: (index % 6) * 0.04,
+      }}
+      style={{ overflow: "visible" }}
     >
-      {isVideo ? (
-        <video
-          src={firstMedia.blobUrl}
-          muted
-          loop
-          autoPlay
-          playsInline
-          className="w-full h-auto object-cover block"
-        />
-      ) : (
-        <img
-          src={firstMedia.blobUrl}
-          alt={tweet.text}
-          loading="lazy"
-          className="w-full h-auto object-cover block"
-        />
-      )}
-    </a>
+      <a
+        href={`https://x.com/laurentdelrey/status/${tweet.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="gallery-card block overflow-hidden"
+        data-no-cursor-expand
+        data-tweet-id={tweet.id}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        {isVideo ? (
+          <video
+            src={firstMedia.blobUrl}
+            muted
+            loop
+            autoPlay
+            playsInline
+            className="w-full h-auto object-cover block"
+          />
+        ) : (
+          <img
+            src={firstMedia.blobUrl}
+            alt={tweet.text}
+            loading="lazy"
+            className="w-full h-auto object-cover block"
+          />
+        )}
+      </a>
+    </motion.div>
   );
 }
 
@@ -72,57 +126,28 @@ export default function EraGallery({
   tweets,
   onHover,
   onLeave,
-  onVisibleDate,
 }: {
   tweets: Tweet[];
-  label?: string;
   onHover: (tweet: Tweet) => void;
   onLeave: () => void;
-  onVisibleDate?: (date: [number, number, number]) => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Report date of currently visible tweet based on scroll position
-  useEffect(() => {
-    if (!onVisibleDate || tweets.length === 0) return;
-
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const viewportH = window.innerHeight;
-
-      // How far through this gallery are we?
-      const totalH = containerRef.current.offsetHeight;
-      const scrolled = viewportH / 2 - rect.top; // midpoint of viewport relative to gallery top
-      const progress = Math.max(0, Math.min(1, scrolled / totalH));
-
-      const idx = Math.min(tweets.length - 1, Math.floor(progress * tweets.length));
-      const d = tweets[idx]?.date;
-      if (d) {
-        const parts = d.split("-");
-        onVisibleDate([parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2])]);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [onVisibleDate, tweets]);
-
   if (tweets.length === 0) return null;
 
   return (
-    <div ref={containerRef} style={{ width: "100%", boxSizing: "border-box" }}>
-      {/* 2-column masonry grid */}
-      <div style={{ display: "flex", gap: "0px" }} className="era-gallery-grid">
+    <div style={{ width: "100%", boxSizing: "border-box", overflow: "visible" }}>
+      <div
+        style={{ display: "flex", gap: "0px", overflow: "visible" }}
+        className="era-gallery-grid"
+      >
         {[0, 1].map((col) => (
-          <div key={col} style={{ flex: 1, minWidth: 0 }}>
+          <div key={col} style={{ flex: 1, minWidth: 0, overflow: "visible" }}>
             {tweets
               .filter((_, i) => i % 2 === col)
-              .map((tweet) => (
-                <GalleryCard
+              .map((tweet, i) => (
+                <AnimatedCard
                   key={tweet.id}
                   tweet={tweet}
+                  index={i}
                   onMouseEnter={() => onHover(tweet)}
                   onMouseLeave={onLeave}
                 />

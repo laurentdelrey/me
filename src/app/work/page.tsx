@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
-import { VerticalScrollProgress } from "@/components/VerticalScrollProgress";
+import { VerticalScrollProgress, TimelineTrack } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
 import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 import tweetsData from "@/data/tweets.json";
@@ -43,15 +43,15 @@ function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
 }
 
 const sections = [
-  { id: "tldr", label: "TL;DR", years: "", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca" },
-  { id: "meta", label: "meta", years: "2025 – ???", startDate: [2025, 1, 6] as [number, number, number], location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca" },
-  { id: "free", label: "free ideas", years: "2021 – ???", startDate: [2021, 4, 1] as [number, number, number], location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca" },
-  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", startDate: [2018, 8, 1] as [number, number, number], location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca" },
-  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", startDate: [2015, 3, 1] as [number, number, number], location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca" },
-  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", startDate: [2012, 6, 1] as [number, number, number], location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france" },
-  { id: "lost", label: "Lost in the game", years: "2007 – 2012", startDate: [2007, 9, 1] as [number, number, number], location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france" },
-  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", startDate: [2005, 1, 1] as [number, number, number], location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris" },
-  { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "" },
+  { id: "tldr", label: "TL;DR", years: "", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca", color: "#FFB48F" },
+  { id: "meta", label: "meta", years: "2025 – ???", startDate: [2025, 1, 6] as [number, number, number], location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca", color: "#60C4FF" },
+  { id: "free", label: "free ideas", years: "2021 – ???", startDate: [2021, 4, 1] as [number, number, number], location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca", color: "#FFB48F" },
+  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", startDate: [2018, 8, 1] as [number, number, number], location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca", color: "#FFEE00" },
+  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", startDate: [2015, 3, 1] as [number, number, number], location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca", color: "#B8FFA9" },
+  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", startDate: [2012, 6, 1] as [number, number, number], location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france", color: "#F68364" },
+  { id: "lost", label: "Lost in the game", years: "2007 – 2012", startDate: [2007, 9, 1] as [number, number, number], location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france", color: "#FFB48F" },
+  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", startDate: [2005, 1, 1] as [number, number, number], location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris", color: "#ffffff" },
+  { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F" },
 ];
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
@@ -435,6 +435,7 @@ export default function WorkPage() {
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const [visibleDate, setVisibleDate] = useState<[number, number, number] | null>(null);
   const [dateHovered, setDateHovered] = useState(false);
+  const [timelineTracks, setTimelineTracks] = useState<TimelineTrack[]>([]);
   const currentSection = sections[activeSection];
 
   // Determine if current section has a gallery
@@ -553,6 +554,71 @@ export default function WorkPage() {
       return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [activeSection]);
+
+  // Compute timeline track positions from measured section heights
+  // "free ideas" spans across meta, free, and snap sections to show overlap
+  useEffect(() => {
+    if (!mounted) return;
+    const computeTracks = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const totalHeight = container.scrollHeight;
+      if (totalHeight === 0) return;
+
+      // Measure each section's start/end as 0-1
+      const positions: Record<string, { start: number; end: number }> = {};
+      let acc = 0;
+      for (let i = 0; i < sections.length; i++) {
+        const el = sectionRefs.current[i];
+        const h = el ? el.offsetHeight : container.clientHeight;
+        positions[sections[i].id] = {
+          start: acc / totalHeight,
+          end: (acc + h) / totalHeight,
+        };
+        acc += h;
+      }
+
+      const tracks: TimelineTrack[] = [];
+
+      // Career tracks — each maps to its own section
+      for (const s of sections) {
+        if (!s.years || s.years === '' || s.years === '@') continue;
+        if (s.id === 'free') continue; // free ideas gets special treatment
+        const pos = positions[s.id];
+        if (!pos) continue;
+        tracks.push({
+          id: s.id,
+          label: s.label,
+          color: s.color,
+          scrollStart: pos.start,
+          scrollEnd: pos.end,
+        });
+      }
+
+      // "free ideas" track spans from meta through snap (overlapping)
+      const metaPos = positions['meta'];
+      const snapPos = positions['snap'];
+      if (metaPos && snapPos) {
+        tracks.push({
+          id: 'free',
+          label: 'free ideas',
+          color: '#FFB48F',
+          scrollStart: metaPos.start,
+          scrollEnd: snapPos.end,
+        });
+      }
+
+      setTimelineTracks(tracks);
+    };
+
+    // Compute after a short delay to let sections render
+    const timer = setTimeout(computeTracks, 500);
+    window.addEventListener('resize', computeTracks);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', computeTracks);
+    };
+  }, [mounted, mapLoaded]);
 
   const scrollToSection = (index: number) => {
     const el = sectionRefs.current[index];
@@ -710,7 +776,11 @@ export default function WorkPage() {
 
       <main className={`h-screen relative z-10 overflow-hidden ${mounted && mapLoaded ? 'animate-fadeIn' : 'opacity-0'}`}>
 
-        <VerticalScrollProgress containerRef={scrollContainerRef} />
+        <VerticalScrollProgress
+          containerRef={scrollContainerRef}
+          tracks={timelineTracks}
+          activeSection={currentSection?.id}
+        />
 
         <div
           ref={scrollContainerRef}
@@ -734,201 +804,59 @@ export default function WorkPage() {
                   boxSizing: 'border-box',
                 }}
               >
-                {/* Desktop: side-by-side layout for sections with gallery */}
-                {sectionHasGallery ? (
-                  <>
-                    {/* Text + gallery side by side in a sticky/flow layout */}
-                    <div className="parallel-section" style={{ display: 'flex', minHeight: '100vh' }}>
-                      {/* Left: career text — sticky so it stays visible while gallery scrolls */}
-                      <div
-                        className="parallel-left"
-                        style={{
-                          width: '45%',
-                          position: 'sticky',
-                          top: 0,
-                          height: '100vh',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
-                          boxSizing: 'border-box',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {(section.id === 'tribe' || section.id === 'hustle') && (
-                          <AwardGrid section={section.id} containerRef={scrollContainerRef} />
-                        )}
+                {/* Text content — always 100vh centered */}
+                <div
+                  className="flex flex-col items-center justify-center relative"
+                  style={{
+                    width: '100%',
+                    height: '100vh',
+                    paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
+                    paddingBottom: '0',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {(section.id === 'tribe' || section.id === 'hustle') && (
+                    <AwardGrid section={section.id} containerRef={scrollContainerRef} />
+                  )}
 
-                        <div style={{ maxWidth: '400px', width: '100%', position: 'relative', zIndex: 10 }}>
-                          {section.label && (
-                            <div className="section-xpad" style={{ marginBottom: '10px' }}>
-                              <h2 className="text-white lowercase text-shadow section-title" style={{
-                                fontSize: '1rem',
-                                lineHeight: '1.5',
-                                fontWeight: 500,
-                              }}>
-                                {section.label}
-                              </h2>
-                            </div>
-                          )}
-
-                          <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
-                            {getContent(activeSection)[section.id]}
-                          </div>
-
-                          {section.city && (
-                            <div className="section-xpad">
-                              <p className="lowercase section-location" style={{
-                                fontSize: '1.05rem',
-                                color: '#6B5654',
-                              }}>
-                                {section.city}
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                  <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
+                    {section.label && (
+                      <div className="section-xpad" style={{ marginBottom: '10px' }}>
+                        <h2 className="text-white lowercase text-shadow section-title" style={{
+                          fontSize: '1rem',
+                          lineHeight: '1.5',
+                          fontWeight: 500,
+                        }}>
+                          {section.label}
+                        </h2>
                       </div>
-
-                      {/* Right: gallery — scrolls naturally */}
-                      <div
-                        className="parallel-right"
-                        style={{
-                          width: '55%',
-                          paddingTop: '60px',
-                          paddingBottom: '60px',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <EraGallery
-                          tweets={eraTweets}
-                          onHover={setHoveredTweet}
-                          onLeave={() => setHoveredTweet(null)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Mobile: horizontal scroll strip below text */}
-                    <div className="mobile-gallery-strip" style={{ display: 'none' }}>
-                      <div
-                        className="flex flex-col items-center justify-center relative"
-                        style={{
-                          width: '100%',
-                          minHeight: '100vh',
-                          paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        <div style={{ maxWidth: '400px', width: '100%', position: 'relative', zIndex: 10 }}>
-                          {section.label && (
-                            <div className="section-xpad" style={{ marginBottom: '10px' }}>
-                              <h2 className="text-white lowercase text-shadow section-title" style={{
-                                fontSize: '1rem', lineHeight: '1.5', fontWeight: 500,
-                              }}>
-                                {section.label}
-                              </h2>
-                            </div>
-                          )}
-                          <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
-                            {getContent(activeSection)[section.id]}
-                          </div>
-                          {section.city && (
-                            <div className="section-xpad">
-                              <p className="lowercase section-location" style={{ fontSize: '1.05rem', color: '#6B5654' }}>
-                                {section.city}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Horizontal scroll strip */}
-                      <div
-                        className="hide-scrollbar"
-                        style={{
-                          overflowX: 'auto',
-                          overflowY: 'hidden',
-                          whiteSpace: 'nowrap',
-                          padding: '0 16px 40px',
-                        }}
-                      >
-                        {eraTweets.map((tweet) => {
-                          const m = tweet.media[0];
-                          if (!m?.blobUrl) return null;
-                          return (
-                            <a
-                              key={tweet.id}
-                              href={`https://x.com/laurentdelrey/status/${tweet.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              data-no-cursor-expand
-                              style={{
-                                display: 'inline-block',
-                                width: '200px',
-                                height: '200px',
-                                marginRight: '4px',
-                                flexShrink: 0,
-                                overflow: 'hidden',
-                                verticalAlign: 'top',
-                              }}
-                            >
-                              {m.type === 'video' ? (
-                                <video src={m.blobUrl} muted loop autoPlay playsInline
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              ) : (
-                                <img src={m.blobUrl} alt={tweet.text} loading="lazy"
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              )}
-                            </a>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* Regular section — full width centered text */
-                  <div
-                    className="flex flex-col items-center justify-center relative"
-                    style={{
-                      width: '100%',
-                      height: '100vh',
-                      paddingTop: 'calc(var(--header-h) - var(--footer-h) / 2)',
-                      paddingBottom: '0',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {(section.id === 'tribe' || section.id === 'hustle') && (
-                      <AwardGrid section={section.id} containerRef={scrollContainerRef} />
                     )}
 
-                    <div style={{ maxWidth: '480px', width: '100%', position: 'relative', zIndex: 10 }}>
-                      {section.label && (
-                        <div className="section-xpad" style={{ marginBottom: '10px' }}>
-                          <h2 className="text-white lowercase text-shadow section-title" style={{
-                            fontSize: '1rem',
-                            lineHeight: '1.5',
-                            fontWeight: 500,
-                          }}>
-                            {section.label}
-                          </h2>
-                        </div>
-                      )}
-
-                      <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
-                        {getContent(activeSection)[section.id]}
-                      </div>
-
-                      {section.city && (
-                        <div className="section-xpad">
-                          <p className="lowercase section-location" style={{
-                            fontSize: '1.05rem',
-                            color: '#6B5654',
-                          }}>
-                            {section.city}
-                          </p>
-                        </div>
-                      )}
+                    <div className="section-content section-xpad" style={{ marginBottom: '10px' }}>
+                      {getContent(activeSection)[section.id]}
                     </div>
+
+                    {section.city && (
+                      <div className="section-xpad">
+                        <p className="lowercase section-location" style={{
+                          fontSize: '1.05rem',
+                          color: '#6B5654',
+                        }}>
+                          {section.city}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gallery below text for sections with tweets */}
+                {sectionHasGallery && (
+                  <div style={{ padding: '0 8% 60px' }}>
+                    <EraGallery
+                      tweets={eraTweets}
+                      onHover={setHoveredTweet}
+                      onLeave={() => setHoveredTweet(null)}
+                    />
                   </div>
                 )}
               </div>
@@ -968,11 +896,8 @@ export default function WorkPage() {
             <p className="text-white lowercase" style={{
               fontSize: '1rem',
               fontWeight: 400,
-              position: 'absolute',
-              right: 0,
-              width: '55%',
               textAlign: 'center',
-              bottom: '24px',
+              marginBottom: '0',
             }}>
               a selection of ideas i shared around that time on social
             </p>
