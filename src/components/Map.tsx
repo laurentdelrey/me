@@ -50,23 +50,23 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
-        // Desaturate map to grey tones
+        // Desaturate map to light grey tones matching #BFBFBF
         const style = map.getStyle();
         if (style?.layers) {
           for (const layer of style.layers) {
-            if (layer.type === 'background') {
-              map.setPaintProperty(layer.id, 'background-color', '#2a2a2a');
-            } else if (layer.type === 'fill') {
-              map.setPaintProperty(layer.id, 'fill-color', '#333333');
-              if (map.getPaintProperty(layer.id, 'fill-outline-color')) {
-                map.setPaintProperty(layer.id, 'fill-outline-color', '#3a3a3a');
+            try {
+              if (layer.type === 'background') {
+                map.setPaintProperty(layer.id, 'background-color', '#b0b0b0');
+              } else if (layer.type === 'fill') {
+                map.setPaintProperty(layer.id, 'fill-color', '#b8b8b8');
+                try { map.setPaintProperty(layer.id, 'fill-outline-color', '#aaaaaa'); } catch {}
+              } else if (layer.type === 'line') {
+                map.setPaintProperty(layer.id, 'line-color', '#a0a0a0');
+              } else if (layer.type === 'symbol') {
+                try { map.setPaintProperty(layer.id, 'text-color', '#999999'); } catch {}
+                try { map.setPaintProperty(layer.id, 'text-halo-color', '#b8b8b8'); } catch {}
               }
-            } else if (layer.type === 'line') {
-              map.setPaintProperty(layer.id, 'line-color', '#404040');
-            } else if (layer.type === 'symbol') {
-              try { map.setPaintProperty(layer.id, 'text-color', '#555555'); } catch {}
-              try { map.setPaintProperty(layer.id, 'text-halo-color', '#2a2a2a'); } catch {}
-            }
+            } catch {}
           }
         }
         
