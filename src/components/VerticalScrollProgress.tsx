@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useSpring, useTransform } from 'motion/react';
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject } from 'react';
 
 export type TimelineTrack = {
   id: string;
@@ -19,6 +19,61 @@ export type VerticalScrollProgressProps = {
 
 const SPRING = { stiffness: 200, damping: 40, restDelta: 0.001 };
 
+function TrackFill({
+  scrollProgress,
+  track,
+}: {
+  scrollProgress: ReturnType<typeof useSpring>;
+  track: TimelineTrack;
+}) {
+  const scaleY = useTransform(
+    scrollProgress,
+    [track.scrollStart, track.scrollEnd],
+    [0, 1]
+  );
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: `${track.scrollStart * 100}%`,
+        width: '100%',
+        backgroundColor: track.color,
+        borderRadius: '1px',
+        transformOrigin: 'top',
+        height: `${(track.scrollEnd - track.scrollStart) * 100}%`,
+        scaleY,
+      }}
+    />
+  );
+}
+
+function ScrollMarker({
+  scrollProgress,
+  width,
+}: {
+  scrollProgress: ReturnType<typeof useSpring>;
+  width: number;
+}) {
+  const top = useTransform(scrollProgress, [0, 1], ['0%', '100%']);
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: 0,
+        width,
+        height: '2px',
+        backgroundColor: '#ffffff',
+        borderRadius: '1px',
+        opacity: 0.6,
+        top,
+      }}
+    />
+  );
+}
+
 export function VerticalScrollProgress({
   containerRef,
   tracks = [],
@@ -27,7 +82,6 @@ export function VerticalScrollProgress({
   const { scrollYProgress } = useScroll({ container: containerRef });
   const smoothProgress = useSpring(scrollYProgress, SPRING);
 
-  // If no tracks provided, fall back to simple progress bar
   if (tracks.length === 0) {
     return (
       <motion.div
@@ -68,7 +122,7 @@ export function VerticalScrollProgress({
 
         return (
           <div key={track.id} style={{ position: 'absolute', left: x, top: 0, bottom: 0, width: trackWidth }}>
-            {/* Track background (full span) */}
+            {/* Track background */}
             <div
               style={{
                 position: 'absolute',
@@ -83,39 +137,15 @@ export function VerticalScrollProgress({
               }}
             />
 
-            {/* Active fill — only shows progress within this track */}
+            {/* Active fill */}
             {isActive && (
-              <motion.div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: `${track.scrollStart * 100}%`,
-                  width: '100%',
-                  backgroundColor: track.color,
-                  borderRadius: '1px',
-                  transformOrigin: 'top',
-                  height: `${(track.scrollEnd - track.scrollStart) * 100}%`,
-                  scaleY: useTransform(smoothProgress, [track.scrollStart, track.scrollEnd], [0, 1]),
-                }}
-              />
+              <TrackFill scrollProgress={smoothProgress} track={track} />
             )}
           </div>
         );
       })}
 
-      {/* Scroll position marker — horizontal dash across all tracks */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          left: 0,
-          width: `${totalWidth}px`,
-          height: '2px',
-          backgroundColor: '#ffffff',
-          borderRadius: '1px',
-          opacity: 0.6,
-          top: useTransform(smoothProgress, [0, 1], ['0%', '100%']),
-        }}
-      />
+      <ScrollMarker scrollProgress={smoothProgress} width={totalWidth} />
     </div>
   );
 }
