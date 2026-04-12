@@ -564,17 +564,18 @@ export default function WorkPage() {
 
     const YEAR_MIN = 2005;
     const YEAR_MAX = 2026;
-    const yearToPos = (y: number) => (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN);
+    // Invert: 2026 (newest) = 0 (top), 2005 (oldest) = 1 (bottom)
+    const yearToPos = (y: number) => 1 - (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN);
 
     // Time-based tracks with generous proportions
+    // Exact dates from LinkedIn
     const TIME_TRACKS: { id: string; label: string; color: string; startYear: number; endYear: number }[] = [
-      { id: 'tldr', label: 'tl;dr', color: '#ffffff', startYear: 2026, endYear: 2026 },
-      { id: 'meta', label: 'meta', color: '#60C4FF', startYear: 2025, endYear: 2026 },
-      { id: 'free', label: 'free ideas', color: '#FFB48F', startYear: 2019, endYear: 2026 },
-      { id: 'snap', label: 'snap', color: '#FFEE00', startYear: 2018, endYear: 2023 },
-      { id: 'tribe', label: 'tribe', color: '#B8FFA9', startYear: 2015, endYear: 2018 },
-      { id: 'hustle', label: 'hustle', color: '#F68364', startYear: 2012, endYear: 2014 },
-      { id: 'lost', label: 'lost', color: '#999999', startYear: 2007, endYear: 2012 },
+      { id: 'meta', label: 'meta', color: '#60C4FF', startYear: 2025, endYear: 2026.3 },
+      { id: 'free', label: 'free ideas', color: '#FFB48F', startYear: 2021.25, endYear: 2026.3 },  // Apr 2021 – present
+      { id: 'snap', label: 'snap', color: '#FFEE00', startYear: 2018.7, endYear: 2023.6 },          // Sep 2018 – Aug 2023
+      { id: 'tribe', label: 'tribe', color: '#B8FFA9', startYear: 2015.4, endYear: 2018.4 },        // Jun 2015 – Jun 2018
+      { id: 'hustle', label: 'hustle', color: '#F68364', startYear: 2014.4, endYear: 2015.4 },      // Jun 2014 – Jun 2015
+      { id: 'lost', label: 'lost', color: '#999999', startYear: 2007, endYear: 2014 },
       { id: 'kid', label: 'kid', color: '#ffffff', startYear: 2005, endYear: 2007 },
     ];
 
@@ -582,8 +583,8 @@ export default function WorkPage() {
       id: t.id,
       label: t.label,
       color: t.color,
-      scrollStart: yearToPos(t.startYear),
-      scrollEnd: yearToPos(t.endYear),
+      scrollStart: yearToPos(t.endYear),     // newer year = top = smaller value
+      scrollEnd: yearToPos(t.startYear),     // older year = bottom = larger value
     }));
 
     setTimelineTracks(tracks);
