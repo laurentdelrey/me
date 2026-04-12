@@ -554,70 +554,38 @@ export default function WorkPage() {
     }
   }, [activeSection]);
 
-  // Compute timeline track positions from measured section heights
-  // "free ideas" spans across meta, free, and snap sections to show overlap
+  // Compute timeline tracks using time-based positioning (not scroll-based)
+  // This makes proportions represent actual years, not content volume
   useEffect(() => {
     if (!mounted) return;
-    const computeTracks = () => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-      const totalHeight = container.scrollHeight;
-      if (totalHeight === 0) return;
 
-      // Measure each section's start/end as 0-1
-      const positions: Record<string, { start: number; end: number }> = {};
-      let acc = 0;
-      for (let i = 0; i < sections.length; i++) {
-        const el = sectionRefs.current[i];
-        const h = el ? el.offsetHeight : container.clientHeight;
-        positions[sections[i].id] = {
-          start: acc / totalHeight,
-          end: (acc + h) / totalHeight,
-        };
-        acc += h;
-      }
+    const YEAR_MIN = 2005;
+    const YEAR_MAX = 2026;
+    const YEAR_SPAN = YEAR_MAX - YEAR_MIN;
 
-      const tracks: TimelineTrack[] = [];
+    // Map a year to 0-1 position (2005=0 at bottom, 2026=1 at top → inverted for scroll: 2026=0, 2005=1)
+    const yearToPos = (y: number) => 1 - (y - YEAR_MIN) / YEAR_SPAN;
 
-      // Career tracks — each maps to its own section
-      for (const s of sections) {
-        if (!s.years || s.years === '' || s.years === '@') continue;
-        if (s.id === 'free') continue; // free ideas gets special treatment
-        const pos = positions[s.id];
-        if (!pos) continue;
-        tracks.push({
-          id: s.id,
-          label: s.label,
-          color: s.color,
-          scrollStart: pos.start,
-          scrollEnd: pos.end,
-        });
-      }
+    const TIME_TRACKS: { id: string; label: string; color: string; startYear: number; endYear: number }[] = [
+      { id: 'meta', label: 'meta', color: '#60C4FF', startYear: 2025, endYear: 2026 },
+      { id: 'free', label: 'free ideas', color: '#FFB48F', startYear: 2019, endYear: 2026 },
+      { id: 'snap', label: 'snap', color: '#FFEE00', startYear: 2018, endYear: 2023 },
+      { id: 'tribe', label: 'tribe', color: '#B8FFA9', startYear: 2015, endYear: 2018 },
+      { id: 'hustle', label: 'hustle', color: '#F68364', startYear: 2012, endYear: 2014 },
+      { id: 'lost', label: 'lost', color: '#FFB48F', startYear: 2007, endYear: 2012 },
+      { id: 'kid', label: 'kid', color: '#ffffff', startYear: 2005, endYear: 2007 },
+    ];
 
-      // "free ideas" track spans from meta through snap (overlapping)
-      const metaPos = positions['meta'];
-      const snapPos = positions['snap'];
-      if (metaPos && snapPos) {
-        tracks.push({
-          id: 'free',
-          label: 'free ideas',
-          color: '#FFB48F',
-          scrollStart: metaPos.start,
-          scrollEnd: snapPos.end,
-        });
-      }
+    const tracks: TimelineTrack[] = TIME_TRACKS.map((t) => ({
+      id: t.id,
+      label: t.label,
+      color: t.color,
+      scrollStart: yearToPos(t.endYear),   // newer = higher = smaller scrollStart
+      scrollEnd: yearToPos(t.startYear),   // older = lower = larger scrollEnd
+    }));
 
-      setTimelineTracks(tracks);
-    };
-
-    // Compute after a short delay to let sections render
-    const timer = setTimeout(computeTracks, 500);
-    window.addEventListener('resize', computeTracks);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', computeTracks);
-    };
-  }, [mounted, mapLoaded]);
+    setTimelineTracks(tracks);
+  }, [mounted]);
 
   const scrollToSection = (index: number) => {
     const el = sectionRefs.current[index];

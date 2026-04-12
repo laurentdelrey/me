@@ -29,7 +29,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
     import("mapbox-gl").then((mapboxgl) => {
       if (!mapContainer.current) return;
 
-      mapboxgl.default.accessToken = "pk.eyJ1IjoibGF1cmVudGRlbHJleSIsImEiOiJjbHc5eGJ2a3QwOG9uMmxsYnpkNXp1c25zIn0.itJVP3vptE7Xn36Qi6-Iuw";
+      mapboxgl.default.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
       console.log("Container dimensions:", mapContainer.current.offsetWidth, mapContainer.current.offsetHeight);
 
@@ -49,6 +49,26 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       // Log when map loads successfully
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
+
+        // Desaturate map to grey tones
+        const style = map.getStyle();
+        if (style?.layers) {
+          for (const layer of style.layers) {
+            if (layer.type === 'background') {
+              map.setPaintProperty(layer.id, 'background-color', '#2a2a2a');
+            } else if (layer.type === 'fill') {
+              map.setPaintProperty(layer.id, 'fill-color', '#333333');
+              if (map.getPaintProperty(layer.id, 'fill-outline-color')) {
+                map.setPaintProperty(layer.id, 'fill-outline-color', '#3a3a3a');
+              }
+            } else if (layer.type === 'line') {
+              map.setPaintProperty(layer.id, 'line-color', '#404040');
+            } else if (layer.type === 'symbol') {
+              try { map.setPaintProperty(layer.id, 'text-color', '#555555'); } catch {}
+              try { map.setPaintProperty(layer.id, 'text-halo-color', '#2a2a2a'); } catch {}
+            }
+          }
+        }
         
         // Preload all location tiles and flight paths
         const locations = [
