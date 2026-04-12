@@ -143,21 +143,32 @@ export function VerticalScrollProgress({
   const smoothProgress = useSpring(scrollYProgress, SPRING);
   const [isHovered, setIsHovered] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isDwell, setIsDwell] = useState(false);
 
-  // Hide labels when scrolling
+  // Show labels on dwell (idle after scrolling stops), hide during scroll
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let timeout: ReturnType<typeof setTimeout>;
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    let dwellTimeout: ReturnType<typeof setTimeout>;
     const onScroll = () => {
       setIsScrolling(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => setIsScrolling(false), 800);
+      setIsDwell(false);
+      clearTimeout(scrollTimeout);
+      clearTimeout(dwellTimeout);
+      scrollTimeout = setTimeout(() => {
+        setIsScrolling(false);
+        // After scroll stops, show labels briefly
+        dwellTimeout = setTimeout(() => setIsDwell(true), 300);
+      }, 600);
     };
     container.addEventListener('scroll', onScroll, { passive: true });
+    // Show labels initially after mount
+    dwellTimeout = setTimeout(() => setIsDwell(true), 1500);
     return () => {
       container.removeEventListener('scroll', onScroll);
-      clearTimeout(timeout);
+      clearTimeout(scrollTimeout);
+      clearTimeout(dwellTimeout);
     };
   }, [containerRef]);
 
@@ -182,15 +193,15 @@ export function VerticalScrollProgress({
   const lanes = assignLanes(tracks);
   const trackWidth = 2;
   const laneGap = 5;
-  const showLabels = isHovered && !isScrolling;
+  const showLabels = (isHovered || isDwell) && !isScrolling;
 
   return (
     <div
       style={{
         position: 'fixed',
-        left: '12px',
-        top: '56px',
-        height: 'calc(100vh - 56px)',
+        left: '32px',
+        top: '52px',
+        height: 'calc(100vh - 52px)',
         width: '120px',
         zIndex: 50,
       }}

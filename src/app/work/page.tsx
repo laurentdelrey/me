@@ -434,7 +434,6 @@ export default function WorkPage() {
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const [visibleDate, setVisibleDate] = useState<[number, number, number] | null>(null);
-  const [dateHovered, setDateHovered] = useState(false);
   const [timelineTracks, setTimelineTracks] = useState<TimelineTrack[]>([]);
   const currentSection = sections[activeSection];
 
@@ -685,7 +684,7 @@ export default function WorkPage() {
         }}
       />
 
-      {/* Rolling date — OUTSIDE main to avoid overflow:hidden clipping */}
+      {/* Rolling date — top left, just the date, no dropdown */}
       {(() => {
         const date = visibleDate || currentSection?.startDate;
         if (!date || !mapLoaded) return null;
@@ -693,83 +692,19 @@ export default function WorkPage() {
         return (
           <div
             className="fixed"
+            data-no-cursor-expand
             style={{ top: '32px', left: '32px', zIndex: 9998, cursor: 'none' }}
-            onMouseEnter={() => setDateHovered(true)}
-            onMouseLeave={() => setDateHovered(false)}
           >
             <div
               className="text-white"
-              data-no-cursor-expand
-              style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'none' }}
+              style={{ fontSize: '0.8rem', fontWeight: 400, display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <SlidingNumber value={year} />
               <span className="text-white/30">.</span>
               <SlidingNumber value={month} padStart />
               <span className="text-white/30">.</span>
               <SlidingNumber value={day} padStart />
-              <motion.span
-                className="text-white/30"
-                style={{ fontSize: '0.6rem', marginLeft: '4px', display: 'inline-block' }}
-                animate={{ rotate: dateHovered ? 180 : 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              >
-                ▼
-              </motion.span>
             </div>
-
-            {/* Hover dropdown — era shortcuts with spring animation */}
-            <motion.div
-              initial={false}
-              animate={{
-                height: dateHovered ? 'auto' : 0,
-                opacity: dateHovered ? 1 : 0,
-              }}
-              transition={{
-                height: { type: 'spring', stiffness: 300, damping: 30 },
-                opacity: { duration: 0.15 },
-              }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div style={{ paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
-                {sections
-                  .filter((s) => s.years && s.years !== '' && s.years !== '@')
-                  .map((s, i) => {
-                    const isActive = s.id === currentSection?.id;
-                    return (
-                      <motion.button
-                        key={s.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={dateHovered ? { opacity: isActive ? 1 : 0.35, x: 0 } : { opacity: 0, x: -8 }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 300,
-                          damping: 25,
-                          delay: dateHovered ? i * 0.03 : 0,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const idx = sections.findIndex((sec) => sec.id === s.id);
-                          scrollToSection(idx);
-                          setTimeout(() => setDateHovered(false), 100);
-                        }}
-                        className="lowercase text-left"
-                        style={{
-                          fontSize: '0.8rem',
-                          color: '#ffffff',
-                          fontWeight: isActive ? 500 : 400,
-                          cursor: 'none',
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                        }}
-                        whileHover={{ opacity: 0.8 }}
-                      >
-                        {s.label} · {s.years}
-                      </motion.button>
-                    );
-                  })}
-              </div>
-            </motion.div>
           </div>
         );
       })()}
@@ -885,28 +820,14 @@ export default function WorkPage() {
           }}
         />
 
-        {/* Bottom gradient with gallery label */}
+        {/* Bottom gradient */}
         <div
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
             height: '250px',
             background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 30%, rgba(63, 45, 44, 0.2) 60%, transparent 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
-        >
-          {hasGallery(currentSection?.id) && (
-            <p className="text-white lowercase" style={{
-              fontSize: '1rem',
-              fontWeight: 400,
-              textAlign: 'center',
-              marginBottom: '0',
-            }}>
-              a selection of ideas i shared around that time on social
-            </p>
-          )}
-        </div>
+        />
       </main>
     </>
   );
