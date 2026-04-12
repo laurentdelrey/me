@@ -780,6 +780,10 @@ export default function WorkPage() {
           containerRef={scrollContainerRef}
           tracks={timelineTracks}
           activeSection={currentSection?.id}
+          onNavigate={(id) => {
+            const idx = sections.findIndex((s) => s.id === id);
+            if (idx >= 0) scrollToSection(idx);
+          }}
         />
 
         <div
@@ -872,12 +876,12 @@ export default function WorkPage() {
           }}
         />
 
-        {/* Top gradient */}
+        {/* Top gradient — diffuse */}
         <div
           className="fixed top-0 left-0 right-0 z-15 pointer-events-none"
           style={{
-            height: '120px',
-            background: 'linear-gradient(to bottom, rgba(63, 45, 44, 1) 0%, transparent 100%)',
+            height: '180px',
+            background: 'linear-gradient(to bottom, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 30%, rgba(63, 45, 44, 0.2) 60%, transparent 100%)',
           }}
         />
 
@@ -885,8 +889,8 @@ export default function WorkPage() {
         <div
           className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none"
           style={{
-            height: '220px',
-            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.5) 50%, transparent 100%)',
+            height: '250px',
+            background: 'linear-gradient(to top, rgba(63, 45, 44, 1) 0%, rgba(63, 45, 44, 0.6) 30%, rgba(63, 45, 44, 0.2) 60%, transparent 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
