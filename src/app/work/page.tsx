@@ -554,79 +554,75 @@ export default function WorkPage() {
     }
   }, [activeSection]);
 
-  // Time-based timeline tracks
-  // Each track's position represents actual years (2005-2026)
-  // We also build a scroll-to-time mapping so the dot can be positioned accurately
-  const [scrollToTimeMap, setScrollToTimeMap] = useState<{ scroll: number; time: number }[]>([]);
-
+  // Scroll-based timeline — tracks match actual scroll positions
+  // Dot, tracks, labels, and navigation all use the same coordinate system
   useEffect(() => {
     if (!mounted) return;
-
-    const YEAR_MIN = 2005;
-    const YEAR_MAX = 2026;
-    // Invert: 2026 (newest) = 0 (top), 2005 (oldest) = 1 (bottom)
-    const yearToPos = (y: number) => 1 - (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN);
-
-    // Time-based tracks with generous proportions
-    // Exact dates from LinkedIn
-    const TIME_TRACKS: { id: string; label: string; color: string; startYear: number; endYear: number }[] = [
-      { id: 'meta', label: 'meta', color: '#60C4FF', startYear: 2025, endYear: 2026.3 },
-      { id: 'free', label: 'free ideas', color: '#FFB48F', startYear: 2021.25, endYear: 2026.3 },  // Apr 2021 – present
-      { id: 'snap', label: 'snap', color: '#FFEE00', startYear: 2018.7, endYear: 2023.6 },          // Sep 2018 – Aug 2023
-      { id: 'tribe', label: 'tribe', color: '#B8FFA9', startYear: 2015.4, endYear: 2018.4 },        // Jun 2015 – Jun 2018
-      { id: 'hustle', label: 'hustle', color: '#F68364', startYear: 2014.4, endYear: 2015.4 },      // Jun 2014 – Jun 2015
-      { id: 'lost', label: 'lost', color: '#999999', startYear: 2007, endYear: 2014 },
-      { id: 'kid', label: 'kid', color: '#ffffff', startYear: 2005, endYear: 2007 },
-    ];
-
-    const tracks: TimelineTrack[] = TIME_TRACKS.map((t) => ({
-      id: t.id,
-      label: t.label,
-      color: t.color,
-      scrollStart: yearToPos(t.endYear),     // newer year = top = smaller value
-      scrollEnd: yearToPos(t.startYear),     // older year = bottom = larger value
-    }));
-
-    setTimelineTracks(tracks);
-
-    // Build scroll-to-time mapping from section measurements
-    const computeMapping = () => {
+    const computeTracks = () => {
       const container = scrollContainerRef.current;
       if (!container) return;
       const totalHeight = container.scrollHeight;
       if (totalHeight === 0) return;
 
-      const mapping: { scroll: number; time: number }[] = [];
+      const positions: Record<string, { start: number; end: number }> = {};
       let acc = 0;
       for (let i = 0; i < sections.length; i++) {
         const el = sectionRefs.current[i];
         const h = el ? el.offsetHeight : container.clientHeight;
-        const scrollPos = acc / totalHeight;
-        const startYear = sections[i].startDate[0];
-        const timePos = yearToPos(startYear);
-        mapping.push({ scroll: scrollPos, time: timePos });
+        positions[sections[i].id] = { start: acc / totalHeight, end: (acc + h) / totalHeight };
         acc += h;
       }
-      // Add end point
-      mapping.push({ scroll: 1, time: yearToPos(YEAR_MIN) });
-      setScrollToTimeMap(mapping);
+
+      const TRACK_COLORS: Record<string, string> = {
+        tldr: '#ffffff', meta: '#60C4FF', snap: '#FFEE00',
+        tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
+      };
+
+      const tracks: TimelineTrack[] = [];
+      for (const s of sections) {
+        if (s.id === 'free' || s.id === 'social') continue;
+        const pos = positions[s.id];
+        if (!pos) continue;
+        tracks.push({
+          id: s.id,
+          label: s.label,
+          color: TRACK_COLORS[s.id] || '#ffffff',
+          scrollStart: pos.start,
+          scrollEnd: pos.end,
+        });
+      }
+
+      // Free ideas spans meta through snap
+      const metaPos = positions['meta'];
+      const snapPos = positions['snap'];
+      if (metaPos && snapPos) {
+        tracks.push({
+          id: 'free',
+          label: 'free ideas',
+          color: '#FFB48F',
+          scrollStart: metaPos.start,
+          scrollEnd: snapPos.end,
+        });
+      }
+
+      setTimelineTracks(tracks);
     };
 
-    const t1 = setTimeout(computeMapping, 500);
-    const t2 = setTimeout(computeMapping, 2000);
-    const t3 = setTimeout(computeMapping, 5000);
-    window.addEventListener('resize', computeMapping);
+    const t1 = setTimeout(computeTracks, 500);
+    const t2 = setTimeout(computeTracks, 2000);
+    const t3 = setTimeout(computeTracks, 5000);
+    window.addEventListener('resize', computeTracks);
     const container = scrollContainerRef.current;
     let observer: ResizeObserver | null = null;
     if (container) {
-      observer = new ResizeObserver(computeMapping);
+      observer = new ResizeObserver(computeTracks);
       observer.observe(container);
     }
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      window.removeEventListener('resize', computeMapping);
+      window.removeEventListener('resize', computeTracks);
       observer?.disconnect();
     };
   }, [mounted, mapLoaded]);
@@ -727,7 +723,6 @@ export default function WorkPage() {
           containerRef={scrollContainerRef}
           tracks={timelineTracks}
           activeSection={currentSection?.id}
-          scrollToTimeMap={scrollToTimeMap}
           onNavigate={(id) => {
             const idx = sections.findIndex((s) => s.id === id);
             if (idx >= 0) scrollToSection(idx);

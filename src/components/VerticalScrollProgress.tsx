@@ -16,36 +16,22 @@ export type VerticalScrollProgressProps = {
   tracks?: TimelineTrack[];
   activeSection?: string;
   onNavigate?: (sectionId: string) => void;
-  scrollToTimeMap?: { scroll: number; time: number }[];
 };
 
 const SPRING = { stiffness: 200, damping: 40, restDelta: 0.001 };
 
-// Check if two tracks overlap in their scroll range
-function tracksOverlap(a: TimelineTrack, b: TimelineTrack): boolean {
-  return a.scrollStart < b.scrollEnd && b.scrollStart < a.scrollEnd;
-}
-
-// Simple lane assignment: "free" always gets lane 1, everything else lane 0
-function assignLanes(tracks: TimelineTrack[]): number[] {
-  return tracks.map((t) => (t.id === 'free' ? 1 : 0));
-}
-
 function TrackFill({
   scrollProgress,
   track,
-  scrollToTimeMap,
 }: {
   scrollProgress: MotionValue<number>;
   track: TimelineTrack;
-  scrollToTimeMap: { scroll: number; time: number }[];
 }) {
-  const scaleY = useTransform(scrollProgress, (v) => {
-    const timePos = mapScrollToTime(v, scrollToTimeMap);
-    if (timePos <= track.scrollStart) return 0;
-    if (timePos >= track.scrollEnd) return 1;
-    return (timePos - track.scrollStart) / (track.scrollEnd - track.scrollStart);
-  });
+  const scaleY = useTransform(
+    scrollProgress,
+    [track.scrollStart, track.scrollEnd],
+    [0, 1]
+  );
 
   return (
     <motion.div
@@ -66,15 +52,10 @@ function TrackFill({
 
 function ScrollMarker({
   scrollProgress,
-  scrollToTimeMap,
 }: {
   scrollProgress: MotionValue<number>;
-  scrollToTimeMap: { scroll: number; time: number }[];
 }) {
-  const mappedTop = useTransform(scrollProgress, (v) => {
-    const timePos = mapScrollToTime(v, scrollToTimeMap);
-    return `${timePos * 100}%`;
-  });
+  const top = useTransform(scrollProgress, [0, 1], ['0%', '100%']);
 
   return (
     <motion.div
@@ -85,7 +66,7 @@ function ScrollMarker({
         height: '6px',
         borderRadius: '50%',
         backgroundColor: '#ffffff',
-        top: mappedTop,
+        top,
         translateY: '-50%',
       }}
     />
@@ -120,7 +101,7 @@ function TrackLabel({
         pointerEvents: isHovered ? 'auto' : 'none',
         background: 'none',
         border: 'none',
-        padding: '2px 0',
+        padding: '4px 0',
         cursor: 'none',
         fontSize: '0.7rem',
         color: isActive ? track.color : '#ffffff',
@@ -133,19 +114,9 @@ function TrackLabel({
   );
 }
 
-// Map scroll position (0-1) to time position (0-1) using the mapping
-function mapScrollToTime(scrollPos: number, mapping: { scroll: number; time: number }[]): number {
-  if (mapping.length < 2) return scrollPos;
-  // Find the two mapping points we're between
-  for (let i = 0; i < mapping.length - 1; i++) {
-    const a = mapping[i];
-    const b = mapping[i + 1];
-    if (scrollPos >= a.scroll && scrollPos <= b.scroll) {
-      const t = b.scroll === a.scroll ? 0 : (scrollPos - a.scroll) / (b.scroll - a.scroll);
-      return a.time + t * (b.time - a.time);
-    }
-  }
-  return mapping[mapping.length - 1].time;
+// "free" always on lane 1, everything else lane 0
+function assignLanes(tracks: TimelineTrack[]): number[] {
+  return tracks.map((t) => (t.id === 'free' ? 1 : 0));
 }
 
 export function VerticalScrollProgress({
@@ -153,7 +124,6 @@ export function VerticalScrollProgress({
   tracks = [],
   activeSection,
   onNavigate,
-  scrollToTimeMap = [],
 }: VerticalScrollProgressProps) {
   const { scrollYProgress } = useScroll({ container: containerRef });
   const smoothProgress = useSpring(scrollYProgress, SPRING);
@@ -161,7 +131,6 @@ export function VerticalScrollProgress({
   const [isScrolling, setIsScrolling] = useState(false);
   const [isDwell, setIsDwell] = useState(false);
 
-  // Show labels on dwell (idle after scrolling stops), hide during scroll
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -174,12 +143,10 @@ export function VerticalScrollProgress({
       clearTimeout(dwellTimeout);
       scrollTimeout = setTimeout(() => {
         setIsScrolling(false);
-        // After scroll stops, show labels briefly
         dwellTimeout = setTimeout(() => setIsDwell(true), 300);
       }, 600);
     };
     container.addEventListener('scroll', onScroll, { passive: true });
-    // Show labels initially after mount
     dwellTimeout = setTimeout(() => setIsDwell(true), 1500);
     return () => {
       container.removeEventListener('scroll', onScroll);
@@ -194,9 +161,9 @@ export function VerticalScrollProgress({
         style={{
           position: 'fixed',
           left: 0,
-          top: '56px',
+          top: 0,
           width: '2px',
-          height: 'calc(100vh - 56px)',
+          height: '100vh',
           backgroundColor: '#ffffff',
           transformOrigin: 'top',
           scaleY: smoothProgress,
@@ -232,7 +199,7 @@ export function VerticalScrollProgress({
         return (
           <div key={track.id}>
             <div style={{ position: 'absolute', left: x, top: 0, bottom: 0, width: trackWidth }}>
-              {/* Track background — white by default, colored when active */}
+              {/* Track background */}
               <div
                 style={{
                   position: 'absolute',
@@ -247,13 +214,11 @@ export function VerticalScrollProgress({
                 }}
               />
 
-              {/* Active fill */}
               {isActive && (
-                <TrackFill scrollProgress={smoothProgress} track={track} scrollToTimeMap={scrollToTimeMap} />
+                <TrackFill scrollProgress={smoothProgress} track={track} />
               )}
             </div>
 
-            {/* Label that appears on hover */}
             <TrackLabel
               track={track}
               isActive={isActive}
@@ -264,8 +229,7 @@ export function VerticalScrollProgress({
         );
       })}
 
-      {/* Scroll marker dot */}
-      <ScrollMarker scrollProgress={smoothProgress} scrollToTimeMap={scrollToTimeMap} />
+      <ScrollMarker scrollProgress={smoothProgress} />
     </div>
   );
 }
