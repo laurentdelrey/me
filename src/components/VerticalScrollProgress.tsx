@@ -102,7 +102,7 @@ function TrackLabel({
       onClick={onClick}
       style={{
         position: 'absolute',
-        left: '16px',
+        left: '28px',
         top,
         transform: 'translateY(-50%)',
         opacity: isHovered ? (isActive ? 1 : 0.35) : 0,
@@ -216,7 +216,7 @@ export function VerticalScrollProgress({
                   bottom: `${(1 - track.scrollEnd) * 100}%`,
                   width: '100%',
                   backgroundColor: isActive ? track.color : '#ffffff',
-                  opacity: isActive ? 0.5 : 0.12,
+                  opacity: isActive ? 0.5 : 0.3,
                   transition: 'background-color 0.5s ease, opacity 0.5s ease',
                   borderRadius: '1px',
                 }}

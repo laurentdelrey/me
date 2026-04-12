@@ -47,7 +47,7 @@ export default function SiteHeader({
           fontSize: "1rem",
           lineHeight: "1.5",
           fontWeight: 400,
-          color: color || "#6B5654",
+          color: color || "#999999",
           transition: "color 0.5s ease",
           margin: 0,
           background: "transparent",

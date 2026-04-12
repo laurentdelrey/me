@@ -339,7 +339,7 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
             rel="noopener noreferrer"
             style={{ color: '#FFB48F', textDecoration: 'none' }}
             className="hover:underline"
-          >2</a>) <span style={{ color: '#6B5654' }}>receiving 100,000+ visits</span>,
+          >2</a>) <span style={{ color: '#999999' }}>receiving 100,000+ visits</span>,
           curated a newsletter of torrent links called Le Video Club (<a
             href="https://medium.com/le-futur-de-la-distribution-de-films-en-france/vie-et-mort-dun-service-illegal-de-vod-117ac172308c"
             target="_blank"
@@ -398,26 +398,26 @@ const getContent = (activeSection: number): Record<string, React.ReactElement> =
     <div style={{ maxWidth: '480px' }} className="section-xpad">
       <AnimatedText delay={100} sectionIndex={8} isActive={activeSection === 8}>
         <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="lowercase text-left text-shadow">
-          <span style={{ color: '#6B5654' }}>DMs are opened on</span> <a
+          <span style={{ color: '#999999' }}>DMs are opened on</span> <a
             href="https://twitter.com/laurentdelrey"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#FFB48F', textDecoration: 'none' }}
             className="hover:underline"
-          >twitter/x</a> <span style={{ color: '#6B5654' }}>and</span> <a
+          >twitter/x</a> <span style={{ color: '#999999' }}>and</span> <a
             href="https://t.me/laurentdelrey"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#FFB48F', textDecoration: 'none' }}
             className="hover:underline"
-          >Telegram</a><span style={{ color: '#6B5654' }}>. </span>
-          <span style={{ color: '#6B5654' }}>I can do</span> <a
+          >Telegram</a><span style={{ color: '#999999' }}>. </span>
+          <span style={{ color: '#999999' }}>I can do</span> <a
             href="mailto:laurent.desserrey@gmail.com?subject=Hi%20there"
             style={{ color: '#FFB48F', textDecoration: 'none' }}
             className="hover:underline"
-          >email</a> <span style={{ color: '#6B5654' }}>too.</span>
+          >email</a> <span style={{ color: '#999999' }}>too.</span>
           <br />
-          <span style={{ color: '#6B5654' }}>Love.</span>
+          <span style={{ color: '#999999' }}>Love.</span>
         </p>
       </AnimatedText>
     </div>
@@ -609,11 +609,24 @@ export default function WorkPage() {
       setTimelineTracks(tracks);
     };
 
-    const timer = setTimeout(computeTracks, 500);
+    // Recompute at multiple points as content loads
+    const t1 = setTimeout(computeTracks, 500);
+    const t2 = setTimeout(computeTracks, 2000);
+    const t3 = setTimeout(computeTracks, 5000);
     window.addEventListener('resize', computeTracks);
+    // Also recompute when scroll container height changes
+    const container = scrollContainerRef.current;
+    let observer: ResizeObserver | null = null;
+    if (container) {
+      observer = new ResizeObserver(computeTracks);
+      observer.observe(container);
+    }
     return () => {
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', computeTracks);
+      observer?.disconnect();
     };
   }, [mounted, mapLoaded]);
 
@@ -674,7 +687,7 @@ export default function WorkPage() {
         visible={headerVisible && mounted}
         startY={headerStartY}
         topPaddingPx={28}
-        color={activeSection > 0 ? '#ffffff' : '#6B5654'}
+        color={activeSection > 0 ? '#ffffff' : '#999999'}
         onClick={() => {
           if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -777,7 +790,7 @@ export default function WorkPage() {
                       <div className="section-xpad">
                         <p className="lowercase section-location" style={{
                           fontSize: '1.05rem',
-                          color: '#6B5654',
+                          color: '#999999',
                         }}>
                           {section.city}
                         </p>
