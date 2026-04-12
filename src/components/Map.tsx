@@ -50,6 +50,17 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
+        // Set fog/atmosphere to grey
+        try {
+          map.setFog({
+            color: '#b0b0b0',
+            'high-color': '#b0b0b0',
+            'horizon-blend': 0.1,
+            'space-color': '#b0b0b0',
+            'star-intensity': 0,
+          });
+        } catch {}
+
         // Desaturate map to light grey tones matching #BFBFBF
         const style = map.getStyle();
         if (style?.layers) {

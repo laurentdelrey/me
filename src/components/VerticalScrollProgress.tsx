@@ -16,6 +16,7 @@ export type VerticalScrollProgressProps = {
   tracks?: TimelineTrack[];
   activeSection?: string;
   onNavigate?: (sectionId: string) => void;
+  scrollToTimeMap?: { scroll: number; time: number }[];
 };
 
 const SPRING = { stiffness: 200, damping: 40, restDelta: 0.001 };
@@ -33,15 +34,18 @@ function assignLanes(tracks: TimelineTrack[]): number[] {
 function TrackFill({
   scrollProgress,
   track,
+  scrollToTimeMap,
 }: {
   scrollProgress: MotionValue<number>;
   track: TimelineTrack;
+  scrollToTimeMap: { scroll: number; time: number }[];
 }) {
-  const scaleY = useTransform(
-    scrollProgress,
-    [track.scrollStart, track.scrollEnd],
-    [0, 1]
-  );
+  const scaleY = useTransform(scrollProgress, (v) => {
+    const timePos = mapScrollToTime(v, scrollToTimeMap);
+    if (timePos <= track.scrollStart) return 0;
+    if (timePos >= track.scrollEnd) return 1;
+    return (timePos - track.scrollStart) / (track.scrollEnd - track.scrollStart);
+  });
 
   return (
     <motion.div
@@ -62,10 +66,15 @@ function TrackFill({
 
 function ScrollMarker({
   scrollProgress,
+  scrollToTimeMap,
 }: {
   scrollProgress: MotionValue<number>;
+  scrollToTimeMap: { scroll: number; time: number }[];
 }) {
-  const top = useTransform(scrollProgress, [0, 1], ['0%', '100%']);
+  const mappedTop = useTransform(scrollProgress, (v) => {
+    const timePos = mapScrollToTime(v, scrollToTimeMap);
+    return `${timePos * 100}%`;
+  });
 
   return (
     <motion.div
@@ -76,7 +85,7 @@ function ScrollMarker({
         height: '6px',
         borderRadius: '50%',
         backgroundColor: '#ffffff',
-        top,
+        top: mappedTop,
         translateY: '-50%',
       }}
     />
@@ -124,11 +133,27 @@ function TrackLabel({
   );
 }
 
+// Map scroll position (0-1) to time position (0-1) using the mapping
+function mapScrollToTime(scrollPos: number, mapping: { scroll: number; time: number }[]): number {
+  if (mapping.length < 2) return scrollPos;
+  // Find the two mapping points we're between
+  for (let i = 0; i < mapping.length - 1; i++) {
+    const a = mapping[i];
+    const b = mapping[i + 1];
+    if (scrollPos >= a.scroll && scrollPos <= b.scroll) {
+      const t = b.scroll === a.scroll ? 0 : (scrollPos - a.scroll) / (b.scroll - a.scroll);
+      return a.time + t * (b.time - a.time);
+    }
+  }
+  return mapping[mapping.length - 1].time;
+}
+
 export function VerticalScrollProgress({
   containerRef,
   tracks = [],
   activeSection,
   onNavigate,
+  scrollToTimeMap = [],
 }: VerticalScrollProgressProps) {
   const { scrollYProgress } = useScroll({ container: containerRef });
   const smoothProgress = useSpring(scrollYProgress, SPRING);
@@ -224,7 +249,7 @@ export function VerticalScrollProgress({
 
               {/* Active fill */}
               {isActive && (
-                <TrackFill scrollProgress={smoothProgress} track={track} />
+                <TrackFill scrollProgress={smoothProgress} track={track} scrollToTimeMap={scrollToTimeMap} />
               )}
             </div>
 
@@ -240,7 +265,7 @@ export function VerticalScrollProgress({
       })}
 
       {/* Scroll marker dot */}
-      <ScrollMarker scrollProgress={smoothProgress} />
+      <ScrollMarker scrollProgress={smoothProgress} scrollToTimeMap={scrollToTimeMap} />
     </div>
   );
 }
