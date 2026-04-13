@@ -219,16 +219,14 @@ export function VerticalScrollProgress({
               />
             </div>
 
-            {/* Bracket label — positioned further right to clear the bracket line */}
             <TrackLabel
-              track={{ ...bracket, scrollStart: bracket.scrollStart, scrollEnd: bracket.scrollEnd }}
+              track={bracket}
               isActive={false}
               isVisible={showLabels}
               onClick={() => onNavigate?.(bracket.id)}
             />
           </div>
-        );
-      })}
+      ))}
 
       {/* Main track labels — skip empty labels */}
       {tracks.filter(t => t.label).map((track) => (
