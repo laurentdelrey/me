@@ -581,13 +581,14 @@ export default function WorkPage() {
 
     // Time-based display positions (where tracks are DRAWN)
     const YEAR_MIN = 2005;
-    const YEAR_MAX = 2026.3;
+    const YEAR_MAX = 2027;
     const yearToDisplay = (y: number) => 1 - (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN);
+    // Continuous ranges — no gaps between adjacent sections
     const TIME_RANGES: Record<string, [number, number]> = {
-      tldr: [2026, 2026.3],
+      tldr: [2026.3, 2027],      // small but visible at top
       meta: [2025, 2026.3],
-      free: [2023.6, 2025],  // gap between snap end and meta start on main line
-      snap: [2018.7, 2023.6],
+      free: [2023.6, 2025],
+      snap: [2018.4, 2023.6],    // connects to tribe end
       tribe: [2015.4, 2018.4],
       hustle: [2014, 2015.4],
       lost: [2007, 2014],
@@ -622,8 +623,8 @@ export default function WorkPage() {
         id: 'free-bracket',
         label: 'free ideas',
         color: '#FFB48F',
-        displayStart: yearToDisplay(2026.3),  // free ideas starts with meta
-        displayEnd: yearToDisplay(2018.7),     // free ideas ends with snap
+        displayStart: yearToDisplay(2026.3),  // free ideas starts at meta era
+        displayEnd: yearToDisplay(2018.4),     // free ideas ends at snap era
         scrollStart: metaPos.start,
         scrollEnd: snapPos.end,
       });
