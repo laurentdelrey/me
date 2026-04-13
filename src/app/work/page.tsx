@@ -503,7 +503,7 @@ export default function WorkPage() {
         const sectionEl = sectionRefs.current[i];
         const sectionHeight = sectionEl ? sectionEl.offsetHeight : containerHeight;
 
-        if (scrollTop < accumulatedHeight + sectionHeight / 2) {
+        if (scrollTop < accumulatedHeight + sectionHeight - 10) {
           currentSectionIndex = i;
           break;
         }
