@@ -31,24 +31,15 @@ function getStartYear(years: string): number | null {
   return match ? parseInt(match[1]) : null;
 }
 
-// Max tweets per year of section duration to keep proportions balanced
-const TWEETS_PER_YEAR = 12;
-
-function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>, timeYears?: number): Tweet[] {
+function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
   const range = ERA_RANGES[sectionId];
   if (!range) return [];
-  const all = (tweetsData as Tweet[]).filter((t) => {
+  return (tweetsData as Tweet[]).filter((t) => {
     if (t.hidden || !t.media[0]?.blobUrl) return false;
     if (hiddenIds?.has(t.id)) return false;
     const year = parseInt(t.date.substring(0, 4));
     return year >= range[0] && year <= range[1];
   });
-  // Cap based on time duration to keep scroll proportions balanced
-  if (timeYears && timeYears > 0) {
-    const max = Math.max(12, Math.round(timeYears * TWEETS_PER_YEAR));
-    return all.slice(0, max);
-  }
-  return all;
 }
 
 // timeYears: approximate duration in years, used to set proportional min-heights
@@ -64,8 +55,8 @@ const sections = [
   { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F", timeYears: 0 },
 ];
 
-// 1 year ≈ 40vh of min scroll height (keeps proportions without excessive scrolling)
-const VH_PER_YEAR = 40;
+// 1 year = 80vh of scroll height — sections are sized by time, not content
+const VH_PER_YEAR = 80;
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
   tldr: (
@@ -538,7 +529,7 @@ export default function WorkPage() {
         const sectionEl = sectionRefs.current[newActiveSection];
         if (sectionEl) {
           const galleryStart = sectionTop + containerHeight; // after 100vh text
-          const eraTweets = getTweetsForEra(section.id, hiddenIds, section.timeYears);
+          const eraTweets = getTweetsForEra(section.id, hiddenIds);
 
           if (eraTweets.length > 0 && scrollTop >= galleryStart) {
             // We're in the gallery portion
@@ -761,11 +752,11 @@ export default function WorkPage() {
           }}
         >
           {sections.map((section, index) => {
-            const eraTweets = getTweetsForEra(section.id, hiddenIds, section.timeYears);
+            const eraTweets = getTweetsForEra(section.id, hiddenIds);
             const sectionHasGallery = eraTweets.length > 0;
 
-            // Time-proportional min height
-            const timeMinHeight = section.timeYears > 0
+            // Section height is purely time-based
+            const timeHeight = section.timeYears > 0
               ? `${Math.max(100, section.timeYears * VH_PER_YEAR)}vh`
               : '100vh';
 
@@ -775,8 +766,8 @@ export default function WorkPage() {
                 ref={el => { sectionRefs.current[index] = el; }}
                 style={{
                   scrollSnapAlign: sectionHasGallery ? 'start' : 'center',
-                  minHeight: timeMinHeight,
-                  height: sectionHasGallery ? 'auto' : timeMinHeight,
+                  height: timeHeight,
+                  overflow: 'hidden',
                   boxSizing: 'border-box',
                 }}
               >
