@@ -588,7 +588,7 @@ export default function WorkPage() {
         tracks.push({
           id: s.id,
           label: s.id === 'free' ? '' : s.label,
-          color: s.id === 'free' ? '#FFB48F' : (TRACK_COLORS[s.id] || '#ffffff'),
+          color: s.id === 'free' ? '#ffffff' : (TRACK_COLORS[s.id] || '#ffffff'),
           scrollStart: pos.start,
           scrollEnd: pos.end,
         });
