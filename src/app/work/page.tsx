@@ -579,7 +579,7 @@ export default function WorkPage() {
         tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
       };
 
-      // Main career tracks — one per section, on the main line
+      // Main career tracks — "free" has no label (bracket handles it)
       const tracks: TimelineTrack[] = [];
       for (const s of sections) {
         if (s.id === 'social') continue;
@@ -587,7 +587,7 @@ export default function WorkPage() {
         if (!pos) continue;
         tracks.push({
           id: s.id,
-          label: s.id === 'free' ? 'free ideas' : s.label,
+          label: s.id === 'free' ? '' : s.label,
           color: s.id === 'free' ? '#FFB48F' : (TRACK_COLORS[s.id] || '#ffffff'),
           scrollStart: pos.start,
           scrollEnd: pos.end,

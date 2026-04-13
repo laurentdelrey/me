@@ -300,8 +300,8 @@ export function VerticalScrollProgress({
         );
       })}
 
-      {/* Main track labels */}
-      {tracks.map((track) => (
+      {/* Main track labels — skip empty labels */}
+      {tracks.filter(t => t.label).map((track) => (
         <TrackLabel
           key={track.id}
           track={track}
