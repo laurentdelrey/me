@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
@@ -55,67 +55,6 @@ const sections = [
   { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F", timeYears: 0 },
 ];
 
-// Compressed gallery: content scrolls faster to fit within the fixed section height
-function CompressedGallery({
-  children,
-  sectionRef,
-  scrollContainerRef,
-  sectionHeight,
-}: {
-  children: React.ReactNode;
-  sectionRef: HTMLDivElement | null;
-  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  sectionHeight: string;
-}) {
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [translateY, setTranslateY] = useState(0);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || !sectionRef || !contentRef.current) return;
-
-    const handleScroll = () => {
-      if (!contentRef.current || !sectionRef) return;
-
-      const sectionTop = sectionRef.offsetTop;
-      const sectionH = sectionRef.offsetHeight;
-      const textHeight = window.innerHeight; // 100vh for text
-      const galleryAvailableH = sectionH - textHeight; // space for gallery in the section
-      const contentH = contentRef.current.scrollHeight;
-
-      if (contentH <= galleryAvailableH || galleryAvailableH <= 0) {
-        setTranslateY(0);
-        return;
-      }
-
-      // How far through this section are we (past the text)?
-      const scrollTop = container.scrollTop;
-      const galleryScrollStart = sectionTop + textHeight;
-      const progress = Math.max(0, Math.min(1,
-        (scrollTop - galleryScrollStart) / (sectionH - textHeight - window.innerHeight)
-      ));
-
-      // How much extra content needs to be compressed
-      const overflow = contentH - galleryAvailableH;
-      setTranslateY(-progress * overflow);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [sectionRef, scrollContainerRef]);
-
-  return (
-    <div style={{ padding: '0 8%', overflow: 'hidden' }}>
-      <div ref={contentRef} style={{ transform: `translateY(${translateY}px)` }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// 1 year = 80vh of scroll height — sections are sized by time, not content
-const VH_PER_YEAR = 80;
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
   tldr: (
@@ -814,19 +753,14 @@ export default function WorkPage() {
             const eraTweets = getTweetsForEra(section.id, hiddenIds);
             const sectionHasGallery = eraTweets.length > 0;
 
-            // Section height is purely time-based
-            const timeHeight = section.timeYears > 0
-              ? `${Math.max(100, section.timeYears * VH_PER_YEAR)}vh`
-              : '100vh';
-
             return (
               <div
                 key={section.id}
                 ref={el => { sectionRefs.current[index] = el; }}
                 style={{
                   scrollSnapAlign: sectionHasGallery ? 'start' : 'center',
-                  height: timeHeight,
-                  overflow: 'hidden',
+                  minHeight: '100vh',
+                  height: sectionHasGallery ? 'auto' : '100vh',
                   boxSizing: 'border-box',
                 }}
               >
@@ -875,19 +809,15 @@ export default function WorkPage() {
                   </div>
                 </div>
 
-                {/* Gallery below text — compressed scroll within fixed section height */}
+                {/* Gallery below text */}
                 {sectionHasGallery && (
-                  <CompressedGallery
-                    sectionRef={sectionRefs.current[index]}
-                    scrollContainerRef={scrollContainerRef}
-                    sectionHeight={timeHeight}
-                  >
+                  <div style={{ padding: '0 8% 60px' }}>
                     <EraGallery
                       tweets={eraTweets}
                       onHover={setHoveredTweet}
                       onLeave={() => setHoveredTweet(null)}
                     />
-                  </CompressedGallery>
+                  </div>
                 )}
               </div>
             );
