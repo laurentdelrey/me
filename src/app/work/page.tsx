@@ -555,79 +555,81 @@ export default function WorkPage() {
     }
   }, [activeSection]);
 
-  // Scroll-based timeline — tracks match actual scroll positions
-  // Dot, tracks, labels, and navigation all use the same coordinate system
-  useEffect(() => {
-    if (!mounted) return;
-    const computeTracks = () => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-      const totalHeight = container.scrollHeight;
-      if (totalHeight === 0) return;
+  // Track computation — extracted so it can be called from multiple places
+  const computeTracksRef = useRef<() => void>(() => {});
+  computeTracksRef.current = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const totalHeight = container.scrollHeight;
+    if (totalHeight === 0) return;
 
-      const positions: Record<string, { start: number; end: number }> = {};
-      let acc = 0;
-      for (let i = 0; i < sections.length; i++) {
-        const el = sectionRefs.current[i];
-        const h = el ? el.offsetHeight : container.clientHeight;
-        positions[sections[i].id] = { start: acc / totalHeight, end: (acc + h) / totalHeight };
-        acc += h;
-      }
+    const positions: Record<string, { start: number; end: number }> = {};
+    let acc = 0;
+    for (let i = 0; i < sections.length; i++) {
+      const el = sectionRefs.current[i];
+      const h = el ? el.offsetHeight : container.clientHeight;
+      positions[sections[i].id] = { start: acc / totalHeight, end: (acc + h) / totalHeight };
+      acc += h;
+    }
 
-      const TRACK_COLORS: Record<string, string> = {
-        tldr: '#ffffff', meta: '#60C4FF', snap: '#FFEE00',
-        tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
-      };
-
-      // Main career tracks — "free" has no label (bracket handles it)
-      const tracks: TimelineTrack[] = [];
-      for (const s of sections) {
-        if (s.id === 'social') continue;
-        const pos = positions[s.id];
-        if (!pos) continue;
-        tracks.push({
-          id: s.id,
-          label: s.id === 'free' ? '' : s.label,
-          color: s.id === 'free' ? '#ffffff' : (TRACK_COLORS[s.id] || '#ffffff'),
-          scrollStart: pos.start,
-          scrollEnd: pos.end,
-        });
-      }
-
-      // Free ideas bracket — spans from meta start through snap end
-      const brackets: TimelineBracket[] = [];
-      const metaPos = positions['meta'];
-      const snapPos = positions['snap'];
-      if (metaPos && snapPos) {
-        brackets.push({
-          id: 'free-bracket',
-          label: 'free ideas',
-          color: '#FFB48F',
-          scrollStart: metaPos.start,
-          scrollEnd: snapPos.end,
-        });
-      }
-
-      setTimelineTracks(tracks);
-      setTimelineBrackets(brackets);
+    const TRACK_COLORS: Record<string, string> = {
+      tldr: '#ffffff', meta: '#60C4FF', snap: '#FFEE00',
+      tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
     };
 
-    const t1 = setTimeout(computeTracks, 500);
-    const t2 = setTimeout(computeTracks, 2000);
-    const t3 = setTimeout(computeTracks, 5000);
-    window.addEventListener('resize', computeTracks);
-    const container = scrollContainerRef.current;
-    let observer: ResizeObserver | null = null;
-    if (container) {
-      observer = new ResizeObserver(computeTracks);
-      observer.observe(container);
+    const tracks: TimelineTrack[] = [];
+    for (const s of sections) {
+      if (s.id === 'social') continue;
+      const pos = positions[s.id];
+      if (!pos) continue;
+      tracks.push({
+        id: s.id,
+        label: s.id === 'free' ? '' : s.label,
+        color: s.id === 'free' ? '#ffffff' : (TRACK_COLORS[s.id] || '#ffffff'),
+        scrollStart: pos.start,
+        scrollEnd: pos.end,
+      });
     }
+
+    const brackets: TimelineBracket[] = [];
+    const metaPos = positions['meta'];
+    const snapPos = positions['snap'];
+    if (metaPos && snapPos) {
+      brackets.push({
+        id: 'free-bracket',
+        label: 'free ideas',
+        color: '#FFB48F',
+        scrollStart: metaPos.start,
+        scrollEnd: snapPos.end,
+      });
+    }
+
+    setTimelineTracks(tracks);
+    setTimelineBrackets(brackets);
+  };
+
+  // Recompute tracks on mount, resize, and periodically as images load
+  useEffect(() => {
+    if (!mounted) return;
+    const compute = () => computeTracksRef.current();
+    const t1 = setTimeout(compute, 500);
+    const t2 = setTimeout(compute, 2000);
+    const t3 = setTimeout(compute, 5000);
+    const t4 = setTimeout(compute, 10000);
+    window.addEventListener('resize', compute);
+    // Also recompute on scroll idle (catches images loading between scrolls)
+    const container = scrollContainerRef.current;
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    const onScrollIdle = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(compute, 500);
+    };
+    container?.addEventListener('scroll', onScrollIdle, { passive: true });
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      window.removeEventListener('resize', computeTracks);
-      observer?.disconnect();
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
+      clearTimeout(scrollTimeout);
+      window.removeEventListener('resize', compute);
+      container?.removeEventListener('scroll', onScrollIdle);
     };
   }, [mounted, mapLoaded]);
 
@@ -664,6 +666,8 @@ export default function WorkPage() {
         container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         container.style.opacity = '1';
         container.style.transform = 'translateY(0)';
+        // Recompute tracks after navigation
+        setTimeout(() => computeTracksRef.current(), 100);
       });
     }, 250);
   };
