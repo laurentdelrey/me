@@ -733,7 +733,9 @@ export default function WorkPage() {
           brackets={timelineBrackets}
           activeSection={currentSection?.id}
           onNavigate={(id) => {
-            const idx = sections.findIndex((s) => s.id === id);
+            // Map bracket ids to section ids
+            const sectionId = id === 'free-bracket' ? 'free' : id;
+            const idx = sections.findIndex((s) => s.id === sectionId);
             if (idx >= 0) scrollToSection(idx);
           }}
         />
