@@ -19,10 +19,11 @@ const GalleryTooltip = dynamic(() => import("@/components/GalleryTooltip"), { ss
 const AwardGrid = dynamic(() => import("@/components/AwardGrid"), { ssr: false });
 
 // Map section IDs to date ranges for tweet assignment
+// Tweet assignment by career era (when they were actually posted)
 const ERA_RANGES: Record<string, [number, number]> = {
-  meta: [2025, 2099],
-  free: [2021, 2024],
-  snap: [2018, 2020],
+  meta: [2025, 2099],           // Jan 2025 – present
+  free: [2023.7, 2024.99],     // Sep 2023 – Dec 2024 (freelance gap)
+  snap: [2018, 2023.6],         // 2018 – Aug 2023 (includes free ideas posted during snap)
 };
 
 // Extract start year from section's years string (e.g. "2018 – 2023" → 2018)
@@ -37,8 +38,11 @@ function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
   return (tweetsData as Tweet[]).filter((t) => {
     if (t.hidden || !t.media[0]?.blobUrl) return false;
     if (hiddenIds?.has(t.id)) return false;
+    // Use year + month for precise era matching
     const year = parseInt(t.date.substring(0, 4));
-    return year >= range[0] && year <= range[1];
+    const month = parseInt(t.date.substring(5, 7));
+    const precise = year + (month - 1) / 12;
+    return precise >= range[0] && precise <= range[1];
   });
 }
 
