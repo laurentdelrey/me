@@ -30,88 +30,58 @@ export type VerticalScrollProgressProps = {
 
 const SPRING = { stiffness: 200, damping: 40, restDelta: 0.001 };
 
-function TrackFill({
-  scrollProgress,
+// Always-mounted segment with background + progressive fill
+function TrackSegment({
   track,
+  isActive,
+  scrollProgress,
 }: {
-  scrollProgress: MotionValue<number>;
   track: TimelineTrack;
-}) {
-  const scaleY = useTransform(
-    scrollProgress,
-    [track.scrollStart, track.scrollEnd],
-    [0, 1]
-  );
-
-  return (
-    <motion.div
-      style={{
-        position: 'absolute',
-        left: 0,
-        top: `${track.scrollStart * 100}%`,
-        width: '100%',
-        backgroundColor: track.color,
-        borderRadius: '1px',
-        transformOrigin: 'top',
-        height: `${(track.scrollEnd - track.scrollStart) * 100}%`,
-        scaleY,
-      }}
-    />
-  );
-}
-
-function BracketFill({
-  scrollProgress,
-  bracket,
-}: {
-  scrollProgress: MotionValue<number>;
-  bracket: TimelineBracket;
-}) {
-  const scaleY = useTransform(
-    scrollProgress,
-    [bracket.scrollStart, bracket.scrollEnd],
-    [0, 1]
-  );
-
-  return (
-    <motion.div
-      style={{
-        position: 'absolute',
-        left: 0,
-        top: `${bracket.scrollStart * 100}%`,
-        width: '100%',
-        backgroundColor: bracket.color,
-        borderRadius: '1px',
-        transformOrigin: 'top',
-        height: `${(bracket.scrollEnd - bracket.scrollStart) * 100}%`,
-        scaleY,
-      }}
-    />
-  );
-}
-
-function ScrollMarker({
-  scrollProgress,
-}: {
+  isActive: boolean;
   scrollProgress: MotionValue<number>;
 }) {
-  const top = useTransform(scrollProgress, [0, 1], ['0%', '100%']);
+  // Fill clamps: before scrollStart → 0, after scrollEnd → 1
+  const fillScale = useTransform(scrollProgress, (v) => {
+    if (v <= track.scrollStart) return 0;
+    if (v >= track.scrollEnd) return 1;
+    return (v - track.scrollStart) / (track.scrollEnd - track.scrollStart);
+  });
 
   return (
-    <motion.div
-      style={{
-        position: 'absolute',
-        left: '-2px',
-        width: '6px',
-        height: '6px',
-        borderRadius: '50%',
-        backgroundColor: '#ffffff',
-        top,
-        translateY: '-50%',
-      }}
-    />
+    <>
+      {/* Background — always visible */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: `${track.scrollStart * 100}%`,
+          bottom: `${(1 - track.scrollEnd) * 100}%`,
+          width: '100%',
+          backgroundColor: '#ffffff',
+          opacity: 0.15,
+          borderRadius: '1px',
+        }}
+      />
+
+      {/* Fill — always rendered, shows scroll progress through this section */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: `${track.scrollStart * 100}%`,
+          width: '100%',
+          backgroundColor: track.color,
+          borderRadius: '1px',
+          transformOrigin: 'top',
+          height: `${(track.scrollEnd - track.scrollStart) * 100}%`,
+          scaleY: fillScale,
+          opacity: 0.8,
+        }}
+      />
+    </>
   );
 }
+
 
 function TrackLabel({
   track,
@@ -226,73 +196,33 @@ export function VerticalScrollProgress({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Main career line — single lane */}
+      {/* Main career line — single lane, all fills always rendered */}
       <div style={{ position: 'absolute', left: mainLineX, top: 0, bottom: 0, width: 2 }}>
-        {tracks.map((track) => {
-          const isActive = track.id === activeSection;
-          return (
-            <div key={track.id}>
-              {/* Track background segment */}
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: `${track.scrollStart * 100}%`,
-                  bottom: `${(1 - track.scrollEnd) * 100}%`,
-                  width: '100%',
-                  backgroundColor: isActive ? track.color : '#ffffff',
-                  opacity: isActive ? 0.5 : 0.3,
-                  transition: 'background-color 0.5s ease, opacity 0.5s ease',
-                  borderRadius: '1px',
-                }}
-              />
-
-              {/* Active fill */}
-              {isActive && (
-                <TrackFill scrollProgress={smoothProgress} track={track} />
-              )}
-            </div>
-          );
-        })}
-
+        {tracks.map((track) => (
+          <TrackSegment
+            key={track.id}
+            track={track}
+            isActive={track.id === activeSection}
+            scrollProgress={smoothProgress}
+          />
+        ))}
       </div>
 
       {/* Brackets — side annotations for overlapping projects */}
-      {brackets.map((bracket) => {
-        // Check if scroll is within this bracket's range
-        const isInRange = activeSection && tracks.some(t => {
-          if (t.scrollStart >= bracket.scrollStart && t.scrollStart < bracket.scrollEnd) {
-            return t.id === activeSection;
-          }
-          return false;
-        });
-
-        return (
+      {brackets.map((bracket) => (
           <div key={bracket.id}>
             <div style={{ position: 'absolute', left: bracketX, top: 0, bottom: 0, width: 2 }}>
-              {/* Bracket background */}
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: `${bracket.scrollStart * 100}%`,
-                  bottom: `${(1 - bracket.scrollEnd) * 100}%`,
-                  width: '100%',
-                  backgroundColor: bracket.color,
-                  opacity: isInRange ? 0.3 : 0.1,
-                  transition: 'opacity 0.5s ease',
-                  borderRadius: '1px',
-                }}
+              <TrackSegment
+                track={bracket}
+                isActive={false}
+                scrollProgress={smoothProgress}
               />
-
-              {/* Bracket fill — progresses with scroll */}
-              <BracketFill scrollProgress={smoothProgress} bracket={bracket} />
             </div>
 
-            {/* Bracket label */}
+            {/* Bracket label — positioned further right to clear the bracket line */}
             <TrackLabel
-              track={bracket}
-              isActive={!!isInRange}
+              track={{ ...bracket, scrollStart: bracket.scrollStart, scrollEnd: bracket.scrollEnd }}
+              isActive={false}
               isVisible={showLabels}
               onClick={() => onNavigate?.(bracket.id)}
             />
