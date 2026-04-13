@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import dynamic from "next/dynamic";
 import { AnimatedText } from "@/components/AnimatedText";
-import { VerticalScrollProgress, TimelineTrack } from "@/components/VerticalScrollProgress";
+import { VerticalScrollProgress, TimelineTrack, TimelineBracket } from "@/components/VerticalScrollProgress";
 import { IPadCursor } from "@/components/IPadCursor";
 import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 import tweetsData from "@/data/tweets.json";
@@ -435,6 +435,7 @@ export default function WorkPage() {
   const [hoveredTweet, setHoveredTweet] = useState<Tweet | null>(null);
   const [visibleDate, setVisibleDate] = useState<[number, number, number] | null>(null);
   const [timelineTracks, setTimelineTracks] = useState<TimelineTrack[]>([]);
+  const [timelineBrackets, setTimelineBrackets] = useState<TimelineBracket[]>([]);
   const currentSection = sections[activeSection];
 
   // Determine if current section has a gallery
@@ -578,26 +579,28 @@ export default function WorkPage() {
         tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
       };
 
+      // Main career tracks — one per section, on the main line
       const tracks: TimelineTrack[] = [];
       for (const s of sections) {
-        if (s.id === 'free' || s.id === 'social') continue;
+        if (s.id === 'social') continue;
         const pos = positions[s.id];
         if (!pos) continue;
         tracks.push({
           id: s.id,
-          label: s.label,
-          color: TRACK_COLORS[s.id] || '#ffffff',
+          label: s.id === 'free' ? 'free ideas' : s.label,
+          color: s.id === 'free' ? '#FFB48F' : (TRACK_COLORS[s.id] || '#ffffff'),
           scrollStart: pos.start,
           scrollEnd: pos.end,
         });
       }
 
-      // Free ideas spans meta through snap
+      // Free ideas bracket — spans from meta start through snap end
+      const brackets: TimelineBracket[] = [];
       const metaPos = positions['meta'];
       const snapPos = positions['snap'];
       if (metaPos && snapPos) {
-        tracks.push({
-          id: 'free',
+        brackets.push({
+          id: 'free-bracket',
           label: 'free ideas',
           color: '#FFB48F',
           scrollStart: metaPos.start,
@@ -606,6 +609,7 @@ export default function WorkPage() {
       }
 
       setTimelineTracks(tracks);
+      setTimelineBrackets(brackets);
     };
 
     const t1 = setTimeout(computeTracks, 500);
@@ -722,6 +726,7 @@ export default function WorkPage() {
         <VerticalScrollProgress
           containerRef={scrollContainerRef}
           tracks={timelineTracks}
+          brackets={timelineBrackets}
           activeSection={currentSection?.id}
           onNavigate={(id) => {
             const idx = sections.findIndex((s) => s.id === id);

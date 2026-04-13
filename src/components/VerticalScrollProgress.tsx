@@ -11,9 +11,19 @@ export type TimelineTrack = {
   scrollEnd: number;   // 0-1
 };
 
+// A bracket annotation that spans a range on the side
+export type TimelineBracket = {
+  id: string;
+  label: string;
+  color: string;
+  scrollStart: number;
+  scrollEnd: number;
+};
+
 export type VerticalScrollProgressProps = {
   containerRef: RefObject<HTMLDivElement | null>;
   tracks?: TimelineTrack[];
+  brackets?: TimelineBracket[];
   activeSection?: string;
   onNavigate?: (sectionId: string) => void;
 };
@@ -50,6 +60,36 @@ function TrackFill({
   );
 }
 
+function BracketFill({
+  scrollProgress,
+  bracket,
+}: {
+  scrollProgress: MotionValue<number>;
+  bracket: TimelineBracket;
+}) {
+  const scaleY = useTransform(
+    scrollProgress,
+    [bracket.scrollStart, bracket.scrollEnd],
+    [0, 1]
+  );
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: `${bracket.scrollStart * 100}%`,
+        width: '100%',
+        backgroundColor: bracket.color,
+        borderRadius: '1px',
+        transformOrigin: 'top',
+        height: `${(bracket.scrollEnd - bracket.scrollStart) * 100}%`,
+        scaleY,
+      }}
+    />
+  );
+}
+
 function ScrollMarker({
   scrollProgress,
 }: {
@@ -76,12 +116,12 @@ function ScrollMarker({
 function TrackLabel({
   track,
   isActive,
-  isHovered,
+  isVisible,
   onClick,
 }: {
-  track: TimelineTrack;
+  track: { id: string; label: string; color: string; scrollStart: number; scrollEnd: number };
   isActive: boolean;
-  isHovered: boolean;
+  isVisible: boolean;
   onClick?: () => void;
 }) {
   const midpoint = (track.scrollStart + track.scrollEnd) / 2;
@@ -95,10 +135,10 @@ function TrackLabel({
         left: '28px',
         top,
         transform: 'translateY(-50%)',
-        opacity: isHovered ? 1 : 0,
+        opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.2s ease, color 0.5s ease',
         whiteSpace: 'nowrap',
-        pointerEvents: isHovered ? 'auto' : 'none',
+        pointerEvents: isVisible ? 'auto' : 'none',
         background: 'none',
         border: 'none',
         padding: '4px 0',
@@ -114,14 +154,10 @@ function TrackLabel({
   );
 }
 
-// "free" always on lane 1, everything else lane 0
-function assignLanes(tracks: TimelineTrack[]): number[] {
-  return tracks.map((t) => (t.id === 'free' ? 1 : 0));
-}
-
 export function VerticalScrollProgress({
   containerRef,
   tracks = [],
+  brackets = [],
   activeSection,
   onNavigate,
 }: VerticalScrollProgressProps) {
@@ -173,9 +209,8 @@ export function VerticalScrollProgress({
     );
   }
 
-  const lanes = assignLanes(tracks);
-  const trackWidth = 2;
-  const laneGap = 5;
+  const mainLineX = 0;
+  const bracketX = 8; // bracket line offset to the right
   const showLabels = (isHovered || isDwell) && !isScrolling;
 
   return (
@@ -185,21 +220,19 @@ export function VerticalScrollProgress({
         left: '32px',
         top: '70px',
         height: 'calc(100vh - 70px)',
-        width: '120px',
+        width: '140px',
         zIndex: 50,
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {tracks.map((track, i) => {
-        const isActive = track.id === activeSection;
-        const lane = lanes[i];
-        const x = lane * (trackWidth + laneGap);
-
-        return (
-          <div key={track.id}>
-            <div style={{ position: 'absolute', left: x, top: 0, bottom: 0, width: trackWidth }}>
-              {/* Track background */}
+      {/* Main career line — single lane */}
+      <div style={{ position: 'absolute', left: mainLineX, top: 0, bottom: 0, width: 2 }}>
+        {tracks.map((track) => {
+          const isActive = track.id === activeSection;
+          return (
+            <div key={track.id}>
+              {/* Track background segment */}
               <div
                 style={{
                   position: 'absolute',
@@ -214,22 +247,69 @@ export function VerticalScrollProgress({
                 }}
               />
 
+              {/* Active fill */}
               {isActive && (
                 <TrackFill scrollProgress={smoothProgress} track={track} />
               )}
             </div>
+          );
+        })}
 
+      </div>
+
+      {/* Brackets — side annotations for overlapping projects */}
+      {brackets.map((bracket) => {
+        // Check if scroll is within this bracket's range
+        const isInRange = activeSection && tracks.some(t => {
+          if (t.scrollStart >= bracket.scrollStart && t.scrollStart < bracket.scrollEnd) {
+            return t.id === activeSection;
+          }
+          return false;
+        });
+
+        return (
+          <div key={bracket.id}>
+            <div style={{ position: 'absolute', left: bracketX, top: 0, bottom: 0, width: 2 }}>
+              {/* Bracket background */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: `${bracket.scrollStart * 100}%`,
+                  bottom: `${(1 - bracket.scrollEnd) * 100}%`,
+                  width: '100%',
+                  backgroundColor: bracket.color,
+                  opacity: isInRange ? 0.3 : 0.1,
+                  transition: 'opacity 0.5s ease',
+                  borderRadius: '1px',
+                }}
+              />
+
+              {/* Bracket fill — progresses with scroll */}
+              <BracketFill scrollProgress={smoothProgress} bracket={bracket} />
+            </div>
+
+            {/* Bracket label */}
             <TrackLabel
-              track={track}
-              isActive={isActive}
-              isHovered={showLabels}
-              onClick={() => onNavigate?.(track.id)}
+              track={bracket}
+              isActive={!!isInRange}
+              isVisible={showLabels}
+              onClick={() => onNavigate?.(bracket.id)}
             />
           </div>
         );
       })}
 
-      <ScrollMarker scrollProgress={smoothProgress} />
+      {/* Main track labels */}
+      {tracks.map((track) => (
+        <TrackLabel
+          key={track.id}
+          track={track}
+          isActive={track.id === activeSection}
+          isVisible={showLabels}
+          onClick={() => onNavigate?.(track.id)}
+        />
+      ))}
     </div>
   );
 }
