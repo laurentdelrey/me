@@ -42,17 +42,21 @@ function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
   });
 }
 
+// timeYears: approximate duration in years, used to set proportional min-heights
 const sections = [
-  { id: "tldr", label: "TL;DR", years: "", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca", color: "#FFB48F" },
-  { id: "meta", label: "meta", years: "2025 – ???", startDate: [2025, 1, 6] as [number, number, number], location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca", color: "#60C4FF" },
-  { id: "free", label: "free ideas", years: "2021 – ???", startDate: [2021, 4, 1] as [number, number, number], location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca", color: "#FFB48F" },
-  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", startDate: [2018, 8, 1] as [number, number, number], location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca", color: "#FFEE00" },
-  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", startDate: [2015, 3, 1] as [number, number, number], location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca", color: "#B8FFA9" },
-  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", startDate: [2012, 6, 1] as [number, number, number], location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france", color: "#F68364" },
-  { id: "lost", label: "Lost in the game", years: "2007 – 2012", startDate: [2007, 9, 1] as [number, number, number], location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france", color: "#FFB48F" },
-  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", startDate: [2005, 1, 1] as [number, number, number], location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris", color: "#ffffff" },
-  { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F" },
+  { id: "tldr", label: "TL;DR", years: "", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "topanga, ca", color: "#FFB48F", timeYears: 0 },
+  { id: "meta", label: "meta", years: "2025 – ???", startDate: [2025, 1, 6] as [number, number, number], location: [-122.1484, 37.4419] as [number, number], zoom: 12.5, city: "menlo park, ca", color: "#60C4FF", timeYears: 1.3 },
+  { id: "free", label: "free ideas", years: "2021 – ???", startDate: [2021, 4, 1] as [number, number, number], location: [-118.4912, 34.0195] as [number, number], zoom: 12.5, city: "santa monica, ca", color: "#FFB48F", timeYears: 4 },
+  { id: "snap", label: "Snap, Inc.", years: "2018 – 2023", startDate: [2018, 8, 1] as [number, number, number], location: [-118.4691, 33.9871] as [number, number], zoom: 12.5, city: "venice, ca", color: "#FFEE00", timeYears: 5 },
+  { id: "tribe", label: "A Quest called Tribe", years: "2015 – 2018", startDate: [2015, 3, 1] as [number, number, number], location: [-122.4194, 37.7749] as [number, number], zoom: 12, city: "san francisco, ca", color: "#B8FFA9", timeYears: 3 },
+  { id: "hustle", label: "Hustling for fun", years: "2012 – 2014", startDate: [2012, 6, 1] as [number, number, number], location: [2.3618, 48.8709] as [number, number], zoom: 13.5, city: "paris, france", color: "#F68364", timeYears: 2 },
+  { id: "lost", label: "Lost in the game", years: "2007 – 2012", startDate: [2007, 9, 1] as [number, number, number], location: [2.2885, 48.8412] as [number, number], zoom: 13.5, city: "paris, france", color: "#FFB48F", timeYears: 5 },
+  { id: "kid", label: "Another Internet Kid", years: "2005 – 2007", startDate: [2005, 1, 1] as [number, number, number], location: [2.5185, 48.8407] as [number, number], zoom: 13, city: "suburbs of paris", color: "#ffffff", timeYears: 2 },
+  { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F", timeYears: 0 },
 ];
+
+// 1 year ≈ 150vh of min scroll height (so 5yr snap = 750vh min)
+const VH_PER_YEAR = 150;
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
   tldr: (
@@ -751,14 +755,19 @@ export default function WorkPage() {
             const eraTweets = getTweetsForEra(section.id, hiddenIds);
             const sectionHasGallery = eraTweets.length > 0;
 
+            // Time-proportional min height
+            const timeMinHeight = section.timeYears > 0
+              ? `${Math.max(100, section.timeYears * VH_PER_YEAR)}vh`
+              : '100vh';
+
             return (
               <div
                 key={section.id}
                 ref={el => { sectionRefs.current[index] = el; }}
                 style={{
                   scrollSnapAlign: sectionHasGallery ? 'start' : 'center',
-                  minHeight: '100vh',
-                  height: sectionHasGallery ? 'auto' : '100vh',
+                  minHeight: timeMinHeight,
+                  height: sectionHasGallery ? 'auto' : timeMinHeight,
                   boxSizing: 'border-box',
                 }}
               >
