@@ -31,23 +31,15 @@ function getStartYear(years: string): number | null {
   return match ? parseInt(match[1]) : null;
 }
 
-// Tweets per year — caps content so scroll proportions match time
-const TWEETS_PER_YEAR = 10;
-
-function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>, timeYears?: number): Tweet[] {
+function getTweetsForEra(sectionId: string, hiddenIds?: Set<string>): Tweet[] {
   const range = ERA_RANGES[sectionId];
   if (!range) return [];
-  const all = (tweetsData as Tweet[]).filter((t) => {
+  return (tweetsData as Tweet[]).filter((t) => {
     if (t.hidden || !t.media[0]?.blobUrl) return false;
     if (hiddenIds?.has(t.id)) return false;
     const year = parseInt(t.date.substring(0, 4));
     return year >= range[0] && year <= range[1];
   });
-  if (timeYears && timeYears > 0) {
-    const max = Math.max(8, Math.round(timeYears * TWEETS_PER_YEAR));
-    if (all.length > max) return all.slice(0, max);
-  }
-  return all;
 }
 
 // timeYears: approximate duration in years, used to set proportional min-heights
@@ -535,7 +527,7 @@ export default function WorkPage() {
         const sectionEl = sectionRefs.current[newActiveSection];
         if (sectionEl) {
           const galleryStart = sectionTop + containerHeight; // after 100vh text
-          const eraTweets = getTweetsForEra(section.id, hiddenIds, section.timeYears);
+          const eraTweets = getTweetsForEra(section.id, hiddenIds);
 
           if (eraTweets.length > 0 && scrollTop >= galleryStart) {
             // We're in the gallery portion
@@ -587,20 +579,41 @@ export default function WorkPage() {
       tribe: '#B8FFA9', hustle: '#F68364', lost: '#999999', kid: '#ffffff',
     };
 
+    // Time-based display positions (where tracks are DRAWN)
+    const YEAR_MIN = 2005;
+    const YEAR_MAX = 2026.3;
+    const yearToDisplay = (y: number) => 1 - (y - YEAR_MIN) / (YEAR_MAX - YEAR_MIN);
+    const TIME_RANGES: Record<string, [number, number]> = {
+      tldr: [2026, 2026.3],
+      meta: [2025, 2026.3],
+      free: [2023.6, 2025],  // gap between snap end and meta start on main line
+      snap: [2018.7, 2023.6],
+      tribe: [2015.4, 2018.4],
+      hustle: [2014, 2015.4],
+      lost: [2007, 2014],
+      kid: [2005, 2007],
+    };
+
     const tracks: TimelineTrack[] = [];
     for (const s of sections) {
       if (s.id === 'social') continue;
       const pos = positions[s.id];
-      if (!pos) continue;
+      const timeRange = TIME_RANGES[s.id];
+      if (!pos || !timeRange) continue;
       tracks.push({
         id: s.id,
         label: s.id === 'free' ? '' : s.label,
         color: s.id === 'free' ? '#ffffff' : (TRACK_COLORS[s.id] || '#ffffff'),
+        // Where it's drawn on the bar (time)
+        displayStart: yearToDisplay(timeRange[1]),
+        displayEnd: yearToDisplay(timeRange[0]),
+        // What scroll range drives the fill (scroll)
         scrollStart: pos.start,
         scrollEnd: pos.end,
       });
     }
 
+    // Bracket: drawn from meta to snap (time), fill driven by meta-to-snap scroll
     const brackets: TimelineBracket[] = [];
     const metaPos = positions['meta'];
     const snapPos = positions['snap'];
@@ -609,6 +622,8 @@ export default function WorkPage() {
         id: 'free-bracket',
         label: 'free ideas',
         color: '#FFB48F',
+        displayStart: yearToDisplay(2026.3),  // free ideas starts with meta
+        displayEnd: yearToDisplay(2018.7),     // free ideas ends with snap
         scrollStart: metaPos.start,
         scrollEnd: snapPos.end,
       });
@@ -758,7 +773,7 @@ export default function WorkPage() {
           }}
         >
           {sections.map((section, index) => {
-            const eraTweets = getTweetsForEra(section.id, hiddenIds, section.timeYears);
+            const eraTweets = getTweetsForEra(section.id, hiddenIds);
             const sectionHasGallery = eraTweets.length > 0;
 
             return (

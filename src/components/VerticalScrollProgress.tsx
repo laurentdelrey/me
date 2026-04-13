@@ -7,15 +7,20 @@ export type TimelineTrack = {
   id: string;
   label: string;
   color: string;
-  scrollStart: number; // 0-1
-  scrollEnd: number;   // 0-1
+  // Where the track is drawn on the bar (time-based, 0-1)
+  displayStart: number;
+  displayEnd: number;
+  // What scroll range maps to 0-100% fill (scroll-based, 0-1)
+  scrollStart: number;
+  scrollEnd: number;
 };
 
-// A bracket annotation that spans a range on the side
 export type TimelineBracket = {
   id: string;
   label: string;
   color: string;
+  displayStart: number;
+  displayEnd: number;
   scrollStart: number;
   scrollEnd: number;
 };
@@ -31,16 +36,20 @@ export type VerticalScrollProgressProps = {
 const SPRING = { stiffness: 200, damping: 40, restDelta: 0.001 };
 
 // Always-mounted segment with background + progressive fill
+// displayStart/displayEnd = where it's drawn (time-based)
+// scrollStart/scrollEnd = what scroll range drives the fill (scroll-based)
 function TrackSegment({
   track,
   isActive,
   scrollProgress,
 }: {
-  track: TimelineTrack;
+  track: TimelineTrack | TimelineBracket;
   isActive: boolean;
   scrollProgress: MotionValue<number>;
 }) {
-  // Fill clamps: before scrollStart → 0, after scrollEnd → 1
+  const ds = 'displayStart' in track ? track.displayStart : track.scrollStart;
+  const de = 'displayEnd' in track ? track.displayEnd : track.scrollEnd;
+
   const fillScale = useTransform(scrollProgress, (v) => {
     if (v <= track.scrollStart) return 0;
     if (v >= track.scrollEnd) return 1;
@@ -49,13 +58,13 @@ function TrackSegment({
 
   return (
     <>
-      {/* Background — always visible */}
+      {/* Background — positioned by display range */}
       <div
         style={{
           position: 'absolute',
           left: 0,
-          top: `${track.scrollStart * 100}%`,
-          bottom: `${(1 - track.scrollEnd) * 100}%`,
+          top: `${ds * 100}%`,
+          bottom: `${(1 - de) * 100}%`,
           width: '100%',
           backgroundColor: '#ffffff',
           opacity: 0.15,
@@ -63,17 +72,17 @@ function TrackSegment({
         }}
       />
 
-      {/* Fill — always rendered, shows scroll progress through this section */}
+      {/* Fill — positioned by display range, driven by scroll range */}
       <motion.div
         style={{
           position: 'absolute',
           left: 0,
-          top: `${track.scrollStart * 100}%`,
+          top: `${ds * 100}%`,
           width: '100%',
           backgroundColor: track.color,
           borderRadius: '1px',
           transformOrigin: 'top',
-          height: `${(track.scrollEnd - track.scrollStart) * 100}%`,
+          height: `${(de - ds) * 100}%`,
           scaleY: fillScale,
           opacity: 0.8,
         }}
@@ -94,7 +103,9 @@ function TrackLabel({
   isVisible: boolean;
   onClick?: () => void;
 }) {
-  const midpoint = (track.scrollStart + track.scrollEnd) / 2;
+  const ds = 'displayStart' in track ? (track as any).displayStart : track.scrollStart;
+  const de = 'displayEnd' in track ? (track as any).displayEnd : track.scrollEnd;
+  const midpoint = (ds + de) / 2;
   const top = `${midpoint * 100}%`;
 
   return (
