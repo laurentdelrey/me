@@ -47,8 +47,8 @@ function TrackSegment({
   isActive: boolean;
   scrollProgress: MotionValue<number>;
 }) {
-  const ds = 'displayStart' in track ? track.displayStart : track.scrollStart;
-  const de = 'displayEnd' in track ? track.displayEnd : track.scrollEnd;
+  const ds = (track as any).displayStart ?? track.scrollStart;
+  const de = (track as any).displayEnd ?? track.scrollEnd;
 
   const fillScale = useTransform(scrollProgress, (v) => {
     if (v <= track.scrollStart) return 0;
@@ -103,8 +103,8 @@ function TrackLabel({
   isVisible: boolean;
   onClick?: () => void;
 }) {
-  const ds = 'displayStart' in track ? (track as any).displayStart : track.scrollStart;
-  const de = 'displayEnd' in track ? (track as any).displayEnd : track.scrollEnd;
+  const ds = (track as any).displayStart ?? track.scrollStart;
+  const de = (track as any).displayEnd ?? track.scrollEnd;
   const midpoint = (ds + de) / 2;
   const top = `${midpoint * 100}%`;
 
