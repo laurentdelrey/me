@@ -55,8 +55,8 @@ const sections = [
   { id: "social", label: "@ Me", years: "@", startDate: [2026, 4, 10] as [number, number, number], location: [-118.5976, 34.0378] as [number, number], zoom: 12.5, city: "", color: "#FFB48F", timeYears: 0 },
 ];
 
-// 1 year ≈ 150vh of min scroll height (so 5yr snap = 750vh min)
-const VH_PER_YEAR = 150;
+// 1 year ≈ 40vh of min scroll height (keeps proportions without excessive scrolling)
+const VH_PER_YEAR = 40;
 
 const getContent = (activeSection: number): Record<string, React.ReactElement> => ({
   tldr: (
