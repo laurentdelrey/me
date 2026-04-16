@@ -12,9 +12,11 @@ const BOTTOM_MARGIN = 160;
 export default function HeroMedia({
   item,
   onVideoEnded,
+  onVideoStarted,
 }: {
   item: TimelineItem;
   onVideoEnded: () => void;
+  onVideoStarted?: () => void;
 }) {
   return (
     <div
@@ -36,7 +38,7 @@ export default function HeroMedia({
           justifyContent: "center",
         }}
       >
-        {renderItem(item, onVideoEnded)}
+        {renderItem(item, onVideoEnded, onVideoStarted)}
       </div>
     </div>
   );
@@ -47,9 +49,9 @@ function keyForItem(item: TimelineItem): string {
   return item.id;
 }
 
-function renderItem(item: TimelineItem, onVideoEnded: () => void) {
+function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted?: () => void) {
   if (item.kind === "media") {
-    return <MediaCard item={item} onVideoEnded={onVideoEnded} />;
+    return <MediaCard item={item} onVideoEnded={onVideoEnded} onVideoStarted={onVideoStarted} />;
   }
 
   if (item.kind === "tldr") {
@@ -120,9 +122,11 @@ function StoryCard({ children }: { children: React.ReactNode }) {
 function MediaCard({
   item,
   onVideoEnded,
+  onVideoStarted,
 }: {
   item: Extract<TimelineItem, { kind: "media" }>;
   onVideoEnded: () => void;
+  onVideoStarted?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const m = item.media;
@@ -148,6 +152,7 @@ function MediaCard({
         muted
         playsInline
         autoPlay
+        onPlay={onVideoStarted}
         onEnded={onVideoEnded}
         style={commonStyle}
         data-no-cursor-expand

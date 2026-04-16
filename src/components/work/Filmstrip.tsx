@@ -3,69 +3,96 @@
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
-import { ERAS } from "@/lib/work/eras";
 
 const THUMB_W = 140;
 const THUMB_H = 90;
 const STRIP_PAD = 16;
+const ITEM_DURATION_MS = 2000; // how long one thumb takes to cross the playhead
 
 export default function Filmstrip({
   timeline,
-  currentIndex,
   hoverIndex,
   onHoverItem,
   onLeave,
+  isPaused,
+  onCurrentIndexChange,
 }: {
   timeline: TimelineItem[];
-  currentIndex: number;
   hoverIndex: number | null;
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
+  isPaused: boolean; // video playing, etc.
+  onCurrentIndexChange: (idx: number) => void;
 }) {
-  // The strip is a continuously-moving film reel.
-  // Position = currentIndex + (time-since-item-start / ITEM_DURATION) thumbs.
-  // When autoplay advances, the transition is seamless. When hovering,
-  // motion pauses and eases toward the hovered thumb.
+  // The strip owns a continuous `position` in units of thumb-widths.
+  // currentIndex = round(position). The strip advances at a constant rate
+  // unless paused (video) or hovering (locked to hovered thumb).
   const x = useMotionValue(0);
+  const positionRef = useRef(0);
+  const lastReportedRef = useRef(-1);
+  const lastTimeRef = useRef(performance.now());
   const rafRef = useRef<number | null>(null);
-  const itemStartRef = useRef(performance.now());
+
   const isHovering = hoverIndex !== null;
-  const initializedRef = useRef(false);
+  const isHoveringRef = useRef(isHovering);
+  const hoverIndexRef = useRef<number | null>(hoverIndex);
+  const isPausedRef = useRef(isPaused);
+  const timelineLenRef = useRef(timeline.length);
 
-  const ITEM_DURATION_MS = 2000;
-
-  // Reset item timer whenever currentIndex changes (only while not hovering)
+  // Keep refs in sync
   useEffect(() => {
-    if (!isHovering) {
-      itemStartRef.current = performance.now();
-    }
-  }, [currentIndex, isHovering]);
-
-  // Initialize position immediately on mount (avoid initial ease-from-zero)
+    isHoveringRef.current = isHovering;
+    hoverIndexRef.current = hoverIndex;
+  }, [isHovering, hoverIndex]);
   useEffect(() => {
-    if (initializedRef.current) return;
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+  useEffect(() => {
+    timelineLenRef.current = timeline.length;
+  }, [timeline.length]);
+
+  // Initialize x position on mount
+  useEffect(() => {
     const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
-    x.set(centerX - currentIndex * THUMB_W - THUMB_W / 2);
-    initializedRef.current = true;
-  }, [currentIndex, x]);
+    x.set(centerX - 0 * THUMB_W - THUMB_W / 2);
+  }, [x]);
 
   useEffect(() => {
     const tick = (now: number) => {
+      const dt = (now - lastTimeRef.current) / 1000;
+      lastTimeRef.current = now;
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
 
-      if (isHovering) {
-        // Ease toward the hovered thumb
-        const target = centerX - currentIndex * THUMB_W - THUMB_W / 2;
-        const cur = x.get();
-        x.set(cur + (target - cur) * 0.25);
-      } else {
-        // Continuous forward motion: target moves at exactly THUMB_W per ITEM_DURATION_MS
-        // No clamp — let it flow past the next boundary; when autoplay advances
-        // currentIndex, itemStart resets and the position continues from where it was.
-        const elapsed = (now - itemStartRef.current) / ITEM_DURATION_MS;
-        const fracIndex = currentIndex + elapsed;
-        const target = centerX - fracIndex * THUMB_W - THUMB_W / 2;
-        x.set(target);
+      if (isHoveringRef.current && hoverIndexRef.current !== null) {
+        // Ease position toward hoverIndex
+        const target = hoverIndexRef.current;
+        positionRef.current += (target - positionRef.current) * 0.25;
+      } else if (!isPausedRef.current) {
+        // Continuous advance
+        positionRef.current += (dt * 1000) / ITEM_DURATION_MS;
+        // Loop back to 0 at end
+        if (positionRef.current > timelineLenRef.current - 1 + 0.5) {
+          positionRef.current = 0;
+        }
+      }
+      // (if paused and not hovering, position stays)
+
+      // Clamp to valid range
+      const pos = Math.max(
+        0,
+        Math.min(timelineLenRef.current - 1, positionRef.current)
+      );
+      positionRef.current = pos;
+
+      // Drive X transform
+      const targetX = centerX - pos * THUMB_W - THUMB_W / 2;
+      x.set(targetX);
+
+      // Emit currentIndex changes to parent
+      const roundedIdx = Math.round(pos);
+      if (roundedIdx !== lastReportedRef.current) {
+        lastReportedRef.current = roundedIdx;
+        onCurrentIndexChange(roundedIdx);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -74,14 +101,39 @@ export default function Filmstrip({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [currentIndex, isHovering, x]);
+  }, [x, onCurrentIndexChange]);
+
+  // External control: wheel to seek
+  useEffect(() => {
+    let cooldown = false;
+    let accum = 0;
+    const THRESHOLD = 80;
+    const onWheel = (e: WheelEvent) => {
+      if (cooldown) return;
+      accum += e.deltaY;
+      if (Math.abs(accum) >= THRESHOLD) {
+        const dir = accum > 0 ? 1 : -1;
+        positionRef.current = Math.max(
+          0,
+          Math.min(timelineLenRef.current - 1, positionRef.current + dir)
+        );
+        accum = 0;
+        cooldown = true;
+        setTimeout(() => {
+          cooldown = false;
+        }, 150);
+      }
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, []);
 
   return (
     <div
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
       style={{ paddingBottom: 20, zIndex: 30 }}
     >
-      {/* Soft shadow under the strip for elevation over the map */}
+      {/* Soft shadow */}
       <div
         className="pointer-events-none"
         style={{
@@ -97,7 +149,7 @@ export default function Filmstrip({
         }}
       />
 
-      {/* Playhead — fixed center vertical line over the strip */}
+      {/* Playhead — fixed vertical line */}
       <div
         className="pointer-events-none"
         style={{
@@ -204,11 +256,23 @@ function FilmstripThumb({
     );
   }
 
-  // Era intro / tldr / social → chip with same width as thumbs
-  const color = "#ffffff";
   const label =
     item.kind === "eraIntro"
-      ? ERAS[item.eraId].label
+      ? item.eraId === "meta"
+        ? "meta"
+        : item.eraId === "free"
+        ? "free ideas"
+        : item.eraId === "snap"
+        ? "snap, inc."
+        : item.eraId === "tribe"
+        ? "a quest called tribe"
+        : item.eraId === "hustle"
+        ? "hustling for fun"
+        : item.eraId === "lost"
+        ? "lost in the game"
+        : item.eraId === "kid"
+        ? "another internet kid"
+        : item.eraId
       : item.kind === "tldr"
       ? "tl;dr"
       : "@ me";
@@ -226,7 +290,7 @@ function FilmstripThumb({
         justifyContent: "center",
         cursor: "none",
         fontSize: "0.7rem",
-        color,
+        color: "#ffffff",
         textTransform: "lowercase",
         letterSpacing: "0.02em",
         textAlign: "center",
