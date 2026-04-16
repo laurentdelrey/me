@@ -7,7 +7,7 @@ import type { TimelineItem } from "@/lib/work/timeline";
 const THUMB_W = 140;
 const THUMB_H = 90;
 const STRIP_PAD = 16;
-const ITEM_DURATION_MS = 2000; // how long one thumb takes to cross the playhead
+const PX_PER_SEC = 70; // 2s per thumb (140px / 2s = 70 px/s)
 
 export default function Filmstrip({
   timeline,
@@ -21,78 +21,51 @@ export default function Filmstrip({
   hoverIndex: number | null;
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
-  isPaused: boolean; // video playing, etc.
+  isPaused: boolean;
   onCurrentIndexChange: (idx: number) => void;
 }) {
-  // The strip owns a continuous `position` in units of thumb-widths.
-  // currentIndex = round(position). The strip advances at a constant rate
-  // unless paused (video) or hovering (locked to hovered thumb).
   const x = useMotionValue(0);
-  const positionRef = useRef(0);
-  const lastReportedRef = useRef(-1);
-  const lastTimeRef = useRef(performance.now());
+  const positionRef = useRef(0); // in pixels — how far the strip has scrolled
   const rafRef = useRef<number | null>(null);
+  const lastReportedRef = useRef(-1);
 
-  const isHovering = hoverIndex !== null;
-  const isHoveringRef = useRef(isHovering);
+  // Keep live values in refs for the RAF loop
   const hoverIndexRef = useRef<number | null>(hoverIndex);
   const isPausedRef = useRef(isPaused);
-  const timelineLenRef = useRef(timeline.length);
-
-  // Keep refs in sync
-  useEffect(() => {
-    isHoveringRef.current = isHovering;
-    hoverIndexRef.current = hoverIndex;
-  }, [isHovering, hoverIndex]);
-  useEffect(() => {
-    isPausedRef.current = isPaused;
-  }, [isPaused]);
-  useEffect(() => {
-    timelineLenRef.current = timeline.length;
-  }, [timeline.length]);
-
-  // Initialize x position on mount
-  useEffect(() => {
-    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
-    x.set(centerX - 0 * THUMB_W - THUMB_W / 2);
-  }, [x]);
+  const lenRef = useRef(timeline.length);
+  useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
 
   useEffect(() => {
+    let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - lastTimeRef.current) / 1000;
-      lastTimeRef.current = now;
+      const dt = (now - last) / 1000;
+      last = now;
+
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
+      const maxPosition = Math.max(0, (lenRef.current - 1) * THUMB_W);
 
-      if (isHoveringRef.current && hoverIndexRef.current !== null) {
-        // Ease position toward hoverIndex
-        const target = hoverIndexRef.current;
-        positionRef.current += (target - positionRef.current) * 0.25;
+      if (hoverIndexRef.current !== null) {
+        // Lock to hovered thumb's center, eased
+        const target = hoverIndexRef.current * THUMB_W;
+        positionRef.current += (target - positionRef.current) * 0.2;
       } else if (!isPausedRef.current) {
-        // Continuous advance
-        positionRef.current += (dt * 1000) / ITEM_DURATION_MS;
-        // Loop back to 0 at end
-        if (positionRef.current > timelineLenRef.current - 1 + 0.5) {
-          positionRef.current = 0;
-        }
+        // Constant forward velocity
+        positionRef.current += PX_PER_SEC * dt;
+        if (positionRef.current > maxPosition) positionRef.current = 0; // loop
       }
-      // (if paused and not hovering, position stays)
+      // If paused (video playing) and not hovering: position stays
 
-      // Clamp to valid range
-      const pos = Math.max(
-        0,
-        Math.min(timelineLenRef.current - 1, positionRef.current)
-      );
-      positionRef.current = pos;
+      // Set strip X: center the current position under the playhead
+      x.set(centerX - positionRef.current - THUMB_W / 2);
 
-      // Drive X transform
-      const targetX = centerX - pos * THUMB_W - THUMB_W / 2;
-      x.set(targetX);
-
-      // Emit currentIndex changes to parent
-      const roundedIdx = Math.round(pos);
-      if (roundedIdx !== lastReportedRef.current) {
-        lastReportedRef.current = roundedIdx;
-        onCurrentIndexChange(roundedIdx);
+      // Report current index (whichever thumb is under the playhead)
+      const idx = Math.round(positionRef.current / THUMB_W);
+      const clamped = Math.max(0, Math.min(lenRef.current - 1, idx));
+      if (clamped !== lastReportedRef.current) {
+        lastReportedRef.current = clamped;
+        onCurrentIndexChange(clamped);
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -103,26 +76,13 @@ export default function Filmstrip({
     };
   }, [x, onCurrentIndexChange]);
 
-  // External control: wheel to seek
+  // Wheel scrub
   useEffect(() => {
-    let cooldown = false;
-    let accum = 0;
-    const THRESHOLD = 80;
     const onWheel = (e: WheelEvent) => {
-      if (cooldown) return;
-      accum += e.deltaY;
-      if (Math.abs(accum) >= THRESHOLD) {
-        const dir = accum > 0 ? 1 : -1;
-        positionRef.current = Math.max(
-          0,
-          Math.min(timelineLenRef.current - 1, positionRef.current + dir)
-        );
-        accum = 0;
-        cooldown = true;
-        setTimeout(() => {
-          cooldown = false;
-        }, 150);
-      }
+      positionRef.current = Math.max(
+        0,
+        Math.min((lenRef.current - 1) * THUMB_W, positionRef.current + e.deltaY * 0.5)
+      );
     };
     window.addEventListener("wheel", onWheel, { passive: true });
     return () => window.removeEventListener("wheel", onWheel);
@@ -149,7 +109,7 @@ export default function Filmstrip({
         }}
       />
 
-      {/* Playhead — fixed vertical line */}
+      {/* Playhead */}
       <div
         className="pointer-events-none"
         style={{
@@ -231,7 +191,6 @@ function FilmstripThumb({
           width: THUMB_W,
           height: THUMB_H,
           overflow: "hidden",
-          position: "relative",
           cursor: "none",
           display: "inline-block",
         }}
