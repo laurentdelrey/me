@@ -4,9 +4,10 @@ import { useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
-// Hero sits between the top (below header) and the filmstrip
-const TOP_MARGIN = 120; // clear the header
-const BOTTOM_MARGIN = 180; // clear the filmstrip + gradient
+// Hero sits between the top (below header) and the filmstrip.
+// These match the actual UI: header ~70px, filmstrip area ~160px.
+const TOP_MARGIN = 90;
+const BOTTOM_MARGIN = 170;
 
 export default function HeroMedia({
   item,
@@ -30,8 +31,8 @@ export default function HeroMedia({
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
-          maxWidth: "min(50vw, 720px)",
-          maxHeight: "min(60vh, 600px)",
+          maxWidth: "min(42vw, 520px)",
+          maxHeight: "min(46vh, 440px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
