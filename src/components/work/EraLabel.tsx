@@ -10,7 +10,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
       className="fixed"
       style={{
         left: 32,
-        bottom: 120,
+        bottom: 175,
         zIndex: 40,
         pointerEvents: "none",
       }}
@@ -29,7 +29,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
               style={{
                 fontSize: "0.8rem",
                 fontWeight: 500,
-                color: era.color,
+                color: "#ffffff",
               }}
             >
               {era.label}

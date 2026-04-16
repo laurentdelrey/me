@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { useEffect } from "react";
+import { motion, useMotionValue } from "motion/react";
+import { useEffect, useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
@@ -22,22 +22,51 @@ export default function Filmstrip({
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
 }) {
-  // The strip translates so the active thumb is always under the center playhead.
-  // translateX = (centerOfViewport) - (index * THUMB_W + THUMB_W / 2)
-  // We use a motion value so it animates smoothly.
-  const targetX = useMotionValue(0);
-  const animatedX = useSpring(targetX, { stiffness: 120, damping: 28, mass: 0.5 });
+  // The strip continuously drifts toward the target position. Each frame we
+  // nudge the current X toward the target (determined by currentIndex). If
+  // we're close to the target, the strip is effectively "still sliding" but
+  // only by a tiny amount — which creates the always-moving playhead feel.
+  const x = useMotionValue(0);
+  const rafRef = useRef<number | null>(null);
+  const targetRef = useRef(0);
 
   useEffect(() => {
-    const update = () => {
+    const computeTarget = () => {
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
-      const x = centerX - (currentIndex * THUMB_W + THUMB_W / 2);
-      targetX.set(x);
+      targetRef.current = centerX - (currentIndex * THUMB_W + THUMB_W / 2);
     };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [currentIndex, targetX]);
+    computeTarget();
+    window.addEventListener("resize", computeTarget);
+    return () => window.removeEventListener("resize", computeTarget);
+  }, [currentIndex]);
+
+  // Continuous drift loop — always moving toward target, always tiny forward drift
+  useEffect(() => {
+    const FORWARD_DRIFT_PX_PER_SEC = -8; // negative = strip drifts left = time advances
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      const current = x.get();
+      const target = targetRef.current;
+      const diff = target - current;
+      // Pull toward target (spring-like)
+      const pullSpeed = diff * 4; // pixels per second
+      // Plus continuous slow drift so the strip is always moving even at target
+      const next = current + (pullSpeed + FORWARD_DRIFT_PX_PER_SEC) * dt;
+      // Clamp so drift doesn't run away past target when close
+      if (Math.abs(diff) < 0.5 && Math.sign(FORWARD_DRIFT_PX_PER_SEC) === Math.sign(diff)) {
+        x.set(target);
+      } else {
+        x.set(next);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [x]);
 
   return (
     <div
@@ -92,7 +121,7 @@ export default function Filmstrip({
           style={{
             display: "flex",
             gap: 0,
-            x: animatedX,
+            x,
             willChange: "transform",
           }}
         >
@@ -168,7 +197,7 @@ function FilmstripThumb({
   }
 
   // Era intro / tldr / social → chip with same width as thumbs
-  const color = item.kind === "eraIntro" ? ERAS[item.eraId].color : "#ffffff";
+  const color = "#ffffff";
   const label =
     item.kind === "eraIntro"
       ? ERAS[item.eraId].label

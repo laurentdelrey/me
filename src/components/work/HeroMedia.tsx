@@ -4,6 +4,11 @@ import { useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
+// Hero sits between the top (below header) and the filmstrip
+// Top margin ~80px (header), bottom margin ~160px (filmstrip + padding)
+const TOP_MARGIN = 80;
+const BOTTOM_MARGIN = 160;
+
 export default function HeroMedia({
   item,
   onVideoEnded,
@@ -13,15 +18,19 @@ export default function HeroMedia({
 }) {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center pointer-events-none"
-      style={{ zIndex: 5 }}
+      className="fixed left-0 right-0 flex items-center justify-center pointer-events-none"
+      style={{
+        top: TOP_MARGIN,
+        bottom: BOTTOM_MARGIN,
+        zIndex: 5,
+      }}
     >
       <div
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
           maxWidth: "56vw",
-          maxHeight: "70vh",
+          maxHeight: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -70,7 +79,7 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void) {
             fontSize: "0.8rem",
             fontWeight: 500,
             marginBottom: "16px",
-            color: era.color,
+            color: "#ffffff",
           }}
         >
           {era.label} {era.years && <span style={{ color: "#999999", marginLeft: "12px" }}>{era.years}</span>}
@@ -123,7 +132,7 @@ function MediaCard({
 
   const commonStyle: React.CSSProperties = {
     maxWidth: "56vw",
-    maxHeight: "70vh",
+    maxHeight: "100%",
     width: "auto",
     height: "auto",
     objectFit: "contain",
