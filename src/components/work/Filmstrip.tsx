@@ -24,23 +24,35 @@ export default function Filmstrip({
   isPaused: boolean;
   onCurrentIndexChange: (idx: number) => void;
 }) {
-  const x = useMotionValue(0);
+  // Start the strip with the first thumb under the playhead (no initial flash)
+  const initialX =
+    typeof window !== "undefined" ? window.innerWidth / 2 - THUMB_W / 2 : 0;
+  const x = useMotionValue(initialX);
   const positionRef = useRef(0); // in pixels — how far the strip has scrolled
   const rafRef = useRef<number | null>(null);
-  const lastReportedRef = useRef(-1);
+  const lastReportedRef = useRef(0);
 
   // Keep live values in refs for the RAF loop
   const hoverIndexRef = useRef<number | null>(hoverIndex);
   const isPausedRef = useRef(isPaused);
   const lenRef = useRef(timeline.length);
   useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
-  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
   useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
+
+  // When pausing (e.g., video plays), snap position to the current thumb's
+  // center so the playhead is aligned with the paused video.
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    if (isPaused) {
+      positionRef.current = lastReportedRef.current * THUMB_W;
+    }
+  }, [isPaused]);
 
   useEffect(() => {
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
+      // Clamp dt to guard against tab-backgrounding jumps
+      const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
