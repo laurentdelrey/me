@@ -22,51 +22,44 @@ export default function Filmstrip({
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
 }) {
-  // The strip continuously drifts toward the target position. Each frame we
-  // nudge the current X toward the target (determined by currentIndex). If
-  // we're close to the target, the strip is effectively "still sliding" but
-  // only by a tiny amount — which creates the always-moving playhead feel.
+  // The strip is a continuously-moving film reel. Position is driven by
+  // (currentIndex + progressThroughCurrentItem), so it's always sliding —
+  // it takes ITEM_DURATION_MS for one thumb to pass under the playhead.
+  // When autoplay advances currentIndex, the motion continues seamlessly.
+  // When hovering, motion pauses and locks to the hovered thumb.
   const x = useMotionValue(0);
   const rafRef = useRef<number | null>(null);
-  const targetRef = useRef(0);
+  const itemStartRef = useRef(performance.now());
+  const isHovering = hoverIndex !== null;
+
+  const ITEM_DURATION_MS = 2000;
+
+  // Reset item-start timer whenever the index changes (unless hovering)
+  useEffect(() => {
+    if (!isHovering) {
+      itemStartRef.current = performance.now();
+    }
+  }, [currentIndex, isHovering]);
 
   useEffect(() => {
-    const computeTarget = () => {
-      const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
-      targetRef.current = centerX - (currentIndex * THUMB_W + THUMB_W / 2);
-    };
-    computeTarget();
-    window.addEventListener("resize", computeTarget);
-    return () => window.removeEventListener("resize", computeTarget);
-  }, [currentIndex]);
-
-  // Continuous drift loop — always moving toward target, always tiny forward drift
-  useEffect(() => {
-    const FORWARD_DRIFT_PX_PER_SEC = -8; // negative = strip drifts left = time advances
-    let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      const current = x.get();
-      const target = targetRef.current;
-      const diff = target - current;
-      // Pull toward target (spring-like)
-      const pullSpeed = diff * 4; // pixels per second
-      // Plus continuous slow drift so the strip is always moving even at target
-      const next = current + (pullSpeed + FORWARD_DRIFT_PX_PER_SEC) * dt;
-      // Clamp so drift doesn't run away past target when close
-      if (Math.abs(diff) < 0.5 && Math.sign(FORWARD_DRIFT_PX_PER_SEC) === Math.sign(diff)) {
-        x.set(target);
-      } else {
-        x.set(next);
-      }
+      const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
+      const elapsed = Math.min(1, (now - itemStartRef.current) / ITEM_DURATION_MS);
+      const fracIndex = isHovering ? currentIndex : currentIndex + elapsed;
+      const target = centerX - fracIndex * THUMB_W - THUMB_W / 2;
+
+      // Smooth toward target each frame (easing)
+      const cur = x.get();
+      const next = cur + (target - cur) * 0.2;
+      x.set(next);
+
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [x]);
+  }, [currentIndex, isHovering, x]);
 
   return (
     <div
