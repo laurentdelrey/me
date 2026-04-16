@@ -7,51 +7,39 @@ import type { TimelineItem } from "@/lib/work/timeline";
 const THUMB_W = 140;
 const THUMB_H = 90;
 const STRIP_PAD = 16;
-const PX_PER_SEC = 70; // 2s per thumb (140px / 2s = 70 px/s)
+const DEFAULT_DURATION_MS = 2000; // per image / era card
+const MAX_VIDEO_DURATION_MS = 15000; // cap so no single clip takes too long
 
 export default function Filmstrip({
   timeline,
   hoverIndex,
   onHoverItem,
   onLeave,
-  isPaused,
   onCurrentIndexChange,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
-  isPaused: boolean;
   onCurrentIndexChange: (idx: number) => void;
 }) {
-  // Start the strip with the first thumb under the playhead (no initial flash)
   const initialX =
     typeof window !== "undefined" ? window.innerWidth / 2 - THUMB_W / 2 : 0;
   const x = useMotionValue(initialX);
-  const positionRef = useRef(0); // in pixels — how far the strip has scrolled
+  const positionRef = useRef(0);
   const rafRef = useRef<number | null>(null);
   const lastReportedRef = useRef(0);
 
-  // Keep live values in refs for the RAF loop
   const hoverIndexRef = useRef<number | null>(hoverIndex);
-  const isPausedRef = useRef(isPaused);
   const lenRef = useRef(timeline.length);
+  const timelineRef = useRef(timeline);
   useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
   useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
-
-  // When pausing (e.g., video plays), snap position to the current thumb's
-  // center so the playhead is aligned with the paused video.
-  useEffect(() => {
-    isPausedRef.current = isPaused;
-    if (isPaused) {
-      positionRef.current = lastReportedRef.current * THUMB_W;
-    }
-  }, [isPaused]);
+  useEffect(() => { timelineRef.current = timeline; }, [timeline]);
 
   useEffect(() => {
     let last = performance.now();
     const tick = (now: number) => {
-      // Clamp dt to guard against tab-backgrounding jumps
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
@@ -62,22 +50,36 @@ export default function Filmstrip({
         // Lock to hovered thumb's center, eased
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.2;
-      } else if (!isPausedRef.current) {
-        // Constant forward velocity
-        positionRef.current += PX_PER_SEC * dt;
-        if (positionRef.current > maxPosition) positionRef.current = 0; // loop
+      } else {
+        // Variable velocity: each item has a duration. The playhead traverses
+        // THUMB_W pixels over that duration. Videos are slower; images go 2s each.
+        const idx = Math.max(
+          0,
+          Math.min(lenRef.current - 1, Math.round(positionRef.current / THUMB_W))
+        );
+        const item = timelineRef.current[idx];
+        let durationMs = DEFAULT_DURATION_MS;
+        if (item && item.kind === "media") {
+          const t = item.media.type;
+          if (t === "video" || t === "animated_gif") {
+            const d = item.media.durationMs ?? DEFAULT_DURATION_MS;
+            durationMs = Math.max(DEFAULT_DURATION_MS, Math.min(MAX_VIDEO_DURATION_MS, d));
+          }
+        }
+        const pxPerSec = THUMB_W / (durationMs / 1000);
+        positionRef.current += pxPerSec * dt;
+        if (positionRef.current > maxPosition) positionRef.current = 0;
       }
-      // If paused (video playing) and not hovering: position stays
 
-      // Set strip X: center the current position under the playhead
       x.set(centerX - positionRef.current - THUMB_W / 2);
 
-      // Report current index (whichever thumb is under the playhead)
-      const idx = Math.round(positionRef.current / THUMB_W);
-      const clamped = Math.max(0, Math.min(lenRef.current - 1, idx));
-      if (clamped !== lastReportedRef.current) {
-        lastReportedRef.current = clamped;
-        onCurrentIndexChange(clamped);
+      const reportedIdx = Math.max(
+        0,
+        Math.min(lenRef.current - 1, Math.round(positionRef.current / THUMB_W))
+      );
+      if (reportedIdx !== lastReportedRef.current) {
+        lastReportedRef.current = reportedIdx;
+        onCurrentIndexChange(reportedIdx);
       }
 
       rafRef.current = requestAnimationFrame(tick);

@@ -23,10 +23,9 @@ export default function WorkPage() {
 
   const timeline = useMemo(() => buildTimeline(hiddenIds), [hiddenIds]);
 
-  // Filmstrip drives currentIndex. Hover and video-playing are inputs to it.
+  // Filmstrip drives currentIndex. Hover is the only override.
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const [videoPlaying, setVideoPlaying] = useState(false);
 
   const displayIndex = hoverIndex ?? currentIndex;
   const currentItem = timeline[displayIndex];
@@ -126,8 +125,7 @@ export default function WorkPage() {
         {currentItem && (
           <HeroMedia
             item={currentItem}
-            onVideoEnded={() => setVideoPlaying(false)}
-            onVideoStarted={() => setVideoPlaying(true)}
+            onVideoEnded={() => {}}
           />
         )}
 
@@ -136,7 +134,6 @@ export default function WorkPage() {
           hoverIndex={hoverIndex}
           onHoverItem={setHoverIndex}
           onLeave={() => setHoverIndex(null)}
-          isPaused={videoPlaying && hoverIndex === null}
           onCurrentIndexChange={setCurrentIndex}
         />
       </main>
