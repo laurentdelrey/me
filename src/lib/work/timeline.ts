@@ -68,45 +68,37 @@ export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
     }
   }
 
-  // Sort oldest → newest by date (stable), tiebreak by tweet id asc
+  // Sort newest → oldest (reading left→right on filmstrip means newest starts on left)
   mediaItems.sort((a, b) => {
-    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-    return a.tweetId < b.tweetId ? -1 : 1;
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return a.tweetId < b.tweetId ? 1 : -1;
   });
 
-  // Insert era intro items at the start of each era (including empty eras)
+  // Build timeline: tl;dr → newest era → its media → next era boundary → media → ... → kid → social
+  // Era order (newest → oldest): meta, free, snap, tribe, hustle, lost, kid
+  const newestToOldest = [...ERA_ORDER].reverse(); // meta, free, snap, tribe, hustle, lost, kid
+
   const result: TimelineItem[] = [];
-  const seenEras = new Set<EraId>();
 
-  // tldr at the very start
-  result.push({ kind: "tldr", id: "tldr", date: "2005-01-01" });
+  // tldr intro at the start
+  result.push({ kind: "tldr", id: "tldr", date: "2026-04-10" });
 
-  // Walk era order (oldest → newest). For each era, insert an intro,
-  // then append all media items belonging to that era.
-  for (const eraId of ERA_ORDER) {
+  for (const eraId of newestToOldest) {
     const era = ERAS[eraId];
-    // Insert era intro item
+    // Era intro marks the BOUNDARY into this era
     result.push({
       kind: "eraIntro",
       id: `era-${eraId}`,
       eraId,
-      date: `${Math.floor(era.startYear)}-${String(Math.max(1, Math.round((era.startYear % 1) * 12 + 1))).padStart(2, "0")}-01`,
+      date: `${Math.floor(era.endYear === Infinity ? 2026 : era.endYear)}-01-01`,
     });
-    seenEras.add(eraId);
-
-    // Append all media items for this era, in date order
+    // All media belonging to this era, already sorted newest→oldest
     const eraMedia = mediaItems.filter((m) => m.eraId === eraId);
     result.push(...eraMedia);
   }
 
-  // Any media items whose era wasn't in ERA_ORDER — unlikely but safe
-  const orphaned = mediaItems.filter((m) => !seenEras.has(m.eraId));
-  if (orphaned.length > 0) {
-    result.push(...orphaned);
-  }
-
-  // social at the very end
-  result.push({ kind: "social", id: "social", date: "2026-04-10" });
+  // social/contact card at the very end
+  result.push({ kind: "social", id: "social", date: "2005-01-01" });
 
   return result;
 }

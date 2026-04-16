@@ -4,10 +4,10 @@ import { useEffect, useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
-const THUMB_W = 96;
-const THUMB_H = 64;
-const THUMB_GAP = 4;
-const ERA_CHIP_W = 80;
+const THUMB_W = 140;
+const THUMB_H = 90;
+const THUMB_GAP = 0;
+const ERA_CHIP_W = 110;
 
 export default function Filmstrip({
   timeline,
@@ -42,6 +42,38 @@ export default function Filmstrip({
       className="fixed left-0 right-0 bottom-0 z-30 pointer-events-none"
       style={{ paddingBottom: 20 }}
     >
+      {/* Playhead — fixed center line over the strip */}
+      <div
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: 20,
+          transform: "translateX(-50%)",
+          width: 2,
+          height: THUMB_H + 20,
+          background: "#ffffff",
+          zIndex: 2,
+          boxShadow: "0 0 8px rgba(255,255,255,0.5)",
+        }}
+      />
+      {/* Playhead triangle marker above the strip */}
+      <div
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: 20 + THUMB_H + 8,
+          transform: "translateX(-50%)",
+          width: 0,
+          height: 0,
+          borderLeft: "6px solid transparent",
+          borderRight: "6px solid transparent",
+          borderTop: "6px solid #ffffff",
+          zIndex: 2,
+        }}
+      />
+
       <div
         ref={stripRef}
         className="hide-scrollbar"
@@ -51,7 +83,7 @@ export default function Filmstrip({
           overflowX: "auto",
           overflowY: "hidden",
           whiteSpace: "nowrap",
-          padding: `8px 50vw`,
+          padding: `10px 50vw`,
           display: "flex",
           gap: THUMB_GAP,
           alignItems: "center",
@@ -117,9 +149,8 @@ function FilmstripThumb({
           overflow: "hidden",
           position: "relative",
           cursor: "none",
-          opacity: isActive || isHovered ? 1 : 0.55,
-          outline: isActive ? "1.5px solid rgba(255,255,255,0.9)" : isHovered ? "1.5px solid rgba(255,255,255,0.45)" : "none",
-          transition: "opacity 150ms ease, outline-color 150ms ease",
+          opacity: isActive || isHovered ? 1 : 0.5,
+          transition: "opacity 150ms ease",
           display: "inline-block",
         }}
       >
@@ -165,9 +196,8 @@ function FilmstripThumb({
         alignItems: "center",
         justifyContent: "center",
         cursor: "none",
-        opacity: isActive || isHovered ? 1 : 0.55,
-        outline: isActive ? "1.5px solid rgba(255,255,255,0.9)" : isHovered ? "1.5px solid rgba(255,255,255,0.45)" : "1px dashed rgba(255,255,255,0.15)",
-        transition: "opacity 150ms ease, outline-color 150ms ease",
+        opacity: isActive || isHovered ? 1 : 0.5,
+        transition: "opacity 150ms ease",
         fontSize: "0.7rem",
         color,
         textTransform: "lowercase",
