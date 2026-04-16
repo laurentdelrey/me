@@ -22,36 +22,51 @@ export default function Filmstrip({
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
 }) {
-  // The strip is a continuously-moving film reel. Position is driven by
-  // (currentIndex + progressThroughCurrentItem), so it's always sliding —
-  // it takes ITEM_DURATION_MS for one thumb to pass under the playhead.
-  // When autoplay advances currentIndex, the motion continues seamlessly.
-  // When hovering, motion pauses and locks to the hovered thumb.
+  // The strip is a continuously-moving film reel.
+  // Position = currentIndex + (time-since-item-start / ITEM_DURATION) thumbs.
+  // When autoplay advances, the transition is seamless. When hovering,
+  // motion pauses and eases toward the hovered thumb.
   const x = useMotionValue(0);
   const rafRef = useRef<number | null>(null);
   const itemStartRef = useRef(performance.now());
   const isHovering = hoverIndex !== null;
+  const initializedRef = useRef(false);
 
   const ITEM_DURATION_MS = 2000;
 
-  // Reset item-start timer whenever the index changes (unless hovering)
+  // Reset item timer whenever currentIndex changes (only while not hovering)
   useEffect(() => {
     if (!isHovering) {
       itemStartRef.current = performance.now();
     }
   }, [currentIndex, isHovering]);
 
+  // Initialize position immediately on mount (avoid initial ease-from-zero)
+  useEffect(() => {
+    if (initializedRef.current) return;
+    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
+    x.set(centerX - currentIndex * THUMB_W - THUMB_W / 2);
+    initializedRef.current = true;
+  }, [currentIndex, x]);
+
   useEffect(() => {
     const tick = (now: number) => {
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
-      const elapsed = Math.min(1, (now - itemStartRef.current) / ITEM_DURATION_MS);
-      const fracIndex = isHovering ? currentIndex : currentIndex + elapsed;
-      const target = centerX - fracIndex * THUMB_W - THUMB_W / 2;
 
-      // Smooth toward target each frame (easing)
-      const cur = x.get();
-      const next = cur + (target - cur) * 0.2;
-      x.set(next);
+      if (isHovering) {
+        // Ease toward the hovered thumb
+        const target = centerX - currentIndex * THUMB_W - THUMB_W / 2;
+        const cur = x.get();
+        x.set(cur + (target - cur) * 0.25);
+      } else {
+        // Continuous forward motion: target moves at exactly THUMB_W per ITEM_DURATION_MS
+        // No clamp — let it flow past the next boundary; when autoplay advances
+        // currentIndex, itemStart resets and the position continues from where it was.
+        const elapsed = (now - itemStartRef.current) / ITEM_DURATION_MS;
+        const fracIndex = currentIndex + elapsed;
+        const target = centerX - fracIndex * THUMB_W - THUMB_W / 2;
+        x.set(target);
+      }
 
       rafRef.current = requestAnimationFrame(tick);
     };
