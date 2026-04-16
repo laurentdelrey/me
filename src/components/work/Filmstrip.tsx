@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
 const THUMB_W = 140;
-const THUMB_H = 90;
+const THUMB_H = 140;
 const STRIP_PAD = 16;
 const IMAGE_DURATION_MS = 2000; // per image
 const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
@@ -284,7 +284,9 @@ function FilmstripThumb({
         letterSpacing: "0.02em",
         textAlign: "center",
         padding: "0 6px",
-        background: "rgba(0,0,0,0.3)",
+        background: "#999999",
+        borderLeft: "1px solid #ffffff",
+        borderRight: "1px solid #ffffff",
       }}
     >
       {label}

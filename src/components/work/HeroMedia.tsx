@@ -7,7 +7,7 @@ import { ERAS } from "@/lib/work/eras";
 // Hero sits between the top (below header) and the filmstrip.
 // These match the actual UI: header ~70px, filmstrip area ~160px.
 const TOP_MARGIN = 90;
-const BOTTOM_MARGIN = 170;
+const BOTTOM_MARGIN = 220;
 
 export default function HeroMedia({
   item,
@@ -32,7 +32,7 @@ export default function HeroMedia({
         className="pointer-events-auto"
         style={{
           maxWidth: "min(42vw, 520px)",
-          maxHeight: "min(46vh, 440px)",
+          maxHeight: "min(60vh, 560px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
