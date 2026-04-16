@@ -5,9 +5,8 @@ import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
 // Hero sits between the top (below header) and the filmstrip
-// Top margin ~80px (header), bottom margin ~160px (filmstrip + padding)
-const TOP_MARGIN = 80;
-const BOTTOM_MARGIN = 160;
+const TOP_MARGIN = 120; // clear the header
+const BOTTOM_MARGIN = 180; // clear the filmstrip + gradient
 
 export default function HeroMedia({
   item,

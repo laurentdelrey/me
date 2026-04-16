@@ -7,8 +7,9 @@ import type { TimelineItem } from "@/lib/work/timeline";
 const THUMB_W = 140;
 const THUMB_H = 90;
 const STRIP_PAD = 16;
-const DEFAULT_DURATION_MS = 2000; // per image / era card
-const MAX_VIDEO_DURATION_MS = 15000; // cap so no single clip takes too long
+const IMAGE_DURATION_MS = 2000; // per image
+const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
+const MAX_VIDEO_DURATION_MS = 15000;
 
 export default function Filmstrip({
   timeline,
@@ -25,10 +26,13 @@ export default function Filmstrip({
   onCurrentIndexChange: (idx: number) => void;
   playing?: boolean;
 }) {
+  // Start with the first thumb's LEFT edge at the playhead so the full tile
+  // has time to travel under the playhead, not starting centered.
+  const START_POSITION = -THUMB_W / 2;
   const initialX =
-    typeof window !== "undefined" ? window.innerWidth / 2 - THUMB_W / 2 : 0;
+    typeof window !== "undefined" ? window.innerWidth / 2 - START_POSITION - THUMB_W / 2 : 0;
   const x = useMotionValue(initialX);
-  const positionRef = useRef(0);
+  const positionRef = useRef(START_POSITION);
   const rafRef = useRef<number | null>(null);
   const lastReportedRef = useRef(0);
 
@@ -55,8 +59,8 @@ export default function Filmstrip({
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.2;
       } else if (!playingRef.current) {
-        // Intro hasn't finished yet — stay at position 0
-        positionRef.current = 0;
+        // Intro hasn't finished yet — stay at start position
+        positionRef.current = START_POSITION;
       } else {
         // Variable velocity: each item has a duration. The playhead traverses
         // THUMB_W pixels over that duration. Videos are slower; images go 2s each.
@@ -65,12 +69,17 @@ export default function Filmstrip({
           Math.min(lenRef.current - 1, Math.round(positionRef.current / THUMB_W))
         );
         const item = timelineRef.current[idx];
-        let durationMs = DEFAULT_DURATION_MS;
-        if (item && item.kind === "media") {
-          const t = item.media.type;
-          if (t === "video" || t === "animated_gif") {
-            const d = item.media.durationMs ?? DEFAULT_DURATION_MS;
-            durationMs = Math.max(DEFAULT_DURATION_MS, Math.min(MAX_VIDEO_DURATION_MS, d));
+        let durationMs = IMAGE_DURATION_MS;
+        if (item) {
+          if (item.kind === "media") {
+            const t = item.media.type;
+            if (t === "video" || t === "animated_gif") {
+              const d = item.media.durationMs ?? IMAGE_DURATION_MS;
+              durationMs = Math.max(IMAGE_DURATION_MS, Math.min(MAX_VIDEO_DURATION_MS, d));
+            }
+          } else {
+            // tldr, eraIntro, social — all text cards, give them more time
+            durationMs = CARD_DURATION_MS;
           }
         }
         const pxPerSec = THUMB_W / (durationMs / 1000);
@@ -101,7 +110,7 @@ export default function Filmstrip({
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       positionRef.current = Math.max(
-        0,
+        START_POSITION,
         Math.min((lenRef.current - 1) * THUMB_W, positionRef.current + e.deltaY * 0.5)
       );
     };
