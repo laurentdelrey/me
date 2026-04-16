@@ -30,8 +30,8 @@ export default function HeroMedia({
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
-          maxWidth: "56vw",
-          maxHeight: "100%",
+          maxWidth: "min(50vw, 720px)",
+          maxHeight: "min(60vh, 600px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -134,7 +134,7 @@ function MediaCard({
   const isVideo = m.type === "video" || m.type === "animated_gif";
 
   const commonStyle: React.CSSProperties = {
-    maxWidth: "56vw",
+    maxWidth: "100%",
     maxHeight: "100%",
     width: "auto",
     height: "auto",
