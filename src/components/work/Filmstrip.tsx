@@ -16,12 +16,14 @@ export default function Filmstrip({
   onHoverItem,
   onLeave,
   onCurrentIndexChange,
+  playing = true,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
   onCurrentIndexChange: (idx: number) => void;
+  playing?: boolean;
 }) {
   const initialX =
     typeof window !== "undefined" ? window.innerWidth / 2 - THUMB_W / 2 : 0;
@@ -33,9 +35,11 @@ export default function Filmstrip({
   const hoverIndexRef = useRef<number | null>(hoverIndex);
   const lenRef = useRef(timeline.length);
   const timelineRef = useRef(timeline);
+  const playingRef = useRef(playing);
   useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
   useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
   useEffect(() => { timelineRef.current = timeline; }, [timeline]);
+  useEffect(() => { playingRef.current = playing; }, [playing]);
 
   useEffect(() => {
     let last = performance.now();
@@ -50,6 +54,9 @@ export default function Filmstrip({
         // Lock to hovered thumb's center, eased
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.2;
+      } else if (!playingRef.current) {
+        // Intro hasn't finished yet — stay at position 0
+        positionRef.current = 0;
       } else {
         // Variable velocity: each item has a duration. The playhead traverses
         // THUMB_W pixels over that duration. Videos are slower; images go 2s each.

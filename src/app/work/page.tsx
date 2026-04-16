@@ -26,6 +26,14 @@ export default function WorkPage() {
   // Filmstrip drives currentIndex. Hover is the only override.
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [playingStarted, setPlayingStarted] = useState(false);
+
+  // Start the playhead only after the map has loaded and the fade-in finishes
+  useEffect(() => {
+    if (!mapLoaded) return;
+    const t = setTimeout(() => setPlayingStarted(true), 1200);
+    return () => clearTimeout(t);
+  }, [mapLoaded]);
 
   const displayIndex = hoverIndex ?? currentIndex;
   const currentItem = timeline[displayIndex];
@@ -135,6 +143,7 @@ export default function WorkPage() {
           onHoverItem={setHoverIndex}
           onLeave={() => setHoverIndex(null)}
           onCurrentIndexChange={setCurrentIndex}
+          playing={playingStarted}
         />
       </main>
     </>
