@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { useEffect } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
 const THUMB_W = 140;
 const THUMB_H = 90;
-const THUMB_GAP = 0;
-const ERA_CHIP_W = 110;
+const STRIP_PAD = 16;
 
 export default function Filmstrip({
   timeline,
@@ -22,27 +22,45 @@ export default function Filmstrip({
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
 }) {
-  const stripRef = useRef<HTMLDivElement>(null);
-  const thumbsRef = useRef<Array<HTMLDivElement | null>>([]);
+  // The strip translates so the active thumb is always under the center playhead.
+  // translateX = (centerOfViewport) - (index * THUMB_W + THUMB_W / 2)
+  // We use a motion value so it animates smoothly.
+  const targetX = useMotionValue(0);
+  const animatedX = useSpring(targetX, { stiffness: 120, damping: 28, mass: 0.5 });
 
-  // Center the current thumb
   useEffect(() => {
-    const el = thumbsRef.current[currentIndex];
-    const strip = stripRef.current;
-    if (!el || !strip) return;
-    const stripRect = strip.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    const targetScrollLeft =
-      strip.scrollLeft + (elRect.left - stripRect.left) - stripRect.width / 2 + elRect.width / 2;
-    strip.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
-  }, [currentIndex]);
+    const update = () => {
+      const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
+      const x = centerX - (currentIndex * THUMB_W + THUMB_W / 2);
+      targetX.set(x);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [currentIndex, targetX]);
 
   return (
     <div
-      className="fixed left-0 right-0 bottom-0 z-30 pointer-events-none"
-      style={{ paddingBottom: 20 }}
+      className="fixed left-0 right-0 bottom-0 pointer-events-none"
+      style={{ paddingBottom: 20, zIndex: 30 }}
     >
-      {/* Playhead — fixed center line over the strip */}
+      {/* Soft shadow under the strip for elevation over the map */}
+      <div
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 8,
+          height: THUMB_H + 40,
+          background:
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 70%)",
+          filter: "blur(10px)",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Playhead — fixed center vertical line over the strip */}
       <div
         className="pointer-events-none"
         style={{
@@ -54,55 +72,39 @@ export default function Filmstrip({
           height: THUMB_H + 20,
           background: "#ffffff",
           zIndex: 2,
-          boxShadow: "0 0 8px rgba(255,255,255,0.5)",
-        }}
-      />
-      {/* Playhead triangle marker above the strip */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: 20 + THUMB_H + 8,
-          transform: "translateX(-50%)",
-          width: 0,
-          height: 0,
-          borderLeft: "6px solid transparent",
-          borderRight: "6px solid transparent",
-          borderTop: "6px solid #ffffff",
-          zIndex: 2,
+          boxShadow: "0 0 10px rgba(255,255,255,0.6)",
         }}
       />
 
       <div
-        ref={stripRef}
         className="hide-scrollbar"
         onMouseLeave={onLeave}
         style={{
           pointerEvents: "auto",
-          overflowX: "auto",
-          overflowY: "hidden",
-          whiteSpace: "nowrap",
-          padding: `10px 50vw`,
-          display: "flex",
-          gap: THUMB_GAP,
-          alignItems: "center",
-          scrollBehavior: "auto",
+          overflow: "hidden",
+          width: "100%",
+          padding: `${STRIP_PAD}px 0`,
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        {timeline.map((item, i) => (
-          <FilmstripThumb
-            key={keyForItem(item)}
-            item={item}
-            index={i}
-            isActive={i === currentIndex}
-            isHovered={i === hoverIndex}
-            onHover={onHoverItem}
-            thumbRef={(el) => {
-              thumbsRef.current[i] = el;
-            }}
-          />
-        ))}
+        <motion.div
+          style={{
+            display: "flex",
+            gap: 0,
+            x: animatedX,
+            willChange: "transform",
+          }}
+        >
+          {timeline.map((item, i) => (
+            <FilmstripThumb
+              key={keyForItem(item)}
+              item={item}
+              index={i}
+              onHover={onHoverItem}
+            />
+          ))}
+        </motion.div>
       </div>
     </div>
   );
@@ -116,17 +118,11 @@ function keyForItem(item: TimelineItem): string {
 function FilmstripThumb({
   item,
   index,
-  isActive,
-  isHovered,
   onHover,
-  thumbRef,
 }: {
   item: TimelineItem;
   index: number;
-  isActive: boolean;
-  isHovered: boolean;
   onHover: (idx: number) => void;
-  thumbRef: (el: HTMLDivElement | null) => void;
 }) {
   const handleMouseEnter = () => onHover(index);
 
@@ -136,7 +132,6 @@ function FilmstripThumb({
     const isVideo = m.type === "video" || m.type === "animated_gif";
     return (
       <a
-        ref={thumbRef as any}
         href={item.url}
         target="_blank"
         rel="noopener noreferrer"
@@ -149,8 +144,6 @@ function FilmstripThumb({
           overflow: "hidden",
           position: "relative",
           cursor: "none",
-          opacity: isActive || isHovered ? 1 : 0.5,
-          transition: "opacity 150ms ease",
           display: "inline-block",
         }}
       >
@@ -174,7 +167,7 @@ function FilmstripThumb({
     );
   }
 
-  // Era intro / tldr / social → small chip
+  // Era intro / tldr / social → chip with same width as thumbs
   const color = item.kind === "eraIntro" ? ERAS[item.eraId].color : "#ffffff";
   const label =
     item.kind === "eraIntro"
@@ -185,25 +178,23 @@ function FilmstripThumb({
 
   return (
     <div
-      ref={thumbRef}
       onMouseEnter={handleMouseEnter}
       data-no-cursor-expand
       style={{
         flexShrink: 0,
-        width: ERA_CHIP_W,
+        width: THUMB_W,
         height: THUMB_H,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: "none",
-        opacity: isActive || isHovered ? 1 : 0.5,
-        transition: "opacity 150ms ease",
         fontSize: "0.7rem",
         color,
         textTransform: "lowercase",
         letterSpacing: "0.02em",
         textAlign: "center",
         padding: "0 6px",
+        background: "rgba(0,0,0,0.3)",
       }}
     >
       {label}

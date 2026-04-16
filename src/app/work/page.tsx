@@ -46,6 +46,32 @@ export default function WorkPage() {
     };
   }, []);
 
+  // Scroll/wheel → advance playhead (throttled)
+  useEffect(() => {
+    let accum = 0;
+    const THRESHOLD = 80;
+    let cooldown = false;
+    const onWheel = (e: WheelEvent) => {
+      if (cooldown) return;
+      accum += e.deltaY;
+      if (Math.abs(accum) >= THRESHOLD) {
+        const direction = accum > 0 ? 1 : -1;
+        const next = Math.max(
+          0,
+          Math.min(timeline.length - 1, autoplay.baseIndex + direction)
+        );
+        autoplay.jumpTo(next);
+        accum = 0;
+        cooldown = true;
+        setTimeout(() => {
+          cooldown = false;
+        }, 200);
+      }
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [autoplay, timeline.length]);
+
   const [year, month, day] = currentItem
     ? getItemDate(currentItem)
     : [2026, 4, 10];

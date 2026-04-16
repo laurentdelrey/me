@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
 import { useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
@@ -17,25 +16,19 @@ export default function HeroMedia({
       className="fixed inset-0 flex items-center justify-center pointer-events-none"
       style={{ zIndex: 5 }}
     >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={keyForItem(item)}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.01 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="pointer-events-auto"
-          style={{
-            maxWidth: "56vw",
-            maxHeight: "70vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {renderItem(item, onVideoEnded)}
-        </motion.div>
-      </AnimatePresence>
+      <div
+        key={keyForItem(item)}
+        className="pointer-events-auto"
+        style={{
+          maxWidth: "56vw",
+          maxHeight: "70vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {renderItem(item, onVideoEnded)}
+      </div>
     </div>
   );
 }
