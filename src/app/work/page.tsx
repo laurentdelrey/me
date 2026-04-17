@@ -48,7 +48,7 @@ export default function WorkPage() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [playingStarted, setPlayingStarted] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
-  const [speed, setSpeed] = useState<1 | 2 | 4>(1);
+  const [speed, setSpeed] = useState<1 | 2 | 10>(1);
   const isPlaying = playingStarted && !userPaused;
 
   // Wait for the map to finish loading before starting the playhead.
@@ -145,7 +145,7 @@ export default function WorkPage() {
             onTogglePlaying={() => setUserPaused((p) => !p)}
             speed={speed}
             onToggleSpeed={() =>
-              setSpeed((s) => (s === 1 ? 2 : s === 2 ? 4 : 1))
+              setSpeed((s) => (s === 1 ? 2 : s === 2 ? 10 : 1))
             }
           />
         )}

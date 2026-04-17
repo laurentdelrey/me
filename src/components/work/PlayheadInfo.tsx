@@ -27,7 +27,7 @@ export default function PlayheadInfo({
   day: number;
   isPlaying: boolean;
   onTogglePlaying: () => void;
-  speed: 1 | 2 | 4;
+  speed: 1 | 2 | 10;
   onToggleSpeed: () => void;
 }) {
   return (
@@ -131,7 +131,7 @@ function SpeedToggle({
   speed,
   onToggle,
 }: {
-  speed: 1 | 2 | 4;
+  speed: 1 | 2 | 10;
   onToggle: () => void;
 }) {
   return (
