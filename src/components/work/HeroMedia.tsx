@@ -67,19 +67,19 @@ function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        maxWidth: "min(68vw, 720px)",
-        fontSize: "0.85rem",
+        maxWidth: "480px",
+        fontSize: "0.8rem",
         lineHeight: 1.5,
         textAlign: "center",
         opacity: 0,
-        animation: "caption-fade-in 0.4s ease-out 0.1s forwards",
+        animation: "caption-fade-in 0.35s ease-out 0.05s forwards",
       }}
     >
       {text}
       <style jsx>{`
         @keyframes caption-fade-in {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 0.85; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 0.75; transform: translateY(0); }
         }
       `}</style>
     </div>
@@ -130,7 +130,7 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
             color: "#ffffff",
           }}
         >
-          {era.label} {era.years && <span style={{ color: "#999999", marginLeft: "12px" }}>{era.years}</span>}
+          {era.label} {era.years && <span style={{ color: "rgba(255,255,255,0.5)", marginLeft: "12px" }}>{era.years}</span>}
         </h2>
         <WordReveal delay={60} key={item.id}>
           {era.content}
@@ -140,7 +140,7 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
             className="lowercase"
             style={{
               fontSize: "1.05rem",
-              color: "#999999",
+              color: "rgba(255,255,255,0.5)",
               marginTop: "16px",
             }}
           >

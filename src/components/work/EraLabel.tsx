@@ -39,7 +39,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
                 className="lowercase"
                 style={{
                   fontSize: "0.75rem",
-                  color: "#999999",
+                  color: "rgba(255,255,255,0.6)",
                   marginTop: 2,
                 }}
               >

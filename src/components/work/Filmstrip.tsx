@@ -121,36 +121,35 @@ export default function Filmstrip({
   return (
     <div
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
-      style={{ paddingBottom: 20, zIndex: 30 }}
+      style={{ zIndex: 30 }}
     >
-
-      {/* Playhead — vertically aligned with the thumbs (strip has STRIP_PAD padding top/bottom) */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: 20 + STRIP_PAD - 6, // extend slightly above/below the thumbs
-          transform: "translateX(-50%)",
-          width: 2,
-          height: THUMB_H + 12,
-          background: "#ffffff",
-          zIndex: 2,
-          boxShadow: "0 0 10px rgba(255,255,255,0.6)",
-        }}
-      />
-
-      {/* Soft drop shadow under the strip — extends below the clipped container */}
+      {/* Upward shadow at the top edge of the strip */}
       <div
         className="pointer-events-none"
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: 12,
-          height: 20,
-          boxShadow: "0 14px 32px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15)",
+          top: -6,
+          height: 6,
+          boxShadow: "0 -12px 28px rgba(0,0,0,0.22), 0 -3px 8px rgba(0,0,0,0.12)",
           zIndex: 0,
+        }}
+      />
+
+      {/* Playhead — vertically aligned with the thumbs */}
+      <div
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: STRIP_PAD - 6,
+          transform: "translateX(-50%)",
+          width: 2,
+          height: THUMB_H + 12,
+          background: "#ffffff",
+          zIndex: 2,
+          boxShadow: "0 0 10px rgba(255,255,255,0.6)",
         }}
       />
 

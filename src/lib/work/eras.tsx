@@ -284,26 +284,26 @@ export const ERAS: Record<EraId, Era> = {
     endYear: 0,
     content: (
       <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="lowercase text-left text-shadow">
-        <span style={{ color: '#999999' }}>dms are opened on</span> <a
+        <span style={{ color: 'rgba(255,255,255,0.5)' }}>dms are opened on</span> <a
           href="https://twitter.com/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: '#FFB48F', textDecoration: 'none' }}
           className={linkClass}
-        >twitter/x</a> <span style={{ color: '#999999' }}>and</span> <a
+        >twitter/x</a> <span style={{ color: 'rgba(255,255,255,0.5)' }}>and</span> <a
           href="https://t.me/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: '#FFB48F', textDecoration: 'none' }}
           className={linkClass}
-        >telegram</a><span style={{ color: '#999999' }}>. </span>
-        <span style={{ color: '#999999' }}>i can do</span> <a
+        >telegram</a><span style={{ color: 'rgba(255,255,255,0.5)' }}>. </span>
+        <span style={{ color: 'rgba(255,255,255,0.5)' }}>i can do</span> <a
           href="mailto:laurent.desserrey@gmail.com?subject=Hi%20there"
           style={{ color: '#FFB48F', textDecoration: 'none' }}
           className={linkClass}
-        >email</a> <span style={{ color: '#999999' }}>too.</span>
+        >email</a> <span style={{ color: 'rgba(255,255,255,0.5)' }}>too.</span>
         <br />
-        <span style={{ color: '#999999' }}>love.</span>
+        <span style={{ color: 'rgba(255,255,255,0.5)' }}>love.</span>
       </p>
     ),
   },
