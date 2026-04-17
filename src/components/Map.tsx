@@ -14,7 +14,6 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
   const driftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mapError, setMapError] = useState<string>("");
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [preloading, setPreloading] = useState(true);
 
   // Initialize map only once
   useEffect(() => {
@@ -72,11 +71,8 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           }
         }
         
-        // Only preload the first-visible era location. The rest load on demand
-        // when flyTo navigates there — tile fetches are gated to real need
-        // instead of front-loaded into the intro. Big intro-lag win.
+        // Signal that the map is ready.
         requestAnimationFrame(() => {
-          setPreloading(false);
           if (onLoad) onLoad();
         });
         
@@ -192,9 +188,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
 
   return (
     <>
-      <div 
-        ref={mapContainer} 
-        style={{ 
+      <div
+        ref={mapContainer}
+        style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -203,9 +199,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           width: '100vw',
           height: '100vh',
           zIndex: 0,
-          opacity: preloading ? 0 : 1,
-          background: '#b0b0b0', // grey fallback matching map style
-          transition: preloading ? 'none' : 'opacity 800ms ease-out'
+          background: '#b0b0b0', // grey fallback matching map style before tiles load
         }}
       />
       {mapError && (
