@@ -169,9 +169,8 @@ export default function Filmstrip({
               gap: 0,
               x,
               willChange: "transform",
-              // Single tight wrapper around ALL thumbs gets the shadow — layered for soft diffusion
-              boxShadow:
-                "0 30px 80px rgba(0,0,0,0.22), 0 16px 40px rgba(0,0,0,0.18), 0 6px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)",
+              // Single soft shadow — transparent + big blur
+              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
             }}
           >
             {timeline.map((item, i) => (
