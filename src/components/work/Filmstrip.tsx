@@ -121,23 +121,8 @@ export default function Filmstrip({
   return (
     <div
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
-      style={{ zIndex: 30 }}
+      style={{ zIndex: 30, height: THUMB_H + STRIP_PAD * 2 }}
     >
-      {/* Subtle elevation shadow that lifts the strip off the map */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: -14,
-          height: 14,
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.18), rgba(0,0,0,0) 100%)",
-          zIndex: 0,
-        }}
-      />
-
       {/* Playhead — vertically aligned with the thumbs */}
       <div
         className="pointer-events-none"
@@ -159,7 +144,8 @@ export default function Filmstrip({
         onMouseLeave={onLeave}
         style={{
           pointerEvents: "auto",
-          overflow: "hidden",
+          overflowX: "hidden",
+          overflowY: "visible",
           width: "100%",
           padding: `${STRIP_PAD}px 0`,
           position: "relative",
@@ -225,6 +211,7 @@ function FilmstripThumb({
           position: "relative",
           overflow: "hidden",
           borderRight: "1px solid rgba(255,255,255,0.9)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.1)",
         }}
       >
         <div style={{ width: "100%", height: "100%" }}>
@@ -292,6 +279,7 @@ function FilmstripThumb({
         background: "#999999",
         borderRight: "1px solid rgba(255,255,255,0.9)",
         boxSizing: "border-box",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.1)",
       }}
     >
       {label}
