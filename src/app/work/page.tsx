@@ -62,6 +62,14 @@ export default function WorkPage() {
     index: 0,
     nonce: 0,
   });
+  // Mobile breakpoint — drives responsive sizing for hero, controls, filmstrip.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const isPlaying = playingStarted && !userPaused;
 
   // Walk the timeline from `from` in `direction` (±1), skipping media items,
@@ -179,12 +187,13 @@ export default function WorkPage() {
           }}
         />
 
-        <EraLabel eraId={currentEraId} />
+        <EraLabel eraId={currentEraId} isMobile={isMobile} />
 
         {currentItem && (
           <HeroMedia
             item={currentItem}
             onVideoEnded={() => {}}
+            isMobile={isMobile}
           />
         )}
 
@@ -203,6 +212,7 @@ export default function WorkPage() {
             onNext={goToNextChapter}
             prevLabel={prevLabel}
             nextLabel={nextLabel}
+            isMobile={isMobile}
           />
         )}
 
@@ -217,6 +227,7 @@ export default function WorkPage() {
           playing={isPlaying}
           speed={speed}
           seek={seek}
+          isMobile={isMobile}
         />
       </main>
     </>

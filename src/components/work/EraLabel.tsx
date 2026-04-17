@@ -3,16 +3,16 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ERAS, type EraId } from "@/lib/work/eras";
 
-export default function EraLabel({ eraId }: { eraId: EraId | null }) {
+export default function EraLabel({ eraId, isMobile = false }: { eraId: EraId | null; isMobile?: boolean }) {
   const era = eraId ? ERAS[eraId] : null;
+  // Desktop: 16 + 124 + 16 = 156. Mobile: 16 + 88 + 16 = 120.
+  const bottomOffset = isMobile ? 120 : 156;
   return (
     <div
       className="fixed"
       style={{
-        left: 32,
-        // Bottom-aligned with PlayheadInfo controls row
-        // (bottom-gap 16 + filmstrip 124 + top-gap 16 = 156)
-        bottom: 156,
+        left: isMobile ? 16 : 32,
+        bottom: bottomOffset,
         zIndex: 40,
         pointerEvents: "none",
       }}

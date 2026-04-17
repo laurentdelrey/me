@@ -13,7 +13,9 @@ import { SlidingNumber } from "@/../components/motion-primitives/sliding-number"
  * so its center always lines up with the playhead (which is the screen center).
  */
 
-const FILMSTRIP_HEIGHT = 100 + 12 * 2; // matches Filmstrip (thumb 100 + pad 12)
+// Desktop: thumb 100 + pad 12 = 124. Mobile: thumb 72 + pad 8 = 88.
+const FILMSTRIP_HEIGHT_DESKTOP = 100 + 12 * 2;
+const FILMSTRIP_HEIGHT_MOBILE = 72 + 8 * 2;
 const GAP_ABOVE_FILMSTRIP = 16;
 const FILMSTRIP_BOTTOM_GAP = 16; // must match Filmstrip's `bottom: 16`
 
@@ -29,6 +31,7 @@ export default function PlayheadInfo({
   onNext,
   prevLabel,
   nextLabel,
+  isMobile = false,
 }: {
   year: number;
   month: number;
@@ -41,12 +44,13 @@ export default function PlayheadInfo({
   onNext: () => void;
   prevLabel: string;
   nextLabel: string;
+  isMobile?: boolean;
 }) {
   return (
     <div
       className="fixed left-0 right-0 pointer-events-none"
       style={{
-        bottom: FILMSTRIP_BOTTOM_GAP + FILMSTRIP_HEIGHT + GAP_ABOVE_FILMSTRIP,
+        bottom: FILMSTRIP_BOTTOM_GAP + (isMobile ? FILMSTRIP_HEIGHT_MOBILE : FILMSTRIP_HEIGHT_DESKTOP) + GAP_ABOVE_FILMSTRIP,
         // Above Filmstrip (z-30) so the filmstrip's bleed shadow doesn't show behind the date.
         zIndex: 35,
         display: "flex",
@@ -60,10 +64,10 @@ export default function PlayheadInfo({
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
-          columnGap: 18,
-          // 1fr columns stay equal, so the auto (date) column is always screen-centered.
-          // Wide enough to fit the longest chapter label at body-text size.
-          width: 680,
+          columnGap: isMobile ? 10 : 18,
+          // Responsive width — caps at 680 on desktop / 360 on mobile,
+          // but never wider than the viewport (minus edge inset).
+          width: `min(${isMobile ? 360 : 680}px, calc(100vw - 24px))`,
           // NOTE: no text-shadow here — SlidingNumber clips each digit with
           // overflow-y: clip, and a text-shadow gets cropped by that box,
           // leaving a visible rectangular artifact inside the date.
@@ -82,6 +86,7 @@ export default function PlayheadInfo({
             side="prev"
             label={prevLabel}
             onClick={onBack}
+            iconOnly={isMobile}
           />
           <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
         </div>
@@ -118,6 +123,7 @@ export default function PlayheadInfo({
             side="next"
             label={nextLabel}
             onClick={onNext}
+            iconOnly={isMobile}
           />
           <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
         </div>
@@ -172,10 +178,12 @@ function ChapterButton({
   side,
   label,
   onClick,
+  iconOnly = false,
 }: {
   side: "prev" | "next";
   label: string;
   onClick: () => void;
+  iconOnly?: boolean;
 }) {
   // Empty label → no chapter to jump to (e.g. tldr has no meaningful "previous").
   if (!label) return null;
@@ -190,9 +198,11 @@ function ChapterButton({
       className="lowercase"
       style={{
         ...pillBase,
-        padding: "0 12px",
+        padding: iconOnly ? 0 : "0 12px",
+        width: iconOnly ? 38 : undefined,
         display: "flex",
         alignItems: "center",
+        justifyContent: iconOnly ? "center" : undefined,
         gap: 8,
         fontSize: "1rem",
         fontWeight: 400,
@@ -201,16 +211,18 @@ function ChapterButton({
       data-no-cursor-expand
     >
       {isPrev && <BackIcon />}
-      <span
-        style={{
-          maxWidth: 200,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </span>
+      {!iconOnly && (
+        <span
+          style={{
+            maxWidth: 200,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </span>
+      )}
       {!isPrev && <NextIcon />}
     </motion.button>
   );

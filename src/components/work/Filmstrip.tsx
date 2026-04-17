@@ -4,9 +4,10 @@ import { motion, useMotionValue } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
-const THUMB_W = 100;
-const THUMB_H = 100;
-const STRIP_PAD = 12;
+const THUMB_W_DESKTOP = 100;
+const THUMB_W_MOBILE = 72;
+const STRIP_PAD_DESKTOP = 12;
+const STRIP_PAD_MOBILE = 8;
 // Center band where hover does NOT scrub, so the user can click to select
 // the thumb under the cursor. Outside this band, hover triggers ff/rew scrub.
 const HOVER_DEAD_ZONE_PX = 250;
@@ -25,6 +26,7 @@ export default function Filmstrip({
   playing = true,
   speed = 1,
   seek,
+  isMobile = false,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
@@ -38,7 +40,11 @@ export default function Filmstrip({
   // A { index, nonce } pair. When `nonce` changes, the playhead jumps to `index`.
   // Nonce lets callers re-trigger the same index (e.g. clicking "back to start" twice).
   seek?: { index: number; nonce: number };
+  isMobile?: boolean;
 }) {
+  const THUMB_W = isMobile ? THUMB_W_MOBILE : THUMB_W_DESKTOP;
+  const THUMB_H = THUMB_W;
+  const STRIP_PAD = isMobile ? STRIP_PAD_MOBILE : STRIP_PAD_DESKTOP;
   // Start with the first thumb's LEFT edge at the playhead so the full tile
   // has time to travel under the playhead, not starting centered.
   const START_POSITION = -THUMB_W / 2;
@@ -161,6 +167,35 @@ export default function Filmstrip({
     };
   }, [x, onCurrentIndexChange]);
 
+  // Touch scrub (mobile) — dragging the strip moves the playhead.
+  useEffect(() => {
+    if (!isMobile) return;
+    let startX = 0;
+    let startPos = 0;
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startPos = positionRef.current;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - startX;
+      // Drag right → content moves right → position decreases (back in time)
+      positionRef.current = Math.max(
+        0,
+        Math.min((lenRef.current - 1) * THUMB_W, startPos - dx),
+      );
+    };
+    const el = document.querySelector('[data-filmstrip]');
+    if (!el) return;
+    el.addEventListener('touchstart', onStart as EventListener, { passive: true });
+    el.addEventListener('touchmove', onMove as EventListener, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart as EventListener);
+      el.removeEventListener('touchmove', onMove as EventListener);
+    };
+  }, [isMobile, THUMB_W]);
+
   // Wheel scrub
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
@@ -247,6 +282,8 @@ export default function Filmstrip({
                 index={i}
                 onHover={onHoverItem}
                 onSelect={onSelectItem}
+                width={THUMB_W}
+                height={THUMB_H}
                 // Load media for thumbs within 3 slots of the playhead — far
                 // enough ahead/behind that the next-visible thumb is ready,
                 // cheap enough to not flood the network.
@@ -271,12 +308,16 @@ function FilmstripThumb({
   onHover,
   onSelect,
   shouldLoad = false,
+  width,
+  height,
 }: {
   item: TimelineItem;
   index: number;
   onHover: (idx: number) => void;
   onSelect?: (idx: number) => void;
   shouldLoad?: boolean;
+  width: number;
+  height: number;
 }) {
   const [loaded, setLoaded] = useState(false);
   // Only scrub-on-hover when the cursor is outside the center dead zone.
@@ -300,8 +341,8 @@ function FilmstripThumb({
         data-no-cursor-expand
         style={{
           flexShrink: 0,
-          width: THUMB_W,
-          height: THUMB_H,
+          width,
+          height,
           cursor: "none",
           display: "inline-block",
           boxSizing: "border-box",

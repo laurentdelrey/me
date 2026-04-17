@@ -11,7 +11,7 @@ const TOP_MARGIN = 80;
 const BOTTOM_MARGIN = 200;
 
 // Hero box caps. Must stay in sync with the container style below.
-const HERO_W_VW = 0.68;
+// Mobile gets a wider viewport percentage since there's less horizontal room.
 const HERO_W_MAX = 920;
 const HERO_H_VH = 0.58;
 const HERO_H_MAX = 580;
@@ -20,11 +20,14 @@ export default function HeroMedia({
   item,
   onVideoEnded,
   onVideoStarted,
+  isMobile = false,
 }: {
   item: TimelineItem;
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
+  isMobile?: boolean;
 }) {
+  const heroWidthVw = isMobile ? 0.9 : 0.68;
   const caption = item.kind === "media" ? item.text : null;
 
   // Track viewport to derive a sensible initial caption width before the media is measured.
@@ -39,7 +42,7 @@ export default function HeroMedia({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const heroMaxW = Math.min(HERO_W_VW * viewport.w, HERO_W_MAX);
+  const heroMaxW = Math.min(heroWidthVw * viewport.w, HERO_W_MAX);
   const heroMaxH = Math.min(HERO_H_VH * viewport.h, HERO_H_MAX);
 
   // First-paint guess from metadata (may be wrong for letterboxed videos);
@@ -88,7 +91,7 @@ export default function HeroMedia({
         )}
         <div
           style={{
-            width: "min(68vw, 920px)",
+            width: `min(${heroWidthVw * 100}vw, ${HERO_W_MAX}px)`,
             height: "min(58vh, 580px)",
             display: "flex",
             alignItems: "center",
