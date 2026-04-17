@@ -19,6 +19,7 @@ export default function Filmstrip({
   onCurrentIndexChange,
   playing = true,
   speed = 1,
+  seek,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
@@ -27,6 +28,9 @@ export default function Filmstrip({
   onCurrentIndexChange: (idx: number) => void;
   playing?: boolean;
   speed?: number;
+  // A { index, nonce } pair. When `nonce` changes, the playhead jumps to `index`.
+  // Nonce lets callers re-trigger the same index (e.g. clicking "back to start" twice).
+  seek?: { index: number; nonce: number };
 }) {
   // Start with the first thumb's LEFT edge at the playhead so the full tile
   // has time to travel under the playhead, not starting centered.
@@ -52,6 +56,14 @@ export default function Filmstrip({
     if (playing) hasStartedRef.current = true;
   }, [playing]);
   useEffect(() => { speedRef.current = speed; }, [speed]);
+
+  // Imperative seek: when the seek nonce changes, jump the playhead to seek.index.
+  useEffect(() => {
+    if (!seek) return;
+    positionRef.current = seek.index * THUMB_W;
+    hasStartedRef.current = true; // seeking implies intro is "over" — don't re-pin to start
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seek?.nonce]);
 
   useEffect(() => {
     let last = performance.now();

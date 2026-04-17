@@ -49,7 +49,31 @@ export default function WorkPage() {
   const [playingStarted, setPlayingStarted] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
   const [speed, setSpeed] = useState<1 | 2 | 10>(1);
+  const [seek, setSeek] = useState<{ index: number; nonce: number }>({
+    index: 0,
+    nonce: 0,
+  });
   const isPlaying = playingStarted && !userPaused;
+
+  const goToStart = () => {
+    setSeek((s) => ({ index: 0, nonce: s.nonce + 1 }));
+    setUserPaused(false);
+  };
+
+  const goToNextChapter = () => {
+    // "Chapter" = next non-media item (tldr / eraIntro / social).
+    // Walk forward from currentIndex, wrapping around.
+    const n = timeline.length;
+    if (n === 0) return;
+    for (let step = 1; step <= n; step++) {
+      const idx = (currentIndex + step) % n;
+      if (timeline[idx].kind !== "media") {
+        setSeek((s) => ({ index: idx, nonce: s.nonce + 1 }));
+        setUserPaused(false);
+        return;
+      }
+    }
+  };
 
   // Wait for the map to finish loading before starting the playhead.
   // This keeps the intro coordinated — everything reveals together.
@@ -147,6 +171,8 @@ export default function WorkPage() {
             onToggleSpeed={() =>
               setSpeed((s) => (s === 1 ? 2 : s === 2 ? 10 : 1))
             }
+            onBack={goToStart}
+            onNext={goToNextChapter}
           />
         )}
 
@@ -158,6 +184,7 @@ export default function WorkPage() {
           onCurrentIndexChange={setCurrentIndex}
           playing={isPlaying}
           speed={speed}
+          seek={seek}
         />
       </main>
     </>
