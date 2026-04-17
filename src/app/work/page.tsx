@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import SiteHeader from "@/components/SiteHeader";
-import { IPadCursor } from "@/components/IPadCursor";
+import { PlayheadCursor } from "@/components/PlayheadCursor";
 import { buildTimeline, getItemDate, getItemEraId } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
@@ -110,7 +110,7 @@ export default function WorkPage() {
 
   return (
     <>
-      {mounted && typeof window !== "undefined" && window.innerWidth > 768 && <IPadCursor />}
+      {mounted && typeof window !== "undefined" && window.innerWidth > 768 && <PlayheadCursor />}
 
       <Map
         center={mapCenter as [number, number]}
