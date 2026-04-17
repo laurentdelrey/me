@@ -127,8 +127,8 @@ const PILL_HEIGHT = 32;
 const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
   borderRadius: 6,
-  background: "rgba(0,0,0,0.45)",
-  border: "1px solid rgba(255,255,255,0.15)",
+  background: "#b0b0b0", // accent grey — matches filmstrip text cards
+  border: "none",
   color: "#fff",
   cursor: "pointer",
 };

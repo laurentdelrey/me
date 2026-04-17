@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         <ul className="space-y-3">
           {rows.map(({ tweet, hidden }) => {
-            const firstMedia = tweet.media.find((m) => m.blobUrl);
+            const mediaWithBlobs = tweet.media.filter((m) => m.blobUrl);
             const isBusy = pending.has(tweet.id);
             return (
               <li
@@ -148,28 +148,36 @@ export default function DashboardPage() {
                   hidden ? "opacity-70" : ""
                 }`}
               >
-                <div className="shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-neutral-100 flex items-center justify-center">
-                  {firstMedia?.blobUrl ? (
-                    firstMedia.type === "video" ||
-                    firstMedia.type === "animated_gif" ? (
-                      <video
-                        src={firstMedia.blobUrl}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={firstMedia.blobUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    )
+                <div className="shrink-0 flex gap-1">
+                  {mediaWithBlobs.length === 0 ? (
+                    <div className="w-32 h-32 rounded-xl bg-neutral-100 flex items-center justify-center">
+                      <span className="text-xs text-neutral-400">no media</span>
+                    </div>
                   ) : (
-                    <span className="text-xs text-neutral-400">no media</span>
+                    mediaWithBlobs.map((m, idx) => (
+                      <div
+                        key={idx}
+                        className="w-32 h-32 rounded-xl overflow-hidden bg-neutral-100 flex items-center justify-center"
+                      >
+                        {m.type === "video" || m.type === "animated_gif" ? (
+                          <video
+                            src={m.blobUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={m.blobUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                      </div>
+                    ))
                   )}
                 </div>
 

@@ -17,6 +17,7 @@ export default function Filmstrip({
   onHoverItem,
   onLeave,
   onCurrentIndexChange,
+  onSelectItem,
   playing = true,
   speed = 1,
   seek,
@@ -26,6 +27,7 @@ export default function Filmstrip({
   onHoverItem: (idx: number) => void;
   onLeave: () => void;
   onCurrentIndexChange: (idx: number) => void;
+  onSelectItem?: (idx: number) => void;
   playing?: boolean;
   speed?: number;
   // A { index, nonce } pair. When `nonce` changes, the playhead jumps to `index`.
@@ -228,6 +230,7 @@ export default function Filmstrip({
                 item={item}
                 index={i}
                 onHover={onHoverItem}
+                onSelect={onSelectItem}
               />
             ))}
           </motion.div>
@@ -246,23 +249,24 @@ function FilmstripThumb({
   item,
   index,
   onHover,
+  onSelect,
 }: {
   item: TimelineItem;
   index: number;
   onHover: (idx: number) => void;
+  onSelect?: (idx: number) => void;
 }) {
   const handleMouseEnter = () => onHover(index);
+  const handleClick = () => onSelect?.(index);
 
   if (item.kind === "media") {
     const m = item.media;
     if (!m.blobUrl) return null;
     const isVideo = m.type === "video" || m.type === "animated_gif";
     return (
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
+      <div
         onMouseEnter={handleMouseEnter}
+        onClick={handleClick}
         data-no-cursor-expand
         style={{
           flexShrink: 0,
@@ -295,7 +299,7 @@ function FilmstripThumb({
             />
           )}
         </div>
-      </a>
+      </div>
     );
   }
 
@@ -323,6 +327,7 @@ function FilmstripThumb({
   return (
     <div
       onMouseEnter={handleMouseEnter}
+      onClick={handleClick}
       data-no-cursor-expand
       style={{
         flexShrink: 0,

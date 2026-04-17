@@ -17,10 +17,10 @@ export type Era = {
   content: React.ReactElement;
 };
 
-const linkClass = "hover:bg-white/30 transition-colors";
+const linkClass = "hover:brightness-110 transition";
 
 // Shared pill-button style for all inline links inside era text.
-// Matches the speed-toggle pill in PlayheadInfo — subtle glass, no accent colors.
+// Matches the PlayheadInfo control pills — plain accent grey, no accent colors.
 // NOTE: WordReveal reads `style.color` to fade the text in; keep `color` set to white.
 const linkStyle: React.CSSProperties = {
   color: "#ffffff",
@@ -28,8 +28,8 @@ const linkStyle: React.CSSProperties = {
   display: "inline-block",
   padding: "0 8px",
   borderRadius: 4,
-  background: "rgba(255,255,255,0.18)",
-  border: "1px solid rgba(255,255,255,0.28)",
+  background: "#b0b0b0",
+  border: "none",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   verticalAlign: "baseline",

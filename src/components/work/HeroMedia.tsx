@@ -66,8 +66,8 @@ function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        // Wider than the hero (68vw / 920px) so the caption feels like a headline.
-        width: "min(86vw, 1120px)",
+        // Never wider than the hero media — left-aligned like a caption block.
+        width: "min(68vw, 920px)",
         fontSize: "1rem",
         lineHeight: 1.5,
         textAlign: "left",
@@ -182,7 +182,7 @@ function MediaCard({
 
   const isVideo = m.type === "video" || m.type === "animated_gif";
 
-  const commonStyle: React.CSSProperties = {
+  const mediaStyle: React.CSSProperties = {
     maxWidth: "100%",
     maxHeight: "100%",
     width: "auto",
@@ -192,29 +192,32 @@ function MediaCard({
     filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.18))",
   };
 
-  if (isVideo) {
-    return (
-      <video
-        ref={videoRef}
-        key={m.blobUrl}
-        src={m.blobUrl}
-        muted
-        playsInline
-        autoPlay
-        onPlay={onVideoStarted}
-        onEnded={onVideoEnded}
-        style={commonStyle}
-        data-no-cursor-expand
-      />
-    );
-  }
-
-  return (
-    <img
+  const media = isVideo ? (
+    <video
+      ref={videoRef}
+      key={m.blobUrl}
       src={m.blobUrl}
-      alt={item.text}
-      style={commonStyle}
+      muted
+      playsInline
+      autoPlay
+      onPlay={onVideoStarted}
+      onEnded={onVideoEnded}
+      style={mediaStyle}
       data-no-cursor-expand
     />
+  ) : (
+    <img src={m.blobUrl} alt={item.text} style={mediaStyle} data-no-cursor-expand />
+  );
+
+  // Hero is clickable — opens the original tweet on x.com in a new tab.
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: "inline-block", cursor: "pointer" }}
+    >
+      {media}
+    </a>
   );
 }
