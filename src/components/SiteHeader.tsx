@@ -97,7 +97,7 @@ export default function SiteHeader({
           pointerEvents: "auto",
         }}
       >
-        <span style={{ opacity: 0.6 }}>on</span>
+        <span>on</span>
         <motion.a
           href="https://x.com/laurentdelrey"
           target="_blank"
@@ -110,7 +110,7 @@ export default function SiteHeader({
         >
           x
         </motion.a>
-        <span style={{ opacity: 0.6 }}>and</span>
+        <span>and</span>
         <motion.a
           href="https://www.threads.net/@laurentdelrey"
           target="_blank"
