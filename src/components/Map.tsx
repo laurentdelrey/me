@@ -33,9 +33,11 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
 
       const map = new mapboxgl.default.Map({
         container: mapContainer.current,
-        // Custom monochrome style with the grey palette baked in — no runtime
-        // setPaintProperty loop needed, no "brown flash into grey" transition.
-        style: `mapbox://styles/laurentdelrey/cmnw9fue6005v01sv8gb600zg`,
+        // Mapbox's built-in light style — grey out of the box, no template
+        // variation lock fighting our API edits. If you want a custom palette
+        // later, create a NEW style from scratch in Studio (not duplicated
+        // from a template) to avoid the variation lock.
+        style: `mapbox://styles/mapbox/light-v11`,
         center: center,
         zoom: zoom,
         pitch: 50, // Initial tilt for 3D effect
@@ -50,9 +52,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
-        // The Studio style is templated (`mapbox:variation`) which locks fog
-        // colors to a dark-brown palette we can't override via the Styles API.
-        // Override at runtime instead — it's a single setFog call, cheap.
+        // Fog override via runtime setFog (template variation locks fog too)
         try {
           map.setFog({
             range: [0.5, 10],
@@ -64,8 +64,6 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           });
         } catch {}
 
-        // Colors are baked into the custom Studio style now — no runtime
-        // setPaintProperty loop, no "brown flash into grey" transition.
         requestAnimationFrame(() => {
           if (onLoad) onLoad();
         });
