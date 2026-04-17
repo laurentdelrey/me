@@ -57,10 +57,24 @@ export default function Filmstrip({
   }, [playing]);
   useEffect(() => { speedRef.current = speed; }, [speed]);
 
-  // Imperative seek: when the seek nonce changes, jump the playhead to seek.index.
+  // Imperative seek: when the seek nonce changes, smoothly animate to seek.index.
+  // Instead of snapping, we ease from the current position to the target over SEEK_DURATION_MS.
+  const seekAnimRef = useRef<
+    | { from: number; to: number; startTime: number; duration: number }
+    | null
+  >(null);
   useEffect(() => {
     if (!seek) return;
-    positionRef.current = seek.index * THUMB_W;
+    const target = seek.index * THUMB_W;
+    const distance = Math.abs(target - positionRef.current);
+    // Longer distance → slightly longer animation, but clamp to a sane range.
+    const duration = Math.max(450, Math.min(900, 300 + distance * 0.3));
+    seekAnimRef.current = {
+      from: positionRef.current,
+      to: target,
+      startTime: performance.now(),
+      duration,
+    };
     hasStartedRef.current = true; // seeking implies intro is "over" — don't re-pin to start
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seek?.nonce]);
@@ -74,7 +88,18 @@ export default function Filmstrip({
       const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500;
       const maxPosition = Math.max(0, (lenRef.current - 1) * THUMB_W);
 
-      if (hoverIndexRef.current !== null) {
+      if (seekAnimRef.current) {
+        // Ease-out cubic from `from` to `to` over `duration` ms.
+        const { from, to, startTime, duration } = seekAnimRef.current;
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        positionRef.current = from + (to - from) * eased;
+        if (t >= 1) {
+          positionRef.current = to;
+          seekAnimRef.current = null;
+        }
+      } else if (hoverIndexRef.current !== null) {
         // Lock to hovered thumb's center with gentle easing
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.025;
@@ -162,7 +187,7 @@ export default function Filmstrip({
           height: THUMB_H + 12,
           background: "#ffffff",
           zIndex: 2,
-          boxShadow: "0 0 10px rgba(255,255,255,0.6)",
+          boxShadow: "0 0 12px rgba(0,0,0,0.35)",
         }}
       />
 

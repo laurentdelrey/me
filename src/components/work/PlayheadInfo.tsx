@@ -125,18 +125,18 @@ function IconButton({
     <motion.button
       onClick={onClick}
       aria-label={ariaLabel}
-      whileHover={{ scale: 1.15 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.92 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       style={{
-        width: 20,
+        width: 24,
         height: 20,
-        borderRadius: 999,
+        borderRadius: 4,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "transparent",
-        border: "none",
+        background: "rgba(255,255,255,0.18)",
+        border: "1px solid rgba(255,255,255,0.28)",
         cursor: "pointer",
         color: "#fff",
         padding: 0,
