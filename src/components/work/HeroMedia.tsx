@@ -128,6 +128,7 @@ function HeroCaption({
         fontSize: "1rem",
         lineHeight: 1.5,
         textDecoration: "none",
+        cursor: "none",
         opacity: 0,
         animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
       }}
@@ -371,7 +372,7 @@ function MediaCard({
         justifyContent: "center",
         width: "100%",
         height: "100%",
-        cursor: "pointer",
+        cursor: "none",
       }}
     >
       {media}

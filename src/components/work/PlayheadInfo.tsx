@@ -133,7 +133,7 @@ const pillBase: React.CSSProperties = {
   // 60px of blur would spill all over on a pill this size.
   boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
   color: "#fff",
-  cursor: "pointer",
+  cursor: "none",
 };
 
 function IconButton({

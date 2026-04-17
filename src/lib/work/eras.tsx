@@ -34,6 +34,7 @@ const linkStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   verticalAlign: "baseline",
+  cursor: "none",
 };
 
 export const ERAS: Record<EraId, Era> = {
