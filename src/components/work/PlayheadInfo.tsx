@@ -129,9 +129,6 @@ const pillBase: React.CSSProperties = {
   borderRadius: 6,
   background: "#b0b0b0", // accent grey — matches filmstrip text cards
   border: "1px solid rgba(255,255,255,0.3)",
-  // Scaled-down version of the hero's diffuse shadow — same family, but
-  // 60px of blur would spill all over on a pill this size.
-  boxShadow: "0 10px 32px rgba(0,0,0,0.10)",
   color: "#fff",
   cursor: "none",
 };
