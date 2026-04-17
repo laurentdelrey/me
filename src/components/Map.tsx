@@ -11,8 +11,6 @@ interface MapProps {
 export default function Map({ center, zoom, onLoad }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const animationRef = useRef<any>(null);
-  const timeoutRef = useRef<any>(null);
   const [mapError, setMapError] = useState<string>("");
   const [mapLoaded, setMapLoaded] = useState(false);
   const [preloading, setPreloading] = useState(true);
@@ -149,12 +147,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
         // Let the custom map style handle all labels without overrides
 
         setMapLoaded(true);
-        
-        // Start the initial drift animation after a short delay
-        setTimeout(() => {
-          startDriftAnimation();
-        }, 100);
-        
+
         // Force a resize in case container dimensions were wrong
         setTimeout(() => {
           map.resize();
@@ -182,95 +175,32 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
     });
   }, []); // Empty dependency array - only run once
 
-  // Drift animation function
-  const startDriftAnimation = () => {
-    if (!mapRef.current) return;
-    
-    // Clean up any existing drift animation
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    
-    const startZoom = mapRef.current.getZoom();
-    const startBearing = mapRef.current.getBearing();
-    let startTime = Date.now();
-
-    const drift = () => {
-      if (!mapRef.current) return;
-      
-      const elapsed = Date.now() - startTime;
-      const t = elapsed / 30000; // 30 second cycle
-      
-      // Subtle zoom oscillation
-      const zoomDrift = startZoom + Math.sin(t * Math.PI) * 0.15;
-      
-      // Slow rotation
-      const bearingDrift = (startBearing + (t * 5)) % 360;
-      
-      mapRef.current.easeTo({
-        zoom: zoomDrift,
-        bearing: bearingDrift,
-        duration: 100,
-        easing: (t: number) => t,
-      });
-      
-      animationRef.current = requestAnimationFrame(drift);
-    };
-
-    drift();
-  };
-
-  // Animate to new location when props change or map loads
+  // Animate to new location when props change or map loads.
+  // Mapbox handles the interpolation internally — no RAF loop needed.
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
 
-    // Clean up any existing animations
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    
     console.log('Animating to:', center, zoom);
-    
-    // Keep the current bearing and pitch, only change slightly
+
     const currentBearing = mapRef.current.getBearing();
     const currentPitch = mapRef.current.getPitch();
-    
+
     // Small incremental changes instead of random values
-    const bearing = currentBearing + (Math.random() * 20 - 10); // ±10 degrees from current
-    const pitch = currentPitch + (Math.random() * 10 - 5); // ±5 degrees from current, clamped between 45-60
+    const bearing = currentBearing + (Math.random() * 20 - 10); // ±10 from current
+    const pitch = currentPitch + (Math.random() * 10 - 5); // ±5 from current, clamped 45–60
     const finalPitch = Math.max(45, Math.min(60, pitch));
-    
+
     mapRef.current.flyTo({
       center: center,
       zoom: zoom,
-      duration: 3500, // Back to slower animation
-      curve: 1.1, // Gentler arc
-      speed: 0.6, // Slower speed
-      easing: (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t, // Smooth ease-in-out
+      duration: 3500,
+      curve: 1.1,
+      speed: 0.6,
+      easing: (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
       pitch: finalPitch,
       bearing: bearing,
       essential: true,
     });
-
-    // After landing, start a subtle continuous drift
-    timeoutRef.current = setTimeout(() => {
-      startDriftAnimation();
-    }, 3600); // Start drift after animation completes
-
-    // Cleanup function
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
   }, [center, zoom, mapLoaded]);
 
   return (
