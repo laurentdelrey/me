@@ -25,8 +25,18 @@ export default function SiteHeader({
 
   return (
     <Container
-      className="fixed left-0 right-0 z-30 flex items-center justify-center header-bar"
-      style={{ top: 0, pointerEvents: onClick ? "auto" : "none", paddingTop: topPaddingPx }}
+      className="fixed left-0 right-0 z-30 header-bar"
+      style={{
+        top: 0,
+        pointerEvents: onClick ? "auto" : "none",
+        paddingTop: topPaddingPx,
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr",
+        alignItems: "center",
+        columnGap: 16,
+        paddingLeft: 24,
+        paddingRight: 24,
+      }}
       {...(animated
         ? {
             initial: { y: startY, opacity: 0 },
@@ -41,6 +51,9 @@ export default function SiteHeader({
           }
         : {})}
     >
+      {/* Left column — empty spacer to keep the title centered. */}
+      <div />
+
       <button
         className={`lowercase header-title ${onClick ? "cursor-pointer" : ""}`}
         style={{
@@ -54,6 +67,7 @@ export default function SiteHeader({
           border: "none",
           padding: 0,
           pointerEvents: onClick ? "auto" : "none",
+          justifySelf: "center",
         }}
         onClick={onClick}
         aria-label={onClick ? "Scroll to start" : undefined}
@@ -69,15 +83,12 @@ export default function SiteHeader({
         laurent del rey
       </button>
 
-      {/* Top-right social — pill links to X and Threads. Replaces the old @me
-          tile that lived at the end of the filmstrip. */}
+      {/* Right-aligned social links — live in the same grid row as the title
+          so they share the same vertical alignment. */}
       <div
         className="lowercase header-social"
         style={{
-          position: "absolute",
-          right: 24,
-          top: "50%",
-          transform: "translateY(-50%)",
+          justifySelf: "end",
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -109,7 +120,6 @@ export default function SiteHeader({
       <style jsx>{`
         @media (max-width: 640px) {
           .header-social {
-            right: 12px !important;
             gap: 6px !important;
             font-size: 0.9rem !important;
           }
