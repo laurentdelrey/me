@@ -85,7 +85,7 @@ export default function PlayheadInfo({
         <div
           className="tabular-nums"
           style={{
-            fontSize: "1.125rem",
+            fontSize: "1rem",
             fontWeight: 400,
             display: "flex",
             alignItems: "center",
@@ -189,7 +189,7 @@ function ChapterButton({
         display: "flex",
         alignItems: "center",
         gap: 8,
-        fontSize: "1.125rem",
+        fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
       }}
@@ -265,7 +265,7 @@ function SpeedToggle({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "1.125rem",
+        fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
       }}

@@ -29,7 +29,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
             <div
               className="lowercase"
               style={{
-                fontSize: "1.125rem",
+                fontSize: "1rem",
                 lineHeight: 1.3,
                 fontWeight: 500,
                 color: "#ffffff",
@@ -41,7 +41,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
               <div
                 className="lowercase"
                 style={{
-                  fontSize: "1.125rem",
+                  fontSize: "1rem",
                   lineHeight: 1.3,
                   color: "rgba(255,255,255,0.6)",
                   marginTop: 2,
