@@ -27,6 +27,8 @@ export default function WorkPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [playingStarted, setPlayingStarted] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const isPlaying = playingStarted && !userPaused;
 
   // Wait for the map to finish loading before starting the playhead.
   // This keeps the intro coordinated — everything reveals together.
@@ -119,6 +121,8 @@ export default function WorkPage() {
             month={month}
             day={day}
             caption={currentItem?.kind === "media" ? currentItem.text : null}
+            isPlaying={isPlaying}
+            onTogglePlaying={() => setUserPaused((p) => !p)}
           />
         )}
 
@@ -128,7 +132,7 @@ export default function WorkPage() {
           onHoverItem={setHoverIndex}
           onLeave={() => setHoverIndex(null)}
           onCurrentIndexChange={setCurrentIndex}
-          playing={playingStarted}
+          playing={isPlaying}
         />
       </main>
     </>

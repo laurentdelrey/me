@@ -1,34 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 
 /**
  * Sits just above the filmstrip playhead.
- * Shows the date (always 1 line) and caption (1-line clamp by default,
- * expands to full text on hover).
- *
- * The cluster is anchored at its bottom edge so expansion grows *upward*
- * into empty air — never pushes the filmstrip or hero around.
+ * Shows: caption (1-line clamp), date, play/pause button.
+ * The cluster is anchored at its bottom edge above the filmstrip.
  */
 
-// Match Filmstrip constants (THUMB_H + STRIP_PAD*2) + breathing room
+// Match Filmstrip constants (THUMB_H + STRIP_PAD*2)
 const FILMSTRIP_HEIGHT = 140 + 16 * 2; // 172
-const GAP_ABOVE_FILMSTRIP = 20;
+const GAP_ABOVE_FILMSTRIP = 10;
 
 export default function PlayheadInfo({
   year,
   month,
   day,
   caption,
+  isPlaying,
+  onTogglePlaying,
 }: {
   year: number;
   month: number;
   day: number;
   caption: string | null;
+  isPlaying: boolean;
+  onTogglePlaying: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   return (
     <div
       className="fixed left-0 right-0 pointer-events-none"
@@ -40,22 +39,17 @@ export default function PlayheadInfo({
       }}
     >
       <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         className="text-white text-shadow"
         style={{
           pointerEvents: "auto",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          // Grow upward: bottom of cluster is stable, content extends up.
-          justifyContent: "flex-end",
           gap: 4,
           maxWidth: "min(60vw, 480px)",
           textAlign: "center",
         }}
       >
-        {/* Caption above the date so it grows upward on hover */}
         {caption && (
           <div
             className="lowercase"
@@ -63,15 +57,10 @@ export default function PlayheadInfo({
               fontSize: "0.8rem",
               lineHeight: 1.5,
               color: "rgba(255,255,255,0.75)",
-              // Default: clamp to 1 line. Hover: unclamp, show full text.
-              display: "-webkit-box",
-              WebkitBoxOrient: "vertical",
-              WebkitLineClamp: hovered ? "unset" : 1,
+              whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              whiteSpace: hovered ? "normal" : "nowrap",
-              transition: "color 0.2s ease",
-              cursor: "default",
+              maxWidth: "100%",
             }}
           >
             {caption}
@@ -94,7 +83,72 @@ export default function PlayheadInfo({
           <span className="text-white/30">.</span>
           <SlidingNumber value={day} padStart />
         </div>
+
+        <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
       </div>
     </div>
+  );
+}
+
+function PlayPauseButton({
+  isPlaying,
+  onToggle,
+}: {
+  isPlaying: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onToggle}
+      aria-label={isPlaying ? "Pause" : "Play"}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      style={{
+        marginTop: 6,
+        width: 24,
+        height: 24,
+        borderRadius: 999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: "#fff",
+        padding: 0,
+      }}
+      data-no-cursor-expand
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isPlaying ? "pause" : "play"}
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.4, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 600, damping: 22 }}
+          style={{ display: "flex" }}
+        >
+          {isPlaying ? <PauseIcon /> : <PlayIcon />}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+      <path d="M1 0.5L9 6L1 11.5V0.5Z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+      <rect x="0.5" y="0.5" width="3" height="11" rx="0.5" />
+      <rect x="6.5" y="0.5" width="3" height="11" rx="0.5" />
+    </svg>
   );
 }
