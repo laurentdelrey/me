@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--turbopack"],
+      "env": { "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin", "NODE_ENV": "development" },
+      "port": 3000
+    }
+  ]
+}

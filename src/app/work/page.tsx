@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import SiteHeader from "@/components/SiteHeader";
 import { IPadCursor } from "@/components/IPadCursor";
-import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 import { buildTimeline, getItemDate, getItemEraId } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
@@ -13,6 +12,7 @@ const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 const HeroMedia = dynamic(() => import("@/components/work/HeroMedia"), { ssr: false });
 const Filmstrip = dynamic(() => import("@/components/work/Filmstrip"), { ssr: false });
 const EraLabel = dynamic(() => import("@/components/work/EraLabel"), { ssr: false });
+const PlayheadInfo = dynamic(() => import("@/components/work/PlayheadInfo"), { ssr: false });
 
 export default function WorkPage() {
   const [mounted, setMounted] = useState(false);
@@ -80,31 +80,6 @@ export default function WorkPage() {
         color="#ffffff"
       />
 
-      {mapLoaded && (
-        <div
-          className="fixed"
-          data-no-cursor-expand
-          style={{ top: 32, left: 32, zIndex: 40, cursor: "none", pointerEvents: "none" }}
-        >
-          <div
-            className="text-white"
-            style={{
-              fontSize: "0.8rem",
-              fontWeight: 400,
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <SlidingNumber value={year} />
-            <span className="text-white/30">.</span>
-            <SlidingNumber value={month} padStart />
-            <span className="text-white/30">.</span>
-            <SlidingNumber value={day} padStart />
-          </div>
-        </div>
-      )}
-
       <main
         className={`h-screen relative z-10 overflow-hidden ${
           mounted && mapLoaded ? "animate-fadeIn" : "opacity-0"
@@ -135,6 +110,15 @@ export default function WorkPage() {
           <HeroMedia
             item={currentItem}
             onVideoEnded={() => {}}
+          />
+        )}
+
+        {mapLoaded && (
+          <PlayheadInfo
+            year={year}
+            month={month}
+            day={day}
+            caption={currentItem?.kind === "media" ? currentItem.text : null}
           />
         )}
 

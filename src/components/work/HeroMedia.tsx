@@ -19,8 +19,6 @@ export default function HeroMedia({
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
 }) {
-  const caption = item.kind === "media" ? item.text : null;
-
   return (
     <div
       className="fixed left-0 right-0 flex items-center justify-center pointer-events-none"
@@ -35,10 +33,8 @@ export default function HeroMedia({
         className="pointer-events-auto"
         style={{
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "16px",
           maxWidth: "min(68vw, 920px)",
         }}
       >
@@ -53,35 +49,7 @@ export default function HeroMedia({
         >
           {renderItem(item, onVideoEnded, onVideoStarted)}
         </div>
-        {caption && (
-          <HeroCaption text={caption} itemKey={keyForItem(item)} />
-        )}
       </div>
-    </div>
-  );
-}
-
-function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
-  return (
-    <div
-      key={itemKey}
-      className="lowercase text-white text-shadow"
-      style={{
-        maxWidth: "480px",
-        fontSize: "0.8rem",
-        lineHeight: 1.5,
-        textAlign: "center",
-        opacity: 0,
-        animation: "caption-fade-in 0.35s ease-out 0.05s forwards",
-      }}
-    >
-      {text}
-      <style jsx>{`
-        @keyframes caption-fade-in {
-          from { opacity: 0; transform: translateY(-6px); }
-          to { opacity: 0.75; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
