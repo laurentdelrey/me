@@ -356,7 +356,7 @@ function FilmstripThumb({
             width: "100%",
             height: "100%",
             position: "relative",
-            background: "#888",
+            background: "#b0b0b0", // accent grey — matches buttons/text-card thumbs
           }}
         >
           {isVideo ? (
