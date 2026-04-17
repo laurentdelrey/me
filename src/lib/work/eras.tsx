@@ -30,7 +30,7 @@ const linkStyle: React.CSSProperties = {
   borderRadius: 4,
   background: "#b0b0b0",
   border: "1px solid rgba(255,255,255,0.3)",
-  boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+  boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   verticalAlign: "baseline",
