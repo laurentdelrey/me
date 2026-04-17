@@ -17,14 +17,12 @@ export default function PlayheadInfo({
   year,
   month,
   day,
-  caption,
   isPlaying,
   onTogglePlaying,
 }: {
   year: number;
   month: number;
   day: number;
-  caption: string | null;
   isPlaying: boolean;
   onTogglePlaying: () => void;
 }) {
@@ -46,27 +44,9 @@ export default function PlayheadInfo({
           flexDirection: "column",
           alignItems: "center",
           gap: 4,
-          maxWidth: "min(60vw, 480px)",
           textAlign: "center",
         }}
       >
-        {caption && (
-          <div
-            className="lowercase"
-            style={{
-              fontSize: "0.8rem",
-              lineHeight: 1.5,
-              color: "rgba(255,255,255,0.75)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: "100%",
-            }}
-          >
-            {caption}
-          </div>
-        )}
-
         <div
           className="tabular-nums"
           style={{
@@ -124,9 +104,16 @@ function PlayPauseButton({
         <motion.span
           key={isPlaying ? "pause" : "play"}
           initial={{ scale: 0.4, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.4, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 600, damping: 22 }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+            transition: { type: "spring", stiffness: 650, damping: 22 },
+          }}
+          exit={{
+            scale: 0.4,
+            opacity: 0,
+            transition: { duration: 0.08, ease: "easeIn" },
+          }}
           style={{ display: "flex" }}
         >
           {isPlaying ? <PauseIcon /> : <PlayIcon />}

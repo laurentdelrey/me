@@ -19,7 +19,27 @@ export default function WorkPage() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(false);
   const [headerStartY, setHeaderStartY] = useState(240);
-  const [hiddenIds] = useState<Set<string>>(() => new Set());
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+
+  // Fetch the shared hidden list from /api/hidden (written by the dashboard).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/hidden", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { ids: string[] };
+        if (!cancelled && Array.isArray(data.ids)) {
+          setHiddenIds(new Set(data.ids));
+        }
+      } catch {
+        // silent — fall back to showing everything
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const timeline = useMemo(() => buildTimeline(hiddenIds), [hiddenIds]);
 
@@ -120,7 +140,6 @@ export default function WorkPage() {
             year={year}
             month={month}
             day={day}
-            caption={currentItem?.kind === "media" ? currentItem.text : null}
             isPlaying={isPlaying}
             onTogglePlaying={() => setUserPaused((p) => !p)}
           />

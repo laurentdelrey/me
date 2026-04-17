@@ -40,10 +40,14 @@ export default function Filmstrip({
   const lenRef = useRef(timeline.length);
   const timelineRef = useRef(timeline);
   const playingRef = useRef(playing);
+  const hasStartedRef = useRef(false);
   useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
   useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
   useEffect(() => { timelineRef.current = timeline; }, [timeline]);
-  useEffect(() => { playingRef.current = playing; }, [playing]);
+  useEffect(() => {
+    playingRef.current = playing;
+    if (playing) hasStartedRef.current = true;
+  }, [playing]);
 
   useEffect(() => {
     let last = performance.now();
@@ -59,8 +63,11 @@ export default function Filmstrip({
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.025;
       } else if (!playingRef.current) {
-        // Intro hasn't finished yet — stay at start position
-        positionRef.current = START_POSITION;
+        // Before intro starts → pin to start. After that, pause in place.
+        if (!hasStartedRef.current) {
+          positionRef.current = START_POSITION;
+        }
+        // else: user paused — leave positionRef.current alone.
       } else {
         // Variable velocity: each item has a duration. The playhead traverses
         // THUMB_W pixels over that duration. Videos are slower; images go 2s each.
