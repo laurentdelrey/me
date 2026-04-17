@@ -39,15 +39,11 @@ export default function SiteHeader({
       }}
       {...(animated
         ? {
-            initial: { y: startY, opacity: 0 },
-            animate: { 
-              y: toTop ? 0 : startY, 
-              opacity: visible ? 1 : 0 
-            },
-            transition: {
-              y: toTop ? { type: "spring", stiffness: 140, damping: 32, mass: 1 } : { duration: 0 },
-              opacity: { duration: 0.5, ease: "easeOut" }
-            },
+            // Header just fades in at its final position — no drop-from-center
+            // spring animation on load.
+            initial: { opacity: 0 },
+            animate: { opacity: visible ? 1 : 0 },
+            transition: { opacity: { duration: 0.5, ease: "easeOut" } },
           }
         : {})}
     >
