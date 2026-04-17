@@ -46,7 +46,8 @@ export default function PlayheadInfo({
       className="fixed left-0 right-0 pointer-events-none"
       style={{
         bottom: FILMSTRIP_HEIGHT + GAP_ABOVE_FILMSTRIP,
-        zIndex: 25,
+        // Above Filmstrip (z-30) so the filmstrip's bleed shadow doesn't show behind the date.
+        zIndex: 35,
         display: "flex",
         justifyContent: "center",
       }}
@@ -126,8 +127,8 @@ const PILL_HEIGHT = 32;
 const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
   borderRadius: 6,
-  background: "rgba(255,255,255,0.18)",
-  border: "1px solid rgba(255,255,255,0.28)",
+  background: "rgba(0,0,0,0.45)",
+  border: "1px solid rgba(255,255,255,0.15)",
   color: "#fff",
   cursor: "pointer",
 };

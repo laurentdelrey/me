@@ -39,7 +39,6 @@ export default function HeroMedia({
           alignItems: "center",
           justifyContent: "center",
           gap: 12,
-          maxWidth: "min(68vw, 920px)",
         }}
       >
         {caption && (
@@ -67,10 +66,11 @@ function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        maxWidth: "720px",
+        // Wider than the hero (68vw / 920px) so the caption feels like a headline.
+        width: "min(86vw, 1120px)",
         fontSize: "1rem",
         lineHeight: 1.5,
-        textAlign: "center",
+        textAlign: "left",
         opacity: 0,
         animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
       }}
