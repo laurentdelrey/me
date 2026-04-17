@@ -217,13 +217,22 @@ export default function Filmstrip({
           zIndex: 1,
         }}
       >
-        <div style={{ width: "100%", overflow: "hidden" }}>
+        {/* Horizontal clip mask — allows the shadow to bleed above/below,
+            while still clipping the thumb strip horizontally at viewport edges. */}
+        <div
+          style={{
+            width: "100%",
+            clipPath: `inset(-80px 0 -80px 0)`,
+            WebkitClipPath: `inset(-80px 0 -80px 0)`,
+          }}
+        >
           <motion.div
             style={{
               display: "inline-flex",
               gap: 0,
               x,
               willChange: "transform",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
             }}
           >
             {timeline.map((item, i) => (
