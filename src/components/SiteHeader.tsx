@@ -156,7 +156,7 @@ const socialPillStyle: React.CSSProperties = {
   textDecoration: "none",
   display: "inline-block",
   padding: "0 8px",
-  borderRadius: 4,
+  borderRadius: 0,
   // Matches the PlayheadInfo control pill bg so the whole site shares
   // one grey. The vignette's corner is only subtly lighter, and the
   // motion hover pops them visually.
