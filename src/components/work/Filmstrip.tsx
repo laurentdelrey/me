@@ -123,21 +123,6 @@ export default function Filmstrip({
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
       style={{ paddingBottom: 20, zIndex: 30 }}
     >
-      {/* Soft shadow */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 8,
-          height: THUMB_H + 40,
-          background:
-            "radial-gradient(ellipse at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 70%)",
-          filter: "blur(10px)",
-          zIndex: 0,
-        }}
-      />
 
       {/* Playhead — vertically aligned with the thumbs (strip has STRIP_PAD padding top/bottom) */}
       <div
@@ -173,6 +158,7 @@ export default function Filmstrip({
             gap: 0,
             x,
             willChange: "transform",
+            filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.25))",
           }}
         >
           {timeline.map((item, i) => (
@@ -239,7 +225,8 @@ function FilmstripThumb({
           <img
             src={m.blobUrl}
             alt=""
-            loading="lazy"
+            loading="eager"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
         )}

@@ -28,14 +28,13 @@ export default function WorkPage() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [playingStarted, setPlayingStarted] = useState(false);
 
-  // Start the playhead as soon as the component is mounted — don't wait for
-  // the map's full tile-preload sequence (which can take 1-2s). The page
-  // is already visible to the user at that point.
+  // Wait for the map to finish loading before starting the playhead.
+  // This keeps the intro coordinated — everything reveals together.
   useEffect(() => {
-    if (!mounted) return;
-    const t = setTimeout(() => setPlayingStarted(true), 300);
+    if (!mapLoaded) return;
+    const t = setTimeout(() => setPlayingStarted(true), 200);
     return () => clearTimeout(t);
-  }, [mounted]);
+  }, [mapLoaded]);
 
   const displayIndex = hoverIndex ?? currentIndex;
   const currentItem = timeline[displayIndex];
@@ -74,14 +73,14 @@ export default function WorkPage() {
 
       <SiteHeader
         animated
-        toTop={mounted}
+        toTop={mapLoaded}
         visible={headerVisible && mounted}
         startY={headerStartY}
         topPaddingPx={28}
         color="#ffffff"
       />
 
-      {mounted && (
+      {mapLoaded && (
         <div
           className="fixed"
           data-no-cursor-expand
@@ -108,7 +107,7 @@ export default function WorkPage() {
 
       <main
         className={`h-screen relative z-10 overflow-hidden ${
-          mounted ? "animate-fadeIn" : "opacity-0"
+          mounted && mapLoaded ? "animate-fadeIn" : "opacity-0"
         }`}
       >
         <div

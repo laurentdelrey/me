@@ -33,7 +33,7 @@ export default function HeroMedia({
         className="pointer-events-auto"
         style={{
           width: "min(62vw, 820px)",
-          height: "min(40vh, 380px)",
+          height: "min(52vh, 520px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

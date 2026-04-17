@@ -123,7 +123,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
             });
             console.log(`Preloading tiles ${preloadIndex + 1}/${allLocations.length}`);
             preloadIndex++;
-            setTimeout(preloadNext, 80);
+            setTimeout(preloadNext, 25);
           } else {
             // Return to initial position
             map.jumpTo({
