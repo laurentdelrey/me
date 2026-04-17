@@ -33,7 +33,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
 
       const map = new mapboxgl.default.Map({
         container: mapContainer.current,
-        style: `mapbox://styles/laurentdelrey/clw9xnyx600ah01ql0ebq5ee5`, // Custom monochrome style (cacheable — removed ?fresh=true)
+        // Custom monochrome style with the grey palette baked in — no runtime
+        // setPaintProperty loop needed, no "brown flash into grey" transition.
+        style: `mapbox://styles/laurentdelrey/cmnw9fue6005v01sv8gb600zg`,
         center: center,
         zoom: zoom,
         pitch: 50, // Initial tilt for 3D effect
@@ -48,35 +50,11 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
-        // Fog removed — in a fully-grey scene it renders an extra pass per frame
-        // for no visible difference. Restore setFog() if we ever un-grey things.
-
-        // Desaturate map to light grey tones matching #BFBFBF
-        const style = map.getStyle();
-        if (style?.layers) {
-          for (const layer of style.layers) {
-            try {
-              if (layer.type === 'background') {
-                map.setPaintProperty(layer.id, 'background-color', '#b0b0b0');
-              } else if (layer.type === 'fill') {
-                map.setPaintProperty(layer.id, 'fill-color', '#b8b8b8');
-                try { map.setPaintProperty(layer.id, 'fill-outline-color', '#aaaaaa'); } catch {}
-              } else if (layer.type === 'line') {
-                map.setPaintProperty(layer.id, 'line-color', '#a0a0a0');
-              } else if (layer.type === 'symbol') {
-                try { map.setPaintProperty(layer.id, 'text-color', '#999999'); } catch {}
-                try { map.setPaintProperty(layer.id, 'text-halo-color', '#b8b8b8'); } catch {}
-              }
-            } catch {}
-          }
-        }
-        
-        // Signal that the map is ready.
+        // Colors are baked into the custom Studio style now — no runtime
+        // setPaintProperty loop, no "brown flash into grey" transition.
         requestAnimationFrame(() => {
           if (onLoad) onLoad();
         });
-        
-        // Let the custom map style handle all labels without overrides
 
         setMapLoaded(true);
 
