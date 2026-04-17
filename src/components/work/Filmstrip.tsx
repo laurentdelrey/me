@@ -123,16 +123,17 @@ export default function Filmstrip({
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
       style={{ zIndex: 30 }}
     >
-      {/* Upward shadow at the top edge of the strip */}
+      {/* Subtle elevation shadow that lifts the strip off the map */}
       <div
         className="pointer-events-none"
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: -6,
-          height: 6,
-          boxShadow: "0 -12px 28px rgba(0,0,0,0.22), 0 -3px 8px rgba(0,0,0,0.12)",
+          top: -14,
+          height: 14,
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.18), rgba(0,0,0,0) 100%)",
           zIndex: 0,
         }}
       />
@@ -218,30 +219,33 @@ function FilmstripThumb({
           flexShrink: 0,
           width: THUMB_W,
           height: THUMB_H,
-          overflow: "hidden",
           cursor: "none",
           display: "inline-block",
-          borderRight: "1px solid rgba(255,255,255,0.9)",
           boxSizing: "border-box",
+          position: "relative",
+          overflow: "hidden",
+          borderRight: "1px solid rgba(255,255,255,0.9)",
         }}
       >
-        {isVideo ? (
-          <video
-            src={m.blobUrl}
-            muted
-            playsInline
-            preload="metadata"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-          <img
-            src={m.blobUrl}
-            alt=""
-            loading="eager"
-            decoding="async"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        )}
+        <div style={{ width: "100%", height: "100%" }}>
+          {isVideo ? (
+            <video
+              src={m.blobUrl}
+              muted
+              playsInline
+              preload="metadata"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          ) : (
+            <img
+              src={m.blobUrl}
+              alt=""
+              loading="eager"
+              decoding="async"
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+          )}
+        </div>
       </a>
     );
   }
