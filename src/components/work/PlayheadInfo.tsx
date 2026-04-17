@@ -13,7 +13,7 @@ import { SlidingNumber } from "@/../components/motion-primitives/sliding-number"
  * so its center always lines up with the playhead (which is the screen center).
  */
 
-const FILMSTRIP_HEIGHT = 140 + 16 * 2; // matches Filmstrip
+const FILMSTRIP_HEIGHT = 100 + 12 * 2; // matches Filmstrip (thumb 100 + pad 12)
 const GAP_ABOVE_FILMSTRIP = 16;
 
 export default function PlayheadInfo({

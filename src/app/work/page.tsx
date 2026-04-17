@@ -221,6 +221,7 @@ export default function WorkPage() {
           onLeave={() => setHoverIndex(null)}
           onCurrentIndexChange={setCurrentIndex}
           onSelectItem={seekTo}
+          currentIndex={currentIndex}
           playing={isPlaying}
           speed={speed}
           seek={seek}

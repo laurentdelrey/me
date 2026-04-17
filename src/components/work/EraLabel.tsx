@@ -11,8 +11,8 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
       style={{
         left: 32,
         // Bottom-aligned with the PlayheadInfo controls row
-        // (FILMSTRIP_HEIGHT 172 + GAP_ABOVE_FILMSTRIP 16 = 188)
-        bottom: 188,
+        // (FILMSTRIP_HEIGHT 124 + GAP_ABOVE_FILMSTRIP 16 = 140)
+        bottom: 140,
         zIndex: 40,
         pointerEvents: "none",
       }}

@@ -4,9 +4,9 @@ import { motion, useMotionValue } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
-const THUMB_W = 140;
-const THUMB_H = 140;
-const STRIP_PAD = 16;
+const THUMB_W = 100;
+const THUMB_H = 100;
+const STRIP_PAD = 12;
 // Center band where hover does NOT scrub, so the user can click to select
 // the thumb under the cursor. Outside this band, hover triggers ff/rew scrub.
 const HOVER_DEAD_ZONE_PX = 250;
@@ -21,6 +21,7 @@ export default function Filmstrip({
   onLeave,
   onCurrentIndexChange,
   onSelectItem,
+  currentIndex = 0,
   playing = true,
   speed = 1,
   seek,
@@ -31,6 +32,7 @@ export default function Filmstrip({
   onLeave: () => void;
   onCurrentIndexChange: (idx: number) => void;
   onSelectItem?: (idx: number) => void;
+  currentIndex?: number;
   playing?: boolean;
   speed?: number;
   // A { index, nonce } pair. When `nonce` changes, the playhead jumps to `index`.
@@ -242,6 +244,10 @@ export default function Filmstrip({
                 index={i}
                 onHover={onHoverItem}
                 onSelect={onSelectItem}
+                // Load media for thumbs within 3 slots of the playhead — far
+                // enough ahead/behind that the next-visible thumb is ready,
+                // cheap enough to not flood the network.
+                shouldLoad={Math.abs(i - currentIndex) <= 3}
               />
             ))}
           </motion.div>
@@ -261,11 +267,13 @@ function FilmstripThumb({
   index,
   onHover,
   onSelect,
+  shouldLoad = false,
 }: {
   item: TimelineItem;
   index: number;
   onHover: (idx: number) => void;
   onSelect?: (idx: number) => void;
+  shouldLoad?: boolean;
 }) {
   // Only scrub-on-hover when the cursor is outside the center dead zone.
   // Inside it, leaving hoverIndex null lets the playhead stay put so the user
@@ -300,16 +308,14 @@ function FilmstripThumb({
       >
         <div style={{ width: "100%", height: "100%" }}>
           {isVideo ? (
-            // preload="none" — ~45 video thumbs were each fetching metadata on
-            // page load, saturating the network and blocking the Map + hero.
-            // Thumbs show a black square until hovered/selected; a tiny
-            // cost for a massive perf win.
+            // Videos only load near the playhead — preloading all 45 at once
+            // choked the network and caused the original page-load lag.
             <video
-              src={m.blobUrl}
+              src={shouldLoad ? m.blobUrl : undefined}
               muted
               playsInline
-              preload="none"
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              preload={shouldLoad ? "metadata" : "none"}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#888" }}
             />
           ) : (
             <img
