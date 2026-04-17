@@ -123,20 +123,6 @@ export default function Filmstrip({
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
       style={{ zIndex: 30, height: THUMB_H + STRIP_PAD * 2 }}
     >
-      {/* Single unified diffuse shadow above the strip (no per-thumb overlap) */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          boxShadow: "0 -14px 40px rgba(0,0,0,0.22), 0 -4px 10px rgba(0,0,0,0.12)",
-          zIndex: 0,
-        }}
-      />
-
       {/* Playhead — vertically aligned with the thumbs */}
       <div
         className="pointer-events-none"
@@ -225,6 +211,7 @@ function FilmstripThumb({
           position: "relative",
           overflow: "hidden",
           borderRight: "1px solid rgba(255,255,255,0.9)",
+          boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
         }}
       >
         <div style={{ width: "100%", height: "100%" }}>
@@ -292,6 +279,7 @@ function FilmstripThumb({
         background: "#b0b0b0",
         borderRight: "1px solid rgba(255,255,255,0.9)",
         boxSizing: "border-box",
+        boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
       }}
     >
       {label}
