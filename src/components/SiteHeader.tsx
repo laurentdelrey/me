@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 type SiteHeaderProps = {
   animated?: boolean;
@@ -98,23 +98,31 @@ export default function SiteHeader({
         }}
       >
         <span style={{ opacity: 0.6 }}>on</span>
-        <a
+        <motion.a
           href="https://x.com/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.94 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
           style={socialPillStyle}
+          data-no-cursor-expand
         >
           x
-        </a>
+        </motion.a>
         <span style={{ opacity: 0.6 }}>and</span>
-        <a
+        <motion.a
           href="https://www.threads.net/@laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.94 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
           style={socialPillStyle}
+          data-no-cursor-expand
         >
           threads
-        </a>
+        </motion.a>
       </div>
 
       <style jsx>{`
@@ -135,10 +143,9 @@ const socialPillStyle: React.CSSProperties = {
   display: "inline-block",
   padding: "0 8px",
   borderRadius: 4,
-  // Darker than the standard pill so they read clearly against the
-  // vignette's grey corners (vignette ≈ #bfbfbf, standard pill #b0b0b0
-  // would blend in).
-  background: "#6f6f6f",
+  // A notch darker than the standard #b0b0b0 pill so they read against
+  // the vignette's grey corners, but not so dark they feel out of palette.
+  background: "#9a9a9a",
   border: "1px solid rgba(255,255,255,0.15)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
