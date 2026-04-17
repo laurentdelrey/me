@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 import { WordReveal } from "@/components/work/WordReveal";
@@ -9,6 +9,12 @@ import { WordReveal } from "@/components/work/WordReveal";
 // These match the actual UI: header ~70px, filmstrip area ~160px.
 const TOP_MARGIN = 80;
 const BOTTOM_MARGIN = 200;
+
+// Hero box caps. Must stay in sync with the container style below.
+const HERO_W_VW = 0.68;
+const HERO_W_MAX = 920;
+const HERO_H_VH = 0.58;
+const HERO_H_MAX = 580;
 
 export default function HeroMedia({
   item,
@@ -20,6 +26,28 @@ export default function HeroMedia({
   onVideoStarted?: () => void;
 }) {
   const caption = item.kind === "media" ? item.text : null;
+
+  // Track viewport so we can compute the actual rendered hero width for the caption.
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window !== "undefined" ? window.innerWidth : 1600,
+    h: typeof window !== "undefined" ? window.innerHeight : 900,
+  }));
+  useEffect(() => {
+    const onResize = () =>
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const heroMaxW = Math.min(HERO_W_VW * viewport.w, HERO_W_MAX);
+  const heroMaxH = Math.min(HERO_H_VH * viewport.h, HERO_H_MAX);
+
+  // Mirror `object-fit: contain`: rendered_w = min(maxW, maxH × aspect).
+  let captionWidthPx = heroMaxW;
+  if (item.kind === "media" && item.media.width && item.media.height) {
+    const aspect = item.media.width / item.media.height;
+    captionWidthPx = Math.min(heroMaxW, heroMaxH * aspect);
+  }
 
   return (
     <div
@@ -45,13 +73,7 @@ export default function HeroMedia({
           <HeroCaption
             text={caption}
             itemKey={keyForItem(item)}
-            // Pass the media's natural aspect ratio so the caption can match
-            // the ACTUAL rendered width of the hero (portrait vs landscape).
-            aspectRatio={
-              item.kind === "media" && item.media.width && item.media.height
-                ? item.media.width / item.media.height
-                : null
-            }
+            widthPx={captionWidthPx}
           />
         )}
         <div
@@ -73,27 +95,18 @@ export default function HeroMedia({
 function HeroCaption({
   text,
   itemKey,
-  aspectRatio,
+  widthPx,
 }: {
   text: string;
   itemKey: string;
-  aspectRatio: number | null;
+  widthPx: number;
 }) {
-  // Hero media is rendered inside `width: min(68vw, 920px); height: min(58vh, 580px)`
-  // with `object-fit: contain`. The actually-displayed width is:
-  //   min(maxWidth, maxHeight × aspectRatio).
-  // We compute that in pure CSS so the caption always matches the real hero width,
-  // regardless of portrait/landscape and viewport size.
-  const captionWidth = aspectRatio
-    ? `min(min(68vw, 920px), calc(min(58vh, 580px) * ${aspectRatio}))`
-    : "min(68vw, 920px)";
-
   return (
     <div
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        width: captionWidth,
+        width: `${widthPx}px`,
         fontSize: "1rem",
         lineHeight: 1.5,
         textAlign: "left",
