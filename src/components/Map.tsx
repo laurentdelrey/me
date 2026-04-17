@@ -79,70 +79,13 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           }
         }
         
-        // Preload all location tiles and flight paths
-        const locations = [
-          { center: [-118.5976, 34.0378], zoom: 12.5 }, // Topanga
-          { center: [-118.4912, 34.0195], zoom: 12.5 }, // Santa Monica
-          { center: [-118.4691, 33.9871], zoom: 12.5 }, // Venice
-          { center: [-122.4194, 37.7749], zoom: 12 }, // SF
-          { center: [2.3618, 48.8709], zoom: 13.5 }, // 10th arrondissement
-          { center: [2.2885, 48.8412], zoom: 13.5 }, // 15th arrondissement
-          { center: [2.5185, 48.8407], zoom: 13 }, // Bry-sur-Marne
-        ];
-        
-        // Key flight paths to preload at wider zoom levels
-        const flightPaths = [
-          // US West to East Coast
-          { center: [-95, 39], zoom: 4 }, // Middle of US
-          { center: [-105, 40], zoom: 5 }, // Western US
-          { center: [-85, 40], zoom: 5 }, // Eastern US
-          
-          // Europe to US (Atlantic crossing)
-          { center: [-30, 50], zoom: 3 }, // Mid-Atlantic
-          { center: [0, 48], zoom: 5 }, // Western Europe
-          { center: [-50, 45], zoom: 4 }, // Eastern Atlantic
-          
-          // California regional
-          { center: [-119, 34], zoom: 7 }, // Southern California overview
-          { center: [-120, 37], zoom: 7 }, // Northern California overview
-        ];
-        
-        let preloadIndex = 0;
-        const allLocations = [...locations, ...flightPaths];
-        
-        const preloadNext = () => {
-          if (preloadIndex < allLocations.length) {
-            const loc = allLocations[preloadIndex];
-            map.jumpTo({
-              center: loc.center as [number, number],
-              zoom: loc.zoom,
-              pitch: 50,
-              bearing: 0
-            });
-            console.log(`Preloading tiles ${preloadIndex + 1}/${allLocations.length}`);
-            preloadIndex++;
-            setTimeout(preloadNext, 25);
-          } else {
-            // Return to initial position
-            map.jumpTo({
-              center: center,
-              zoom: zoom,
-              pitch: 50,
-              bearing: 0
-            });
-            console.log('Preloading complete, returning to initial position');
-            setTimeout(() => {
-            // Fade-in after brief frame to avoid flash
-            requestAnimationFrame(() => {
-              setPreloading(false);
-              if (onLoad) onLoad();
-            });
-            }, 200);
-          }
-        };
-        
-        // Start preloading
-        setTimeout(preloadNext, 100);
+        // Only preload the first-visible era location. The rest load on demand
+        // when flyTo navigates there — tile fetches are gated to real need
+        // instead of front-loaded into the intro. Big intro-lag win.
+        requestAnimationFrame(() => {
+          setPreloading(false);
+          if (onLoad) onLoad();
+        });
         
         // Let the custom map style handle all labels without overrides
 

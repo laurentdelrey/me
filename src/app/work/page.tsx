@@ -98,13 +98,14 @@ export default function WorkPage() {
   const goToPrevChapter = () => seekTo(prevChapterIndex);
   const goToNextChapter = () => seekTo(nextChapterIndex);
 
-  // Wait for the map to finish loading before starting the playhead.
-  // This keeps the intro coordinated — everything reveals together.
+  // Start the playhead as soon as the page mounts — don't wait for the map.
+  // The map loads in the background while the tldr card plays; by the time
+  // the user advances to meta, the map is ready (or nearly so).
   useEffect(() => {
-    if (!mapLoaded) return;
+    if (!mounted) return;
     const t = setTimeout(() => setPlayingStarted(true), 200);
     return () => clearTimeout(t);
-  }, [mapLoaded]);
+  }, [mounted]);
 
   const displayIndex = hoverIndex ?? currentIndex;
   const currentItem = timeline[displayIndex];
@@ -143,16 +144,29 @@ export default function WorkPage() {
 
       <SiteHeader
         animated
-        toTop={mapLoaded}
+        toTop={mounted}
         visible={headerVisible && mounted}
         startY={headerStartY}
         topPaddingPx={28}
         color="#ffffff"
       />
 
+      {/* Grey veil — covers the map during tldr so the first step lands
+          on a clean grey background while the map is still loading. Fades
+          out as soon as we leave the tldr step. */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: "#b0b0b0",
+          opacity: currentItem?.kind === "tldr" ? 1 : 0,
+          transition: "opacity 700ms ease-out",
+          zIndex: 1,
+        }}
+      />
+
       <main
         className={`h-screen relative z-10 overflow-hidden ${
-          mounted && mapLoaded ? "animate-fadeIn" : "opacity-0"
+          mounted ? "animate-fadeIn" : "opacity-0"
         }`}
       >
         <div
@@ -183,7 +197,7 @@ export default function WorkPage() {
           />
         )}
 
-        {mapLoaded && (
+        {mounted && (
           <PlayheadInfo
             year={year}
             month={month}
