@@ -168,13 +168,13 @@ export default function WorkPage() {
           mounted ? "animate-fadeIn" : "opacity-0"
         }`}
       >
-        {/* Vignette — one fixed div with a radial gradient that darkens
-            all four edges evenly, replacing the separate top/bottom gradients. */}
+        {/* Vignette — page grey narrowed to the outer band: center stays
+            clear, then a quick ramp up to full grey in the last ~25%. */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.25) 75%, rgba(0,0,0,0.6) 100%)",
+              "radial-gradient(ellipse at center, transparent 72%, rgba(191,191,191,0.55) 92%, rgba(191,191,191,1) 100%)",
             zIndex: 15,
           }}
         />
