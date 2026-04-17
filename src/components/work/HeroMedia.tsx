@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
@@ -361,12 +362,17 @@ function MediaCard({
   // Anchor stretches to fill the constrained parent box so the image's
   // `max-width: 100%` resolves against the hero size (`min(68vw, 920px)`),
   // not against its own content.
+  const [hovered, setHovered] = useState(false);
+
   return (
     <a
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -376,6 +382,52 @@ function MediaCard({
       }}
     >
       {media}
+      {/* "Open on x" hint — fades in on hover to make clickability obvious. */}
+      <motion.div
+        aria-hidden
+        initial={false}
+        animate={{
+          opacity: hovered ? 1 : 0,
+          y: hovered ? 0 : 4,
+        }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="lowercase"
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "6px 10px",
+          borderRadius: 6,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          color: "#fff",
+          fontSize: "0.8rem",
+          lineHeight: 1,
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <span>open on x</span>
+        <HeroHintOpenIcon />
+      </motion.div>
     </a>
+  );
+}
+
+function HeroHintOpenIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path
+        d="M4 3 H9 V8 M9 3 L3 9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

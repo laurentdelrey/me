@@ -131,7 +131,7 @@ const pillBase: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.3)",
   // Scaled-down version of the hero's diffuse shadow — same family, but
   // 60px of blur would spill all over on a pill this size.
-  boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+  boxShadow: "0 10px 32px rgba(0,0,0,0.10)",
   color: "#fff",
   cursor: "none",
 };
