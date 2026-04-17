@@ -187,7 +187,7 @@ export default function WorkPage() {
           }}
         />
 
-        <EraLabel eraId={currentEraId} isMobile={isMobile} />
+        {!isMobile && <EraLabel eraId={currentEraId} isMobile={isMobile} />}
 
         {currentItem && (
           <HeroMedia

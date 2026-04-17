@@ -81,7 +81,7 @@ export default function HeroMedia({
           gap: 12,
         }}
       >
-        {caption && item.kind === "media" && (
+        {caption && item.kind === "media" && !isMobile && (
           <HeroCaption
             text={caption}
             itemKey={keyForItem(item)}
