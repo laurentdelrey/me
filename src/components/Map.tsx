@@ -78,9 +78,10 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           console.log('Map resized');
         }, 100);
 
-        // Start the slow living drift once tiles are laid out so the map feels
-        // alive on the very first step.
-        setTimeout(() => startDrift(), 800);
+        // Don't start drift here — the `[center, zoom, mapLoaded]` effect is
+        // about to run a 3.5s flyTo for the opening animation, and drift's
+        // easeTo would interrupt it. Drift is scheduled to resume 3700ms
+        // after the flyTo via that effect.
       });
       
       map.on('error', (e) => {
