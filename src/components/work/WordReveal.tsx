@@ -54,21 +54,22 @@ export function WordReveal({
     }
     if (React.isValidElement(node)) {
       const el = node as React.ReactElement<any>;
-      // For anchors, we also want them to fade in as their words become visible.
+      // Anchors (pill buttons) fade in AS A UNIT — bg + border + text all together —
+      // once all their words have been reached. This avoids empty-looking pills
+      // and keeps the pill chrome in sync with the text it represents.
       if (el.type === "a" && el.props.style) {
         const linkWords = countWords(el.props.children);
         const endIdx = wordIndex + linkWords;
         const allVisible = endIdx <= visibleWords;
-        const originalColor = el.props.style.color;
-        const children = React.Children.map(el.props.children, process);
+        // Advance wordIndex past this link's words so subsequent words line up.
+        wordIndex = endIdx;
         return React.cloneElement(el, {
           ...el.props,
           style: {
             ...el.props.style,
-            color: allVisible ? originalColor : "rgba(255,255,255,0.25)",
-            transition: "color 0.3s ease-out",
+            opacity: allVisible ? 1 : 0,
+            transition: "opacity 0.3s ease-out",
           },
-          children,
         });
       }
       // For span with muted color, match opacity
