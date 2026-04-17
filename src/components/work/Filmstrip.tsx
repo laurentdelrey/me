@@ -121,7 +121,11 @@ export default function Filmstrip({
   return (
     <div
       className="fixed left-0 right-0 bottom-0 pointer-events-none"
-      style={{ zIndex: 30, height: THUMB_H + STRIP_PAD * 2 }}
+      style={{
+        zIndex: 30,
+        height: THUMB_H + STRIP_PAD * 2,
+        overflow: "visible",
+      }}
     >
       {/* Playhead — vertically aligned with the thumbs */}
       <div
@@ -144,33 +148,42 @@ export default function Filmstrip({
         onMouseLeave={onLeave}
         style={{
           pointerEvents: "auto",
-          overflowX: "hidden",
-          overflowY: "visible",
+          overflow: "visible",
           width: "100%",
           padding: `${STRIP_PAD}px 0`,
           position: "relative",
           zIndex: 1,
         }}
       >
-        <motion.div
+        {/* Horizontal clip mask — only clips left/right via clip-path, lets the shadow bleed above */}
+        <div
           style={{
-            display: "inline-flex",
-            gap: 0,
-            x,
-            willChange: "transform",
-            // Single tight wrapper around ALL thumbs gets the shadow
-            boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
+            width: "100%",
+            clipPath: `inset(-80px 0 -80px 0)`, // allow 80px of shadow above & below, clip horizontally
+            WebkitClipPath: `inset(-80px 0 -80px 0)`,
           }}
         >
-          {timeline.map((item, i) => (
-            <FilmstripThumb
-              key={keyForItem(item)}
-              item={item}
-              index={i}
-              onHover={onHoverItem}
-            />
-          ))}
-        </motion.div>
+          <motion.div
+            style={{
+              display: "inline-flex",
+              gap: 0,
+              x,
+              willChange: "transform",
+              // Single tight wrapper around ALL thumbs gets the shadow — layered for soft diffusion
+              boxShadow:
+                "0 30px 80px rgba(0,0,0,0.22), 0 16px 40px rgba(0,0,0,0.18), 0 6px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08)",
+            }}
+          >
+            {timeline.map((item, i) => (
+              <FilmstripThumb
+                key={keyForItem(item)}
+                item={item}
+                index={i}
+                onHover={onHoverItem}
+              />
+            ))}
+          </motion.div>
+        </div>
       </div>
     </div>
   );
