@@ -163,19 +163,6 @@ export default function WorkPage() {
         color="#ffffff"
       />
 
-      {/* Grey veil — covers the map during tldr so the first step lands
-          on a clean grey background while the map is still loading. Fades
-          out as soon as we leave the tldr step. */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: "#b0b0b0",
-          opacity: currentItem?.kind === "tldr" ? 1 : 0,
-          transition: "opacity 700ms ease-out",
-          zIndex: 1,
-        }}
-      />
-
       <main
         className={`h-screen relative z-10 overflow-hidden ${
           mounted ? "animate-fadeIn" : "opacity-0"
