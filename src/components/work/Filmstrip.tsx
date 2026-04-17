@@ -55,9 +55,9 @@ export default function Filmstrip({
       const maxPosition = Math.max(0, (lenRef.current - 1) * THUMB_W);
 
       if (hoverIndexRef.current !== null) {
-        // Lock to hovered thumb's center, eased
+        // Lock to hovered thumb's center with gentle easing
         const target = hoverIndexRef.current * THUMB_W;
-        positionRef.current += (target - positionRef.current) * 0.2;
+        positionRef.current += (target - positionRef.current) * 0.06;
       } else if (!playingRef.current) {
         // Intro hasn't finished yet — stay at start position
         positionRef.current = START_POSITION;
@@ -139,16 +139,16 @@ export default function Filmstrip({
         }}
       />
 
-      {/* Playhead */}
+      {/* Playhead — vertically aligned with the thumbs (strip has STRIP_PAD padding top/bottom) */}
       <div
         className="pointer-events-none"
         style={{
           position: "absolute",
           left: "50%",
-          bottom: 20,
+          bottom: 20 + STRIP_PAD - 6, // extend slightly above/below the thumbs
           transform: "translateX(-50%)",
           width: 2,
-          height: THUMB_H + 20,
+          height: THUMB_H + 12,
           background: "#ffffff",
           zIndex: 2,
           boxShadow: "0 0 10px rgba(255,255,255,0.6)",

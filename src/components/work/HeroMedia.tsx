@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
-import { AnimatedText } from "@/components/AnimatedText";
+import { WordReveal } from "@/components/work/WordReveal";
 
 // Hero sits between the top (below header) and the filmstrip.
 // These match the actual UI: header ~70px, filmstrip area ~160px.
@@ -33,7 +33,7 @@ export default function HeroMedia({
         className="pointer-events-auto"
         style={{
           maxWidth: "min(62vw, 820px)",
-          maxHeight: "min(60vh, 560px)",
+          maxHeight: "min(52vh, 480px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -58,9 +58,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
   if (item.kind === "tldr") {
     return (
       <StoryCard>
-        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+        <WordReveal delay={60} key={item.id}>
           <div style={{ maxWidth: "520px" }}>{ERAS.tldr.content}</div>
-        </AnimatedText>
+        </WordReveal>
       </StoryCard>
     );
   }
@@ -68,9 +68,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
   if (item.kind === "social") {
     return (
       <StoryCard>
-        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+        <WordReveal delay={60} key={item.id}>
           <div style={{ maxWidth: "520px" }}>{ERAS.social.content}</div>
-        </AnimatedText>
+        </WordReveal>
       </StoryCard>
     );
   }
@@ -91,9 +91,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
         >
           {era.label} {era.years && <span style={{ color: "#999999", marginLeft: "12px" }}>{era.years}</span>}
         </h2>
-        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+        <WordReveal delay={60} key={item.id}>
           {era.content}
-        </AnimatedText>
+        </WordReveal>
         {era.city && (
           <p
             className="lowercase"
