@@ -67,7 +67,9 @@ export default function HeroMedia({
       style={{
         top: TOP_MARGIN,
         bottom: BOTTOM_MARGIN,
-        zIndex: 5,
+        // Above the vignette (z:15) so the hero + text chips always read clearly
+        // even at the edges of wide viewports.
+        zIndex: 20,
       }}
     >
       <div
