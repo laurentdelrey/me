@@ -50,6 +50,20 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
+        // The Studio style is templated (`mapbox:variation`) which locks fog
+        // colors to a dark-brown palette we can't override via the Styles API.
+        // Override at runtime instead — it's a single setFog call, cheap.
+        try {
+          map.setFog({
+            range: [0.5, 10],
+            color: '#b0b0b0',
+            'high-color': '#b0b0b0',
+            'space-color': '#b0b0b0',
+            'horizon-blend': 0.1,
+            'star-intensity': 0,
+          });
+        } catch {}
+
         // Colors are baked into the custom Studio style now — no runtime
         // setPaintProperty loop, no "brown flash into grey" transition.
         requestAnimationFrame(() => {
