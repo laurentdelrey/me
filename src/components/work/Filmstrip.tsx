@@ -300,18 +300,22 @@ function FilmstripThumb({
       >
         <div style={{ width: "100%", height: "100%" }}>
           {isVideo ? (
+            // preload="none" — ~45 video thumbs were each fetching metadata on
+            // page load, saturating the network and blocking the Map + hero.
+            // Thumbs show a black square until hovered/selected; a tiny
+            // cost for a massive perf win.
             <video
               src={m.blobUrl}
               muted
               playsInline
-              preload="metadata"
+              preload="none"
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
           ) : (
             <img
               src={m.blobUrl}
               alt=""
-              loading="eager"
+              loading="lazy"
               decoding="async"
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
