@@ -53,7 +53,7 @@ export default function PlayheadInfo({
       }}
     >
       <div
-        className="text-white text-shadow"
+        className="text-white"
         style={{
           pointerEvents: "auto",
           display: "grid",
@@ -63,6 +63,9 @@ export default function PlayheadInfo({
           // 1fr columns stay equal, so the auto (date) column is always screen-centered.
           // Wide enough to fit the longest chapter label at body-text size.
           width: 680,
+          // NOTE: no text-shadow here — SlidingNumber clips each digit with
+          // overflow-y: clip, and a text-shadow gets cropped by that box,
+          // leaving a visible rectangular artifact inside the date.
         }}
       >
         {/* Left controls — previous chapter, then play/pause, pushed toward the date */}
