@@ -26,6 +26,8 @@ export default function PlayheadInfo({
   onToggleSpeed,
   onBack,
   onNext,
+  prevLabel,
+  nextLabel,
 }: {
   year: number;
   month: number;
@@ -36,6 +38,8 @@ export default function PlayheadInfo({
   onToggleSpeed: () => void;
   onBack: () => void;
   onNext: () => void;
+  prevLabel: string;
+  nextLabel: string;
 }) {
   return (
     <div
@@ -54,12 +58,14 @@ export default function PlayheadInfo({
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
-          columnGap: 12,
-          // Total width = 2×sideWidth + date; with 1fr columns, visual center = date center.
-          width: 360,
+          columnGap: 14,
+          // 1fr columns stay equal, so the auto (date) column is always screen-centered.
+          // Needs to be wide enough to fit the longest chapter label ("a quest called tribe")
+          // on each side without letting pills overlap the date.
+          width: 520,
         }}
       >
-        {/* Left controls — back-to-start, then play/pause, pushed toward the date */}
+        {/* Left controls — previous chapter, then play/pause, pushed toward the date */}
         <div
           style={{
             display: "flex",
@@ -68,9 +74,11 @@ export default function PlayheadInfo({
             gap: 10,
           }}
         >
-          <IconButton onClick={onBack} ariaLabel="Back to start">
-            <BackIcon />
-          </IconButton>
+          <ChapterButton
+            side="prev"
+            label={prevLabel}
+            onClick={onBack}
+          />
           <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
         </div>
 
@@ -102,9 +110,11 @@ export default function PlayheadInfo({
             gap: 10,
           }}
         >
-          <IconButton onClick={onNext} ariaLabel="Next chapter">
-            <NextIcon />
-          </IconButton>
+          <ChapterButton
+            side="next"
+            label={nextLabel}
+            onClick={onNext}
+          />
           <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
         </div>
       </div>
@@ -144,6 +154,57 @@ function IconButton({
       data-no-cursor-expand
     >
       {children}
+    </motion.button>
+  );
+}
+
+function ChapterButton({
+  side,
+  label,
+  onClick,
+}: {
+  side: "prev" | "next";
+  label: string;
+  onClick: () => void;
+}) {
+  const isPrev = side === "prev";
+  return (
+    <motion.button
+      onClick={onClick}
+      aria-label={isPrev ? `Previous chapter: ${label}` : `Next chapter: ${label}`}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      className="lowercase"
+      style={{
+        height: 20,
+        padding: "0 7px",
+        borderRadius: 4,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        background: "rgba(255,255,255,0.18)",
+        border: "1px solid rgba(255,255,255,0.28)",
+        cursor: "pointer",
+        color: "#fff",
+        fontSize: "0.7rem",
+        fontWeight: 500,
+        lineHeight: 1,
+      }}
+      data-no-cursor-expand
+    >
+      {isPrev && <BackIcon />}
+      <span
+        style={{
+          maxWidth: 110,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </span>
+      {!isPrev && <NextIcon />}
     </motion.button>
   );
 }

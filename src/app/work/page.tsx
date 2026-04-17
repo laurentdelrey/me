@@ -4,8 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import SiteHeader from "@/components/SiteHeader";
 import { PlayheadCursor } from "@/components/PlayheadCursor";
-import { buildTimeline, getItemDate, getItemEraId } from "@/lib/work/timeline";
+import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
+
+function chapterLabel(item: TimelineItem | undefined): string {
+  if (!item) return "";
+  if (item.kind === "tldr") return "tl;dr";
+  if (item.kind === "social") return "@ me";
+  if (item.kind === "eraIntro") return ERAS[item.eraId].label;
+  return "";
+}
 
 // Dynamic imports (client-only)
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -55,25 +63,37 @@ export default function WorkPage() {
   });
   const isPlaying = playingStarted && !userPaused;
 
-  const goToStart = () => {
-    setSeek((s) => ({ index: 0, nonce: s.nonce + 1 }));
-    setUserPaused(false);
+  // Walk the timeline from `from` in `direction` (±1), skipping media items,
+  // to find the next/prev "chapter" (tldr / eraIntro / social). Wraps around.
+  const findChapterIndex = (from: number, direction: 1 | -1): number => {
+    const n = timeline.length;
+    if (n === 0) return 0;
+    for (let step = 1; step <= n; step++) {
+      const idx = (((from + direction * step) % n) + n) % n;
+      if (timeline[idx].kind !== "media") return idx;
+    }
+    return from;
   };
 
-  const goToNextChapter = () => {
-    // "Chapter" = next non-media item (tldr / eraIntro / social).
-    // Walk forward from currentIndex, wrapping around.
-    const n = timeline.length;
-    if (n === 0) return;
-    for (let step = 1; step <= n; step++) {
-      const idx = (currentIndex + step) % n;
-      if (timeline[idx].kind !== "media") {
-        setSeek((s) => ({ index: idx, nonce: s.nonce + 1 }));
-        setUserPaused(false);
-        return;
-      }
-    }
+  const prevChapterIndex = useMemo(
+    () => findChapterIndex(currentIndex, -1),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timeline, currentIndex],
+  );
+  const nextChapterIndex = useMemo(
+    () => findChapterIndex(currentIndex, 1),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timeline, currentIndex],
+  );
+  const prevLabel = chapterLabel(timeline[prevChapterIndex]);
+  const nextLabel = chapterLabel(timeline[nextChapterIndex]);
+
+  const seekTo = (idx: number) => {
+    setSeek((s) => ({ index: idx, nonce: s.nonce + 1 }));
+    setUserPaused(false);
   };
+  const goToPrevChapter = () => seekTo(prevChapterIndex);
+  const goToNextChapter = () => seekTo(nextChapterIndex);
 
   // Wait for the map to finish loading before starting the playhead.
   // This keeps the intro coordinated — everything reveals together.
@@ -171,8 +191,10 @@ export default function WorkPage() {
             onToggleSpeed={() =>
               setSpeed((s) => (s === 1 ? 2 : s === 2 ? 10 : 1))
             }
-            onBack={goToStart}
+            onBack={goToPrevChapter}
             onNext={goToNextChapter}
+            prevLabel={prevLabel}
+            nextLabel={nextLabel}
           />
         )}
 

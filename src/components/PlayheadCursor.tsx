@@ -94,8 +94,8 @@ export function PlayheadCursor() {
         }}
       >
         <svg
-          width="22"
-          height="16"
+          width="30"
+          height="22"
           viewBox="0 0 22 16"
           fill="#ffffff"
           aria-hidden
