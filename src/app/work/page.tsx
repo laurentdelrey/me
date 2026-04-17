@@ -87,7 +87,7 @@ export default function WorkPage() {
   );
   // On the very first chapter (tldr), there's no meaningful "previous" —
   // hide the back pill rather than wrap around to `@ me`.
-  const onFirstChapter = currentItem?.kind === "tldr";
+  const onFirstChapter = timeline[currentIndex]?.kind === "tldr";
   const prevLabel = onFirstChapter ? "" : chapterLabel(timeline[prevChapterIndex]);
   const nextLabel = chapterLabel(timeline[nextChapterIndex]);
 
