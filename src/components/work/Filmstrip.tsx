@@ -217,22 +217,13 @@ export default function Filmstrip({
           zIndex: 1,
         }}
       >
-        {/* Horizontal clip mask — only clips left/right via clip-path, lets the shadow bleed above */}
-        <div
-          style={{
-            width: "100%",
-            clipPath: `inset(-80px 0 -80px 0)`, // allow 80px of shadow above & below, clip horizontally
-            WebkitClipPath: `inset(-80px 0 -80px 0)`,
-          }}
-        >
+        <div style={{ width: "100%", overflow: "hidden" }}>
           <motion.div
             style={{
               display: "inline-flex",
               gap: 0,
               x,
               willChange: "transform",
-              // Single soft shadow — transparent + big blur
-              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
             }}
           >
             {timeline.map((item, i) => (
