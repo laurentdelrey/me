@@ -168,12 +168,13 @@ export default function WorkPage() {
           mounted ? "animate-fadeIn" : "opacity-0"
         }`}
       >
-        {/* Vignette — page-grey ring with a wide soft fade from the center. */}
+        {/* Vignette — diffuse page-grey fade, multi-stop so there's no
+            visible edge to the "circle". */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 34%, rgba(191,191,191,1) 90%, rgba(191,191,191,1) 100%)",
+              "radial-gradient(ellipse at center, transparent 15%, rgba(191,191,191,0.15) 45%, rgba(191,191,191,0.5) 75%, rgba(191,191,191,1) 100%)",
             zIndex: 15,
           }}
         />

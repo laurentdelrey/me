@@ -29,7 +29,7 @@ const linkStyle: React.CSSProperties = {
   padding: "0 8px",
   borderRadius: 4,
   background: "#b0b0b0",
-  border: "1px solid rgba(255,255,255,0.3)",
+  border: "1px solid rgba(255,255,255,0.15)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   verticalAlign: "baseline",
