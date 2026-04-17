@@ -42,7 +42,17 @@ export default function HeroMedia({
         }}
       >
         {caption && (
-          <HeroCaption text={caption} itemKey={keyForItem(item)} />
+          <HeroCaption
+            text={caption}
+            itemKey={keyForItem(item)}
+            // Pass the media's natural aspect ratio so the caption can match
+            // the ACTUAL rendered width of the hero (portrait vs landscape).
+            aspectRatio={
+              item.kind === "media" && item.media.width && item.media.height
+                ? item.media.width / item.media.height
+                : null
+            }
+          />
         )}
         <div
           style={{
@@ -60,14 +70,30 @@ export default function HeroMedia({
   );
 }
 
-function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
+function HeroCaption({
+  text,
+  itemKey,
+  aspectRatio,
+}: {
+  text: string;
+  itemKey: string;
+  aspectRatio: number | null;
+}) {
+  // Hero media is rendered inside `width: min(68vw, 920px); height: min(58vh, 580px)`
+  // with `object-fit: contain`. The actually-displayed width is:
+  //   min(maxWidth, maxHeight × aspectRatio).
+  // We compute that in pure CSS so the caption always matches the real hero width,
+  // regardless of portrait/landscape and viewport size.
+  const captionWidth = aspectRatio
+    ? `min(min(68vw, 920px), calc(min(58vh, 580px) * ${aspectRatio}))`
+    : "min(68vw, 920px)";
+
   return (
     <div
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        // Never wider than the hero media — left-aligned like a caption block.
-        width: "min(68vw, 920px)",
+        width: captionWidth,
         fontSize: "1rem",
         lineHeight: 1.5,
         textAlign: "left",
