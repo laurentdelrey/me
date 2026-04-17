@@ -97,6 +97,8 @@ function HeroCaption({
         fontSize: "1rem",
         lineHeight: 1.5,
         textAlign: "left",
+        // Avoid 1–2 orphan words on the last line.
+        textWrap: "pretty",
         opacity: 0,
         animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
       }}
