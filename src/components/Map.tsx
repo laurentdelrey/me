@@ -136,15 +136,6 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
     const m = mapRef.current;
     if (!mapLoaded || !m) return;
 
-    // Skip no-op flyTo: if the map is already at the requested location, don't
-    // run a 3.5s animation to nowhere (with random bearing/pitch jitter) —
-    // that's pure wasted GPU behind the grey veil on the first step.
-    const cur = m.getCenter();
-    const lngDelta = Math.abs(cur.lng - center[0]);
-    const latDelta = Math.abs(cur.lat - center[1]);
-    const zoomDelta = Math.abs(m.getZoom() - zoom);
-    if (lngDelta < 0.001 && latDelta < 0.001 && zoomDelta < 0.01) return;
-
     // Cancel any drift chain before a flyTo takes over
     if (driftTimerRef.current) {
       clearTimeout(driftTimerRef.current);
