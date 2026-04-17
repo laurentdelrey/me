@@ -49,16 +49,8 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
-        // Set fog/atmosphere to grey
-        try {
-          map.setFog({
-            color: '#b0b0b0',
-            'high-color': '#b0b0b0',
-            'horizon-blend': 0.1,
-            'space-color': '#b0b0b0',
-            'star-intensity': 0,
-          });
-        } catch {}
+        // Fog removed — in a fully-grey scene it renders an extra pass per frame
+        // for no visible difference. Restore setFog() if we ever un-grey things.
 
         // Desaturate map to light grey tones matching #BFBFBF
         const style = map.getStyle();
@@ -98,8 +90,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           console.log('Map resized');
         }, 100);
 
-        // Kick off the slow living drift once tiles are laid out.
-        setTimeout(() => startDrift(), 800);
+        // Drift doesn't start here anymore — it starts only after the first
+        // flyTo completes (i.e. we've left tldr and the map is actually visible).
+        // No point animating the map behind an opaque grey veil.
       });
       
       map.on('error', (e) => {
