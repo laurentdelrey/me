@@ -27,7 +27,7 @@ export default function PlayheadInfo({
   day: number;
   isPlaying: boolean;
   onTogglePlaying: () => void;
-  speed: 1 | 2;
+  speed: 1 | 2 | 4;
   onToggleSpeed: () => void;
 }) {
   return (
@@ -131,32 +131,32 @@ function SpeedToggle({
   speed,
   onToggle,
 }: {
-  speed: 1 | 2;
+  speed: 1 | 2 | 4;
   onToggle: () => void;
 }) {
   return (
     <motion.button
       onClick={onToggle}
       aria-label={`Playback speed ${speed}×`}
-      whileHover={{ scale: 1.15 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.92 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="tabular-nums"
       style={{
-        minWidth: 20,
+        minWidth: 28,
         height: 20,
-        padding: "0 4px",
-        borderRadius: 999,
+        padding: "0 6px",
+        borderRadius: 4,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "transparent",
-        border: "none",
+        background: "rgba(255,255,255,0.18)",
+        border: "1px solid rgba(255,255,255,0.28)",
         cursor: "pointer",
         color: "#fff",
-        fontSize: "0.75rem",
+        fontSize: "0.7rem",
+        fontWeight: 500,
         lineHeight: 1,
-        opacity: speed === 1 ? 0.5 : 1,
       }}
       data-no-cursor-expand
     >
