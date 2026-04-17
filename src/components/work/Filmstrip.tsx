@@ -140,6 +140,20 @@ export default function Filmstrip({
         }}
       />
 
+      {/* Soft drop shadow under the strip — extends below the clipped container */}
+      <div
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 12,
+          height: 20,
+          boxShadow: "0 14px 32px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.15)",
+          zIndex: 0,
+        }}
+      />
+
       <div
         className="hide-scrollbar"
         onMouseLeave={onLeave}
@@ -158,7 +172,6 @@ export default function Filmstrip({
             gap: 0,
             x,
             willChange: "transform",
-            filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.25))",
           }}
         >
           {timeline.map((item, i) => (

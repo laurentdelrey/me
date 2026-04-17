@@ -7,8 +7,8 @@ import { WordReveal } from "@/components/work/WordReveal";
 
 // Hero sits between the top (below header) and the filmstrip.
 // These match the actual UI: header ~70px, filmstrip area ~160px.
-const TOP_MARGIN = 90;
-const BOTTOM_MARGIN = 220;
+const TOP_MARGIN = 80;
+const BOTTOM_MARGIN = 200;
 
 export default function HeroMedia({
   item,
@@ -19,6 +19,8 @@ export default function HeroMedia({
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
 }) {
+  const caption = item.kind === "media" ? item.text : null;
+
   return (
     <div
       className="fixed left-0 right-0 flex items-center justify-center pointer-events-none"
@@ -32,15 +34,54 @@ export default function HeroMedia({
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
-          width: "min(62vw, 820px)",
-          height: "min(52vh, 520px)",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: "16px",
+          maxWidth: "min(68vw, 920px)",
         }}
       >
-        {renderItem(item, onVideoEnded, onVideoStarted)}
+        <div
+          style={{
+            width: "min(68vw, 920px)",
+            height: "min(58vh, 580px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {renderItem(item, onVideoEnded, onVideoStarted)}
+        </div>
+        {caption && (
+          <HeroCaption text={caption} itemKey={keyForItem(item)} />
+        )}
       </div>
+    </div>
+  );
+}
+
+function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
+  return (
+    <div
+      key={itemKey}
+      className="lowercase text-white text-shadow"
+      style={{
+        maxWidth: "min(68vw, 720px)",
+        fontSize: "0.85rem",
+        lineHeight: 1.5,
+        textAlign: "center",
+        opacity: 0,
+        animation: "caption-fade-in 0.4s ease-out 0.1s forwards",
+      }}
+    >
+      {text}
+      <style jsx>{`
+        @keyframes caption-fade-in {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 0.85; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -148,6 +189,7 @@ function MediaCard({
     height: "auto",
     objectFit: "contain",
     display: "block",
+    filter: "drop-shadow(0 12px 32px rgba(0,0,0,0.25))",
   };
 
   if (isVideo) {
