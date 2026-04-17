@@ -427,8 +427,8 @@ function FilmstripThumb({
       data-no-cursor-expand
       style={{
         flexShrink: 0,
-        width: THUMB_W,
-        height: THUMB_H,
+        width,
+        height,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
