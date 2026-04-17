@@ -186,6 +186,21 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           background: '#b0b0b0', // grey fallback matching map style before tiles load
         }}
       />
+      {/* Grey overlay that covers the map until tiles paint, then fades out.
+          Sits above the map (z:0) but below the content (z:5+), so the hero
+          and filmstrip are fully visible even while the overlay is still up.
+          We fade the OVERLAY (not the map) to avoid the map-opacity-restart
+          bug that comes from React re-rendering the container with a new
+          style object every frame. */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: 2,
+          background: '#b0b0b0',
+          opacity: mapLoaded ? 0 : 1,
+          transition: 'opacity 700ms ease-out',
+        }}
+      />
       {mapError && (
         <div className="hidden md:block" style={{ position: 'fixed', top: 10, right: 10, background: 'red', color: 'white', padding: 10, zIndex: 1000 }}>
           Map Error: {mapError}
