@@ -27,7 +27,7 @@ export default function HeroMedia({
 }) {
   const caption = item.kind === "media" ? item.text : null;
 
-  // Track viewport so we can compute the actual rendered hero width for the caption.
+  // Track viewport to derive a sensible initial caption width before the media is measured.
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== "undefined" ? window.innerWidth : 1600,
     h: typeof window !== "undefined" ? window.innerHeight : 900,
@@ -42,12 +42,21 @@ export default function HeroMedia({
   const heroMaxW = Math.min(HERO_W_VW * viewport.w, HERO_W_MAX);
   const heroMaxH = Math.min(HERO_H_VH * viewport.h, HERO_H_MAX);
 
-  // Mirror `object-fit: contain`: rendered_w = min(maxW, maxH × aspect).
-  let captionWidthPx = heroMaxW;
+  // First-paint guess from metadata (may be wrong for letterboxed videos);
+  // then overwritten by the real rendered width once the element lays out.
+  let initialWidth = heroMaxW;
   if (item.kind === "media" && item.media.width && item.media.height) {
     const aspect = item.media.width / item.media.height;
-    captionWidthPx = Math.min(heroMaxW, heroMaxH * aspect);
+    initialWidth = Math.min(heroMaxW, heroMaxH * aspect);
   }
+  const [captionWidthPx, setCaptionWidthPx] = useState(initialWidth);
+  // Reset to the metadata estimate whenever the item changes, then let the
+  // ResizeObserver in MediaCard overwrite with the true rendered width.
+  const itemKey = keyForItem(item);
+  useEffect(() => {
+    setCaptionWidthPx(initialWidth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemKey]);
 
   return (
     <div
@@ -85,7 +94,7 @@ export default function HeroMedia({
             justifyContent: "center",
           }}
         >
-          {renderItem(item, onVideoEnded, onVideoStarted)}
+          {renderItem(item, onVideoEnded, onVideoStarted, setCaptionWidthPx)}
         </div>
       </div>
     </div>
@@ -132,9 +141,21 @@ function keyForItem(item: TimelineItem): string {
   return item.id;
 }
 
-function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted?: () => void) {
+function renderItem(
+  item: TimelineItem,
+  onVideoEnded: () => void,
+  onVideoStarted?: () => void,
+  onMeasureWidth?: (w: number) => void,
+) {
   if (item.kind === "media") {
-    return <MediaCard item={item} onVideoEnded={onVideoEnded} onVideoStarted={onVideoStarted} />;
+    return (
+      <MediaCard
+        item={item}
+        onVideoEnded={onVideoEnded}
+        onVideoStarted={onVideoStarted}
+        onMeasureWidth={onMeasureWidth}
+      />
+    );
   }
 
   if (item.kind === "tldr") {
@@ -212,16 +233,48 @@ function MediaCard({
   item,
   onVideoEnded,
   onVideoStarted,
+  onMeasureWidth,
 }: {
   item: Extract<TimelineItem, { kind: "media" }>;
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
+  onMeasureWidth?: (w: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const m = item.media;
-  if (!m.blobUrl) return null;
-
   const isVideo = m.type === "video" || m.type === "animated_gif";
+
+  // Measure the ACTUAL rendered width of the media element so the caption
+  // can match the visible media (not the metadata-declared box, which can be
+  // wrong when the file contains letterboxed content).
+  useEffect(() => {
+    const el = isVideo ? videoRef.current : imgRef.current;
+    if (!el || !onMeasureWidth) return;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) onMeasureWidth(w);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (el instanceof HTMLImageElement) {
+      el.addEventListener("load", measure);
+    } else if (el instanceof HTMLVideoElement) {
+      el.addEventListener("loadedmetadata", measure);
+      el.addEventListener("loadeddata", measure);
+    }
+    return () => {
+      ro.disconnect();
+      if (el instanceof HTMLImageElement) el.removeEventListener("load", measure);
+      if (el instanceof HTMLVideoElement) {
+        el.removeEventListener("loadedmetadata", measure);
+        el.removeEventListener("loadeddata", measure);
+      }
+    };
+  }, [onMeasureWidth, isVideo, m.blobUrl]);
+
+  if (!m.blobUrl) return null;
 
   const mediaStyle: React.CSSProperties = {
     maxWidth: "100%",
@@ -247,7 +300,13 @@ function MediaCard({
       data-no-cursor-expand
     />
   ) : (
-    <img src={m.blobUrl} alt={item.text} style={mediaStyle} data-no-cursor-expand />
+    <img
+      ref={imgRef}
+      src={m.blobUrl}
+      alt={item.text}
+      style={mediaStyle}
+      data-no-cursor-expand
+    />
   );
 
   // Hero is clickable — opens the original tweet on x.com in a new tab.
