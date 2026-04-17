@@ -51,8 +51,9 @@ export default function SiteHeader({
           }
         : {})}
     >
-      {/* Left column — empty spacer to keep the title centered. */}
-      <div />
+      {/* Left column — empty spacer to keep the title centered on desktop.
+          Hidden on mobile (see media query at the bottom). */}
+      <div className="header-spacer" />
 
       <button
         className={`lowercase header-title ${onClick ? "cursor-pointer" : ""}`}
@@ -127,7 +128,20 @@ export default function SiteHeader({
 
       <style jsx>{`
         @media (max-width: 640px) {
-          .header-social {
+          /* On mobile, anchor title left and social right — drop the
+             centering spacer, restructure the grid to 2 cols. */
+          :global(.header-bar) {
+            grid-template-columns: auto 1fr !important;
+          }
+          :global(.header-spacer) {
+            display: none !important;
+          }
+          :global(.header-title) {
+            justify-self: start !important;
+            grid-column: 1 !important;
+          }
+          :global(.header-social) {
+            grid-column: 2 !important;
             gap: 6px !important;
             font-size: 0.9rem !important;
           }
