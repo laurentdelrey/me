@@ -25,7 +25,7 @@ export default function SiteHeader({
 
   return (
     <Container
-      className="fixed left-0 right-0 z-30 header-bar"
+      className="fixed left-0 right-0 z-50 header-bar"
       style={{
         top: 0,
         pointerEvents: onClick ? "auto" : "none",
@@ -135,7 +135,10 @@ const socialPillStyle: React.CSSProperties = {
   display: "inline-block",
   padding: "0 8px",
   borderRadius: 4,
-  background: "#b0b0b0",
+  // Darker than the standard pill so they read clearly against the
+  // vignette's grey corners (vignette ≈ #bfbfbf, standard pill #b0b0b0
+  // would blend in).
+  background: "#6f6f6f",
   border: "1px solid rgba(255,255,255,0.15)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
