@@ -33,11 +33,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
 
       const map = new mapboxgl.default.Map({
         container: mapContainer.current,
-        // Mapbox's built-in light style — grey out of the box, no template
-        // variation lock fighting our API edits. If you want a custom palette
-        // later, create a NEW style from scratch in Studio (not duplicated
-        // from a template) to avoid the variation lock.
-        style: `mapbox://styles/mapbox/light-v11`,
+        // Custom grey style — created fresh via the Styles API (not a Studio
+        // duplicate), so it has no mapbox:variation lock and accepts API edits.
+        style: `mapbox://styles/laurentdelrey/cmo3gbtdf002c01sv65t3f4d0`,
         center: center,
         zoom: zoom,
         pitch: 50, // Initial tilt for 3D effect
@@ -52,18 +50,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       map.on('load', () => {
         console.log('Mapbox loaded successfully');
 
-        // Fog override via runtime setFog (template variation locks fog too)
-        try {
-          map.setFog({
-            range: [0.5, 10],
-            color: '#b0b0b0',
-            'high-color': '#b0b0b0',
-            'space-color': '#b0b0b0',
-            'horizon-blend': 0.1,
-            'star-intensity': 0,
-          });
-        } catch {}
-
+        // Colors are baked into the custom style now — no runtime loops.
         requestAnimationFrame(() => {
           if (onLoad) onLoad();
         });
