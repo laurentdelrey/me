@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import tweetsData from "@/data/tweets.json";
-import type { Tweet } from "@/types/tweet";
+import type { MediaItem, Tweet } from "@/types/tweet";
+
+type Row = {
+  tweet: Tweet;
+  media: MediaItem;
+  mediaIndex: number; // index among media with blobUrl
+  totalMedia: number;
+  key: string; // `${tweetId}:${mediaIndex}`
+  hidden: boolean;
+};
 
 export default function DashboardPage() {
   const tweets = tweetsData as Tweet[];
@@ -20,7 +29,7 @@ export default function DashboardPage() {
         const data = (await res.json()) as { ids: string[] };
         if (!cancelled) setHiddenIds(new Set(data.ids ?? []));
       } catch {
-        // network error → treat as empty
+        // ignore
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -30,46 +39,69 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const rows = useMemo(() => {
-    const withStatus = tweets
-      .filter((t) => t.media.some((m) => m.blobUrl))
-      .map((t) => ({ tweet: t, hidden: hiddenIds.has(t.id) }));
+  const rows = useMemo<Row[]>(() => {
+    const all: Row[] = [];
+    for (const tweet of tweets) {
+      const withBlobs = tweet.media.filter((m) => m.blobUrl);
+      if (withBlobs.length === 0) continue;
+      withBlobs.forEach((media, mediaIndex) => {
+        const key = `${tweet.id}:${mediaIndex}`;
+        all.push({
+          tweet,
+          media,
+          mediaIndex,
+          totalMedia: withBlobs.length,
+          key,
+          hidden: hiddenIds.has(key),
+        });
+      });
+    }
 
     const q = query.trim().toLowerCase();
-    return withStatus
-      .filter(({ tweet, hidden }) => {
-        if (filter === "visible" && hidden) return false;
-        if (filter === "hidden" && !hidden) return false;
+    return all
+      .filter((r) => {
+        if (filter === "visible" && r.hidden) return false;
+        if (filter === "hidden" && !r.hidden) return false;
         if (!q) return true;
-        return tweet.text.toLowerCase().includes(q) || tweet.id.includes(q);
+        return (
+          r.tweet.text.toLowerCase().includes(q) || r.tweet.id.includes(q)
+        );
       })
-      .sort((a, b) => (a.tweet.date < b.tweet.date ? 1 : -1));
+      .sort((a, b) => {
+        if (a.tweet.date !== b.tweet.date)
+          return a.tweet.date < b.tweet.date ? 1 : -1;
+        if (a.tweet.id !== b.tweet.id)
+          return a.tweet.id < b.tweet.id ? 1 : -1;
+        return a.mediaIndex - b.mediaIndex;
+      });
   }, [tweets, hiddenIds, filter, query]);
 
   const counts = useMemo(() => {
     let visible = 0;
     let hidden = 0;
-    for (const t of tweets) {
-      if (!t.media.some((m) => m.blobUrl)) continue;
-      if (hiddenIds.has(t.id)) hidden++;
-      else visible++;
+    for (const tweet of tweets) {
+      const withBlobs = tweet.media.filter((m) => m.blobUrl);
+      withBlobs.forEach((_m, i) => {
+        if (hiddenIds.has(`${tweet.id}:${i}`)) hidden++;
+        else visible++;
+      });
     }
     return { visible, hidden, total: visible + hidden };
   }, [tweets, hiddenIds]);
 
-  async function toggleHidden(id: string, nextHidden: boolean) {
-    setPending((p) => new Set(p).add(id));
+  async function toggleHidden(key: string, nextHidden: boolean) {
+    setPending((p) => new Set(p).add(key));
     setHiddenIds((prev) => {
       const next = new Set(prev);
-      if (nextHidden) next.add(id);
-      else next.delete(id);
+      if (nextHidden) next.add(key);
+      else next.delete(key);
       return next;
     });
     try {
       const res = await fetch("/api/hidden", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, hidden: nextHidden }),
+        body: JSON.stringify({ id: key, hidden: nextHidden }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { ids: string[] };
@@ -77,15 +109,15 @@ export default function DashboardPage() {
     } catch (err) {
       setHiddenIds((prev) => {
         const next = new Set(prev);
-        if (nextHidden) next.delete(id);
-        else next.add(id);
+        if (nextHidden) next.delete(key);
+        else next.add(key);
         return next;
       });
       alert(`Failed to update: ${(err as Error).message}`);
     } finally {
       setPending((p) => {
         const next = new Set(p);
-        next.delete(id);
+        next.delete(key);
         return next;
       });
     }
@@ -102,7 +134,7 @@ export default function DashboardPage() {
             <p className="text-sm text-neutral-500">
               {loading
                 ? "Loading…"
-                : `${counts.total} media tweets · ${counts.visible} visible · ${counts.hidden} hidden`}
+                : `${counts.total} media · ${counts.visible} visible · ${counts.hidden} hidden`}
             </p>
           </div>
           <a
@@ -138,46 +170,33 @@ export default function DashboardPage() {
         </div>
 
         <ul className="space-y-3">
-          {rows.map(({ tweet, hidden }) => {
-            const mediaWithBlobs = tweet.media.filter((m) => m.blobUrl);
-            const isBusy = pending.has(tweet.id);
+          {rows.map((row) => {
+            const { tweet, media, mediaIndex, totalMedia, key, hidden } = row;
+            const isBusy = pending.has(key);
             return (
               <li
-                key={tweet.id}
+                key={key}
                 className={`flex gap-4 rounded-2xl border border-neutral-200 bg-white p-3 transition ${
                   hidden ? "opacity-70" : ""
                 }`}
               >
-                <div className="shrink-0 flex gap-1">
-                  {mediaWithBlobs.length === 0 ? (
-                    <div className="w-32 h-32 rounded-xl bg-neutral-100 flex items-center justify-center">
-                      <span className="text-xs text-neutral-400">no media</span>
-                    </div>
+                <div className="shrink-0 w-32 h-32 rounded-xl overflow-hidden bg-neutral-100 flex items-center justify-center">
+                  {media.type === "video" || media.type === "animated_gif" ? (
+                    <video
+                      src={media.blobUrl}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
                   ) : (
-                    mediaWithBlobs.map((m, idx) => (
-                      <div
-                        key={idx}
-                        className="w-32 h-32 rounded-xl overflow-hidden bg-neutral-100 flex items-center justify-center"
-                      >
-                        {m.type === "video" || m.type === "animated_gif" ? (
-                          <video
-                            src={m.blobUrl}
-                            className="w-full h-full object-cover"
-                            muted
-                            playsInline
-                            preload="metadata"
-                          />
-                        ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={m.blobUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
-                    ))
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={media.blobUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   )}
                 </div>
 
@@ -185,7 +204,9 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2 text-xs text-neutral-500">
                     <span>{tweet.date}</span>
                     <span>·</span>
-                    <span>{tweet.media.length} media</span>
+                    <span>
+                      media {mediaIndex + 1}/{totalMedia}
+                    </span>
                     <span>·</span>
                     <a
                       href={`https://x.com/laurentdelrey/status/${tweet.id}`}
@@ -213,7 +234,7 @@ export default function DashboardPage() {
                   <div className="mt-auto flex items-center gap-2">
                     <button
                       disabled={isBusy || loading}
-                      onClick={() => toggleHidden(tweet.id, !hidden)}
+                      onClick={() => toggleHidden(key, !hidden)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                         hidden
                           ? "bg-neutral-900 text-white hover:bg-neutral-700"
@@ -231,7 +252,7 @@ export default function DashboardPage() {
 
         {!loading && rows.length === 0 && (
           <p className="text-sm text-neutral-500 py-8 text-center">
-            No tweets match.
+            No media matches.
           </p>
         )}
       </div>

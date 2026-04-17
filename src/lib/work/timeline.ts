@@ -38,21 +38,28 @@ export type TimelineItem = MediaTimelineItem | EraIntroItem | TldrItem | SocialI
 export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
   const tweets = tweetsData as Tweet[];
 
-  // Keep only visible tweets with at least one media with a blobUrl.
-  // Hidden state is fully managed by the dashboard (via /api/hidden).
-  const visible = tweets.filter((t) => {
-    if (hiddenIds?.has(t.id)) return false;
-    return t.media.some((m) => m.blobUrl);
-  });
+  // Keep tweets with at least one media with a blobUrl. Individual media are
+  // filtered below via per-media keys ("tweetId:mediaIndex") in hiddenIds.
+  const candidates = tweets.filter((t) =>
+    t.media.some((m) => m.blobUrl)
+  );
 
-  // Flatten into one item per media attachment, with era assignment
+  // Flatten into one item per media attachment, with era assignment.
   const mediaItems: MediaTimelineItem[] = [];
-  for (const t of visible) {
+  for (const t of candidates) {
     let mi = 0;
     for (const m of t.media) {
       if (!m.blobUrl) continue;
+      const key = `${t.id}:${mi}`;
+      if (hiddenIds?.has(key)) {
+        mi++;
+        continue;
+      }
       const eraId = dateToEraId(t.date);
-      if (!eraId) continue; // skip tweets that don't fit any era
+      if (!eraId) {
+        mi++;
+        continue;
+      }
       mediaItems.push({
         kind: "media",
         tweetId: t.id,
