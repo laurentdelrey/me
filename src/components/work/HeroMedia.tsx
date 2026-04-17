@@ -229,9 +229,9 @@ function renderItem(
     <StoryCard>
       <div style={{ maxWidth: "520px" }}>
         <h2
-          className="text-white lowercase text-shadow"
+          className="text-white lowercase text-shadow story-card-header"
           style={{
-            fontSize: "0.8rem",
+            fontSize: "1.125rem",
             fontWeight: 500,
             marginBottom: "16px",
             color: "#ffffff",
@@ -276,6 +276,9 @@ function StoryCard({ children }: { children: React.ReactNode }) {
           .story-card p {
             font-size: 1.35rem !important;
             line-height: 1.6 !important;
+          }
+          .story-card-header {
+            font-size: 1.35rem !important;
           }
         }
       `}</style>

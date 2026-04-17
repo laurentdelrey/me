@@ -37,6 +37,19 @@ export default function EraLabel({ eraId, isMobile = false }: { eraId: EraId | n
             >
               {era.label}
             </div>
+            {era.years && (
+              <div
+                className="lowercase"
+                style={{
+                  fontSize: "1rem",
+                  lineHeight: 1.3,
+                  color: "rgba(255,255,255,0.6)",
+                  marginTop: 2,
+                }}
+              >
+                {era.years}
+              </div>
+            )}
             {era.city && (
               <div
                 className="lowercase"
