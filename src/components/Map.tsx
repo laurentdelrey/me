@@ -11,6 +11,7 @@ interface MapProps {
 export default function Map({ center, zoom, onLoad }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const driftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mapError, setMapError] = useState<string>("");
   const [mapLoaded, setMapLoaded] = useState(false);
   const [preloading, setPreloading] = useState(true);
@@ -33,7 +34,7 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
 
       const map = new mapboxgl.default.Map({
         container: mapContainer.current,
-        style: `mapbox://styles/laurentdelrey/clw9xnyx600ah01ql0ebq5ee5?fresh=true`, // Custom monochrome style
+        style: `mapbox://styles/laurentdelrey/clw9xnyx600ah01ql0ebq5ee5`, // Custom monochrome style (cacheable — removed ?fresh=true)
         center: center,
         zoom: zoom,
         pitch: 50, // Initial tilt for 3D effect
@@ -96,6 +97,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           map.resize();
           console.log('Map resized');
         }, 100);
+
+        // Kick off the slow living drift once tiles are laid out.
+        setTimeout(() => startDrift(), 800);
       });
       
       map.on('error', (e) => {
@@ -118,6 +122,33 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
     });
   }, []); // Empty dependency array - only run once
 
+  // Living drift: instead of RAF-driving easeTo every frame (which is what
+  // the old drift did and what caused persistent lag), we kick off a SINGLE
+  // long easeTo that Mapbox interpolates internally. When it finishes we
+  // chain the next leg. That's 2 easeTo calls per minute vs 60/second.
+  const startDrift = () => {
+    const m = mapRef.current;
+    if (!m) return;
+    if (driftTimerRef.current) clearTimeout(driftTimerRef.current);
+
+    let direction = 1;
+    const step = () => {
+      if (!mapRef.current) return;
+      const startZoom = mapRef.current.getZoom();
+      const startBearing = mapRef.current.getBearing();
+      const legMs = 18000; // 18s per leg — slow and barely-perceptible
+      mapRef.current.easeTo({
+        zoom: startZoom + 0.15 * direction,
+        bearing: startBearing + 4 * direction,
+        duration: legMs,
+        easing: (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t), // smoothstep
+      });
+      direction *= -1;
+      driftTimerRef.current = setTimeout(step, legMs);
+    };
+    step();
+  };
+
   // Animate to new location when props change or map loads.
   // Mapbox handles the interpolation internally — no RAF loop needed.
   useEffect(() => {
@@ -132,6 +163,12 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
     const latDelta = Math.abs(cur.lat - center[1]);
     const zoomDelta = Math.abs(m.getZoom() - zoom);
     if (lngDelta < 0.001 && latDelta < 0.001 && zoomDelta < 0.01) return;
+
+    // Cancel any drift chain before a flyTo takes over
+    if (driftTimerRef.current) {
+      clearTimeout(driftTimerRef.current);
+      driftTimerRef.current = null;
+    }
 
     console.log('Animating to:', center, zoom);
 
@@ -154,6 +191,10 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
       bearing: bearing,
       essential: true,
     });
+
+    // After the flyTo completes, resume the drift from the new position
+    const resume = setTimeout(() => startDrift(), 3700);
+    return () => clearTimeout(resume);
   }, [center, zoom, mapLoaded]);
 
   return (
