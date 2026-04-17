@@ -85,7 +85,10 @@ export default function WorkPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [timeline, currentIndex],
   );
-  const prevLabel = chapterLabel(timeline[prevChapterIndex]);
+  // On the very first chapter (tldr), there's no meaningful "previous" —
+  // hide the back pill rather than wrap around to `@ me`.
+  const onFirstChapter = currentItem?.kind === "tldr";
+  const prevLabel = onFirstChapter ? "" : chapterLabel(timeline[prevChapterIndex]);
   const nextLabel = chapterLabel(timeline[nextChapterIndex]);
 
   const seekTo = (idx: number) => {

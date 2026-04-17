@@ -67,8 +67,8 @@ function HeroCaption({ text, itemKey }: { text: string; itemKey: string }) {
       key={itemKey}
       className="lowercase text-white text-shadow"
       style={{
-        maxWidth: "560px",
-        fontSize: "0.8rem",
+        maxWidth: "720px",
+        fontSize: "1.125rem",
         lineHeight: 1.5,
         textAlign: "center",
         opacity: 0,

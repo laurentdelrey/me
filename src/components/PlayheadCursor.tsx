@@ -99,10 +99,13 @@ export function PlayheadCursor() {
           viewBox="0 0 22 16"
           fill="#ffffff"
           aria-hidden
-          style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))" }}
         >
+          {/* Shadow is applied per-path so it hugs each triangle shape — no separate asset feel. */}
           {/* Primary triangle — always visible. Points right in SVG; rotated by parent. */}
-          <path d="M4 3 L10 8 L4 13 Z" />
+          <path
+            d="M4 3 L10 8 L4 13 Z"
+            style={{ filter: "drop-shadow(0 0 1px rgba(0,0,0,0.35))" }}
+          />
           {/* Secondary triangle — appears only when scrubbing (ff/rew). */}
           <motion.path
             d="M11 3 L17 8 L11 13 Z"
@@ -111,6 +114,7 @@ export function PlayheadCursor() {
               x: isScrubbing ? 0 : -5,
             }}
             transition={{ type: "spring", stiffness: 450, damping: 28 }}
+            style={{ filter: "drop-shadow(0 0 1px rgba(0,0,0,0.35))" }}
           />
         </svg>
       </motion.div>

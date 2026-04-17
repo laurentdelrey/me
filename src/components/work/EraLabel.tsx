@@ -11,8 +11,8 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
       style={{
         left: 32,
         // Bottom-aligned with the PlayheadInfo controls row
-        // (FILMSTRIP_HEIGHT 172 + GAP_ABOVE_FILMSTRIP 12 = 184)
-        bottom: 184,
+        // (FILMSTRIP_HEIGHT 172 + GAP_ABOVE_FILMSTRIP 16 = 188)
+        bottom: 188,
         zIndex: 40,
         pointerEvents: "none",
       }}
@@ -29,7 +29,8 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
             <div
               className="lowercase"
               style={{
-                fontSize: "0.8rem",
+                fontSize: "1.125rem",
+                lineHeight: 1.3,
                 fontWeight: 500,
                 color: "#ffffff",
               }}
@@ -40,7 +41,8 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
               <div
                 className="lowercase"
                 style={{
-                  fontSize: "0.75rem",
+                  fontSize: "1.125rem",
+                  lineHeight: 1.3,
                   color: "rgba(255,255,255,0.6)",
                   marginTop: 2,
                 }}

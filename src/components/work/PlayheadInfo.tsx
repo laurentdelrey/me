@@ -14,7 +14,7 @@ import { SlidingNumber } from "@/../components/motion-primitives/sliding-number"
  */
 
 const FILMSTRIP_HEIGHT = 140 + 16 * 2; // matches Filmstrip
-const GAP_ABOVE_FILMSTRIP = 12;
+const GAP_ABOVE_FILMSTRIP = 16;
 
 export default function PlayheadInfo({
   year,
@@ -58,11 +58,10 @@ export default function PlayheadInfo({
           display: "grid",
           gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
-          columnGap: 14,
+          columnGap: 18,
           // 1fr columns stay equal, so the auto (date) column is always screen-centered.
-          // Needs to be wide enough to fit the longest chapter label ("a quest called tribe")
-          // on each side without letting pills overlap the date.
-          width: 520,
+          // Wide enough to fit the longest chapter label at body-text size.
+          width: 680,
         }}
       >
         {/* Left controls — previous chapter, then play/pause, pushed toward the date */}
@@ -71,7 +70,7 @@ export default function PlayheadInfo({
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
-            gap: 10,
+            gap: 12,
           }}
         >
           <ChapterButton
@@ -86,12 +85,12 @@ export default function PlayheadInfo({
         <div
           className="tabular-nums"
           style={{
-            fontSize: "0.8rem",
+            fontSize: "1.125rem",
             fontWeight: 400,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 4,
+            gap: 5,
           }}
         >
           <SlidingNumber value={year} />
@@ -107,7 +106,7 @@ export default function PlayheadInfo({
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-start",
-            gap: 10,
+            gap: 12,
           }}
         >
           <ChapterButton
@@ -122,6 +121,17 @@ export default function PlayheadInfo({
   );
 }
 
+// Shared pill chrome for all controls — matches the era-text pill links.
+const PILL_HEIGHT = 32;
+const pillBase: React.CSSProperties = {
+  height: PILL_HEIGHT,
+  borderRadius: 6,
+  background: "rgba(255,255,255,0.18)",
+  border: "1px solid rgba(255,255,255,0.28)",
+  color: "#fff",
+  cursor: "pointer",
+};
+
 function IconButton({
   children,
   onClick,
@@ -135,20 +145,15 @@ function IconButton({
     <motion.button
       onClick={onClick}
       aria-label={ariaLabel}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.92 }}
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.94 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       style={{
-        width: 24,
-        height: 20,
-        borderRadius: 4,
+        ...pillBase,
+        width: 38,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(255,255,255,0.18)",
-        border: "1px solid rgba(255,255,255,0.28)",
-        cursor: "pointer",
-        color: "#fff",
         padding: 0,
       }}
       data-no-cursor-expand
@@ -167,28 +172,25 @@ function ChapterButton({
   label: string;
   onClick: () => void;
 }) {
+  // Empty label → no chapter to jump to (e.g. tldr has no meaningful "previous").
+  if (!label) return null;
   const isPrev = side === "prev";
   return (
     <motion.button
       onClick={onClick}
       aria-label={isPrev ? `Previous chapter: ${label}` : `Next chapter: ${label}`}
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.96 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="lowercase"
       style={{
-        height: 20,
-        padding: "0 7px",
-        borderRadius: 4,
+        ...pillBase,
+        padding: "0 12px",
         display: "flex",
         alignItems: "center",
-        gap: 6,
-        background: "rgba(255,255,255,0.18)",
-        border: "1px solid rgba(255,255,255,0.28)",
-        cursor: "pointer",
-        color: "#fff",
-        fontSize: "0.7rem",
-        fontWeight: 500,
+        gap: 8,
+        fontSize: "1.125rem",
+        fontWeight: 400,
         lineHeight: 1,
       }}
       data-no-cursor-expand
@@ -196,7 +198,7 @@ function ChapterButton({
       {isPrev && <BackIcon />}
       <span
         style={{
-          maxWidth: 110,
+          maxWidth: 200,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -252,24 +254,19 @@ function SpeedToggle({
     <motion.button
       onClick={onToggle}
       aria-label={`Playback speed ${speed}×`}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.92 }}
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.94 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="tabular-nums"
       style={{
-        minWidth: 28,
-        height: 20,
-        padding: "0 6px",
-        borderRadius: 4,
+        ...pillBase,
+        minWidth: 46,
+        padding: "0 10px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(255,255,255,0.18)",
-        border: "1px solid rgba(255,255,255,0.28)",
-        cursor: "pointer",
-        color: "#fff",
-        fontSize: "0.7rem",
-        fontWeight: 500,
+        fontSize: "1.125rem",
+        fontWeight: 400,
         lineHeight: 1,
       }}
       data-no-cursor-expand
@@ -299,7 +296,7 @@ function SpeedToggle({
 
 function PlayIcon() {
   return (
-    <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+    <svg width="14" height="16" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
       <path d="M1 0.5L9 6L1 11.5V0.5Z" />
     </svg>
   );
@@ -307,7 +304,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
+    <svg width="14" height="16" viewBox="0 0 10 12" fill="currentColor" aria-hidden>
       <rect x="0.5" y="0.5" width="3" height="11" rx="0.5" />
       <rect x="6.5" y="0.5" width="3" height="11" rx="0.5" />
     </svg>
@@ -316,7 +313,7 @@ function PauseIcon() {
 
 function BackIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
       <rect x="0.5" y="1" width="2" height="10" rx="0.5" />
       <path d="M11.5 1.2L4 6L11.5 10.8V1.2Z" />
     </svg>
@@ -325,7 +322,7 @@ function BackIcon() {
 
 function NextIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+    <svg width="16" height="16" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
       <path d="M0.5 1.2L8 6L0.5 10.8V1.2Z" />
       <rect x="9.5" y="1" width="2" height="10" rx="0.5" />
     </svg>
