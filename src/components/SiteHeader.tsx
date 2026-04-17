@@ -142,8 +142,8 @@ export default function SiteHeader({
           }
           :global(.header-social) {
             grid-column: 2 !important;
-            gap: 6px !important;
-            font-size: 0.9rem !important;
+            gap: 8px !important;
+            font-size: 1.05rem !important;
           }
         }
       `}</style>

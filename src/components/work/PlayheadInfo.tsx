@@ -93,7 +93,7 @@ export default function PlayheadInfo({
 
         {/* Date — centered, so its midpoint lines up with the playhead */}
         <div
-          className="tabular-nums"
+          className="tabular-nums playhead-text"
           style={{
             fontSize: "1rem",
             fontWeight: 400,
@@ -128,6 +128,13 @@ export default function PlayheadInfo({
           <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
         </div>
       </div>
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          .playhead-text {
+            font-size: 1.15rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -195,7 +202,7 @@ function ChapterButton({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.96 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
-      className="lowercase"
+      className="lowercase playhead-text"
       style={{
         ...pillBase,
         padding: iconOnly ? 0 : "0 12px",
@@ -274,7 +281,7 @@ function SpeedToggle({
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.94 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
-      className="tabular-nums"
+      className="tabular-nums playhead-text"
       style={{
         ...pillBase,
         minWidth: 46,
