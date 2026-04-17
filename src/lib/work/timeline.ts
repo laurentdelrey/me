@@ -104,8 +104,7 @@ export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
     result.push(...eraMedia);
   }
 
-  // social/contact card at the very end
-  result.push({ kind: "social", id: "social", date: "2005-01-01" });
+  // social/contact card removed — handled by the top-right header link instead.
 
   return result;
 }

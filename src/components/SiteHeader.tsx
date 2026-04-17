@@ -68,7 +68,67 @@ export default function SiteHeader({
       >
         laurent del rey
       </button>
+
+      {/* Top-right social — pill links to X and Threads. Replaces the old @me
+          tile that lived at the end of the filmstrip. */}
+      <div
+        className="lowercase header-social"
+        style={{
+          position: "absolute",
+          right: 24,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: "1rem",
+          color: color || "#ffffff",
+          pointerEvents: "auto",
+        }}
+      >
+        <span style={{ opacity: 0.6 }}>on</span>
+        <a
+          href="https://x.com/laurentdelrey"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={socialPillStyle}
+        >
+          x
+        </a>
+        <span style={{ opacity: 0.6 }}>and</span>
+        <a
+          href="https://www.threads.net/@laurentdelrey"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={socialPillStyle}
+        >
+          threads
+        </a>
+      </div>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .header-social {
+            right: 12px !important;
+            gap: 6px !important;
+            font-size: 0.9rem !important;
+          }
+        }
+      `}</style>
     </Container>
   );
 }
+
+const socialPillStyle: React.CSSProperties = {
+  color: "#fff",
+  textDecoration: "none",
+  display: "inline-block",
+  padding: "0 8px",
+  borderRadius: 4,
+  background: "#b0b0b0",
+  border: "1px solid rgba(255,255,255,0.15)",
+  whiteSpace: "nowrap",
+  lineHeight: 1.5,
+  cursor: "none",
+};
 
