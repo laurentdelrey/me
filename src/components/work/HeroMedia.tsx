@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
+import { AnimatedText } from "@/components/AnimatedText";
 
 // Hero sits between the top (below header) and the filmstrip.
 // These match the actual UI: header ~70px, filmstrip area ~160px.
@@ -31,7 +32,7 @@ export default function HeroMedia({
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
-          maxWidth: "min(42vw, 520px)",
+          maxWidth: "min(62vw, 820px)",
           maxHeight: "min(60vh, 560px)",
           display: "flex",
           alignItems: "center",
@@ -57,7 +58,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
   if (item.kind === "tldr") {
     return (
       <StoryCard>
-        <div style={{ maxWidth: "520px" }}>{ERAS.tldr.content}</div>
+        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+          <div style={{ maxWidth: "520px" }}>{ERAS.tldr.content}</div>
+        </AnimatedText>
       </StoryCard>
     );
   }
@@ -65,7 +68,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
   if (item.kind === "social") {
     return (
       <StoryCard>
-        <div style={{ maxWidth: "520px" }}>{ERAS.social.content}</div>
+        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+          <div style={{ maxWidth: "520px" }}>{ERAS.social.content}</div>
+        </AnimatedText>
       </StoryCard>
     );
   }
@@ -86,7 +91,9 @@ function renderItem(item: TimelineItem, onVideoEnded: () => void, onVideoStarted
         >
           {era.label} {era.years && <span style={{ color: "#999999", marginLeft: "12px" }}>{era.years}</span>}
         </h2>
-        {era.content}
+        <AnimatedText delay={60} isActive sectionIndex={0} key={item.id}>
+          {era.content}
+        </AnimatedText>
         {era.city && (
           <p
             className="lowercase"

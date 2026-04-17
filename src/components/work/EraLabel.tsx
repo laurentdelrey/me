@@ -10,7 +10,7 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
       className="fixed"
       style={{
         left: 32,
-        bottom: 175,
+        bottom: 220,
         zIndex: 40,
         pointerEvents: "none",
       }}

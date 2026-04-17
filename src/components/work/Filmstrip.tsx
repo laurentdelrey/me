@@ -223,6 +223,8 @@ function FilmstripThumb({
           overflow: "hidden",
           cursor: "none",
           display: "inline-block",
+          borderRight: "1px solid rgba(255,255,255,0.9)",
+          boxSizing: "border-box",
         }}
       >
         {isVideo ? (
@@ -285,8 +287,8 @@ function FilmstripThumb({
         textAlign: "center",
         padding: "0 6px",
         background: "#999999",
-        borderLeft: "1px solid #ffffff",
-        borderRight: "1px solid #ffffff",
+        borderRight: "1px solid rgba(255,255,255,0.9)",
+        boxSizing: "border-box",
       }}
     >
       {label}

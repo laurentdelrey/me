@@ -28,11 +28,9 @@ export default function WorkPage() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [playingStarted, setPlayingStarted] = useState(false);
 
-  // Start the playhead only after the map has loaded and the fade-in finishes
+  // Start the playhead as soon as the map loads (the fade-in runs concurrently)
   useEffect(() => {
-    if (!mapLoaded) return;
-    const t = setTimeout(() => setPlayingStarted(true), 1200);
-    return () => clearTimeout(t);
+    if (mapLoaded) setPlayingStarted(true);
   }, [mapLoaded]);
 
   const displayIndex = hoverIndex ?? currentIndex;
