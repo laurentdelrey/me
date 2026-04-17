@@ -210,12 +210,22 @@ function MediaCard({
   );
 
   // Hero is clickable — opens the original tweet on x.com in a new tab.
+  // Anchor stretches to fill the constrained parent box so the image's
+  // `max-width: 100%` resolves against the hero size (`min(68vw, 920px)`),
+  // not against its own content.
   return (
     <a
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ display: "inline-block", cursor: "pointer" }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        cursor: "pointer",
+      }}
     >
       {media}
     </a>
