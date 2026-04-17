@@ -38,9 +38,9 @@ export type TimelineItem = MediaTimelineItem | EraIntroItem | TldrItem | SocialI
 export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
   const tweets = tweetsData as Tweet[];
 
-  // Keep only visible tweets with at least one media with a blobUrl
+  // Keep only visible tweets with at least one media with a blobUrl.
+  // Hidden state is fully managed by the dashboard (via /api/hidden).
   const visible = tweets.filter((t) => {
-    if (t.hidden) return false;
     if (hiddenIds?.has(t.id)) return false;
     return t.media.some((m) => m.blobUrl);
   });

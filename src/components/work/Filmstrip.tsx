@@ -18,6 +18,7 @@ export default function Filmstrip({
   onLeave,
   onCurrentIndexChange,
   playing = true,
+  speed = 1,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
@@ -25,6 +26,7 @@ export default function Filmstrip({
   onLeave: () => void;
   onCurrentIndexChange: (idx: number) => void;
   playing?: boolean;
+  speed?: number;
 }) {
   // Start with the first thumb's LEFT edge at the playhead so the full tile
   // has time to travel under the playhead, not starting centered.
@@ -41,6 +43,7 @@ export default function Filmstrip({
   const timelineRef = useRef(timeline);
   const playingRef = useRef(playing);
   const hasStartedRef = useRef(false);
+  const speedRef = useRef(speed);
   useEffect(() => { hoverIndexRef.current = hoverIndex; }, [hoverIndex]);
   useEffect(() => { lenRef.current = timeline.length; }, [timeline.length]);
   useEffect(() => { timelineRef.current = timeline; }, [timeline]);
@@ -48,6 +51,7 @@ export default function Filmstrip({
     playingRef.current = playing;
     if (playing) hasStartedRef.current = true;
   }, [playing]);
+  useEffect(() => { speedRef.current = speed; }, [speed]);
 
   useEffect(() => {
     let last = performance.now();
@@ -89,7 +93,7 @@ export default function Filmstrip({
             durationMs = CARD_DURATION_MS;
           }
         }
-        const pxPerSec = THUMB_W / (durationMs / 1000);
+        const pxPerSec = (THUMB_W / (durationMs / 1000)) * speedRef.current;
         positionRef.current += pxPerSec * dt;
         if (positionRef.current > maxPosition) positionRef.current = 0;
       }

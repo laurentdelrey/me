@@ -15,5 +15,4 @@ export type Tweet = {
   favoriteCount: number;
   retweetCount: number;
   replies?: string[];
-  hidden?: boolean;
 };

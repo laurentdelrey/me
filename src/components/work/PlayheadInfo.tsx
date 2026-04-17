@@ -4,14 +4,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { SlidingNumber } from "@/../components/motion-primitives/sliding-number";
 
 /**
- * Sits just above the filmstrip playhead.
- * Shows: caption (1-line clamp), date, play/pause button.
- * The cluster is anchored at its bottom edge above the filmstrip.
+ * Sits just above the filmstrip playhead as a single horizontal row:
+ *   [ 2024 . 09 . 09 ]   [ ⏸ ]   [ 2× ]
+ * Anchored at its bottom edge so it never pushes the filmstrip around.
  */
 
 // Match Filmstrip constants (THUMB_H + STRIP_PAD*2)
 const FILMSTRIP_HEIGHT = 140 + 16 * 2; // 172
-const GAP_ABOVE_FILMSTRIP = 10;
+const GAP_ABOVE_FILMSTRIP = 12;
 
 export default function PlayheadInfo({
   year,
@@ -19,12 +19,16 @@ export default function PlayheadInfo({
   day,
   isPlaying,
   onTogglePlaying,
+  speed,
+  onToggleSpeed,
 }: {
   year: number;
   month: number;
   day: number;
   isPlaying: boolean;
   onTogglePlaying: () => void;
+  speed: 1 | 2;
+  onToggleSpeed: () => void;
 }) {
   return (
     <div
@@ -41,10 +45,9 @@ export default function PlayheadInfo({
         style={{
           pointerEvents: "auto",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
           alignItems: "center",
-          gap: 4,
-          textAlign: "center",
+          gap: 12,
         }}
       >
         <div
@@ -65,6 +68,8 @@ export default function PlayheadInfo({
         </div>
 
         <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
+
+        <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
       </div>
     </div>
   );
@@ -85,9 +90,8 @@ function PlayPauseButton({
       whileTap={{ scale: 0.9 }}
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       style={{
-        marginTop: 6,
-        width: 24,
-        height: 24,
+        width: 20,
+        height: 20,
         borderRadius: 999,
         display: "flex",
         alignItems: "center",
@@ -117,6 +121,62 @@ function PlayPauseButton({
           style={{ display: "flex" }}
         >
           {isPlaying ? <PauseIcon /> : <PlayIcon />}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
+  );
+}
+
+function SpeedToggle({
+  speed,
+  onToggle,
+}: {
+  speed: 1 | 2;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onToggle}
+      aria-label={`Playback speed ${speed}×`}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      className="tabular-nums"
+      style={{
+        minWidth: 20,
+        height: 20,
+        padding: "0 4px",
+        borderRadius: 999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: "#fff",
+        fontSize: "0.75rem",
+        lineHeight: 1,
+        opacity: speed === 1 ? 0.5 : 1,
+      }}
+      data-no-cursor-expand
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={speed}
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+            transition: { type: "spring", stiffness: 650, damping: 22 },
+          }}
+          exit={{
+            scale: 0.4,
+            opacity: 0,
+            transition: { duration: 0.08, ease: "easeIn" },
+          }}
+          style={{ display: "flex" }}
+        >
+          {speed}×
         </motion.span>
       </AnimatePresence>
     </motion.button>
