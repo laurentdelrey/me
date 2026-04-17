@@ -78,11 +78,12 @@ export default function HeroMedia({
           gap: 12,
         }}
       >
-        {caption && (
+        {caption && item.kind === "media" && (
           <HeroCaption
             text={caption}
             itemKey={keyForItem(item)}
             widthPx={captionWidthPx}
+            url={item.url}
           />
         )}
         <div
@@ -105,34 +106,72 @@ function HeroCaption({
   text,
   itemKey,
   widthPx,
+  url,
 }: {
   text: string;
   itemKey: string;
   widthPx: number;
+  url: string;
 }) {
   return (
-    <div
+    <a
       key={itemKey}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
       className="lowercase text-white text-shadow"
       style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
         width: `${widthPx}px`,
         fontSize: "1rem",
         lineHeight: 1.5,
-        textAlign: "left",
-        // Avoid 1–2 orphan words on the last line.
-        textWrap: "pretty",
+        textDecoration: "none",
         opacity: 0,
         animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
       }}
     >
-      {text}
+      <span
+        style={{
+          flex: "1 1 auto",
+          minWidth: 0,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {text}
+      </span>
+      <OpenIcon />
       <style jsx>{`
         @keyframes hero-caption-fade-in {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 0.75; transform: translateY(0); }
         }
       `}</style>
-    </div>
+    </a>
+  );
+}
+
+function OpenIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden
+      style={{ flexShrink: 0, opacity: 0.9 }}
+    >
+      <path
+        d="M4 3 H9 V8 M9 3 L3 9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

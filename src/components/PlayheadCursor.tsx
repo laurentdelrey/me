@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 
 type CursorMode = "idle" | "ff" | "rew";
 
-const DEAD_ZONE_PX = 80; // centered band where we stay "idle" even over the strip
+const DEAD_ZONE_PX = 250; // must match Filmstrip's HOVER_DEAD_ZONE_PX
 
 export function PlayheadCursor() {
   const x = useMotionValue(-100);

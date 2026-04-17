@@ -9,7 +9,7 @@ const THUMB_H = 140;
 const STRIP_PAD = 16;
 // Center band where hover does NOT scrub, so the user can click to select
 // the thumb under the cursor. Outside this band, hover triggers ff/rew scrub.
-const HOVER_DEAD_ZONE_PX = 100;
+const HOVER_DEAD_ZONE_PX = 250;
 const IMAGE_DURATION_MS = 2000; // per image
 const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
 const MAX_VIDEO_DURATION_MS = 15000;
