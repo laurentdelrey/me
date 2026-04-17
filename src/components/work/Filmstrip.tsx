@@ -256,12 +256,6 @@ export default function Filmstrip({
           </motion.div>
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes filmstrip-pulse {
-          0%, 100% { background-color: #888; }
-          50% { background-color: #a8a8a8; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -322,8 +316,6 @@ function FilmstripThumb({
             height: "100%",
             position: "relative",
             background: "#888",
-            // Pulse while the thumb hasn't loaded its real pixels yet.
-            animation: loaded ? "none" : "filmstrip-pulse 1.4s ease-in-out infinite",
           }}
         >
           {isVideo ? (
