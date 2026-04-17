@@ -286,6 +286,11 @@ function MediaCard({
     filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.18))",
   };
 
+  const reportWidth = (el: HTMLElement) => {
+    const w = el.getBoundingClientRect().width;
+    if (w > 0) onMeasureWidth?.(w);
+  };
+
   const media = isVideo ? (
     <video
       ref={videoRef}
@@ -296,6 +301,8 @@ function MediaCard({
       autoPlay
       onPlay={onVideoStarted}
       onEnded={onVideoEnded}
+      onLoadedMetadata={(e) => reportWidth(e.currentTarget)}
+      onLoadedData={(e) => reportWidth(e.currentTarget)}
       style={mediaStyle}
       data-no-cursor-expand
     />
@@ -304,6 +311,7 @@ function MediaCard({
       ref={imgRef}
       src={m.blobUrl}
       alt={item.text}
+      onLoad={(e) => reportWidth(e.currentTarget)}
       style={mediaStyle}
       data-no-cursor-expand
     />

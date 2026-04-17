@@ -7,6 +7,9 @@ import type { TimelineItem } from "@/lib/work/timeline";
 const THUMB_W = 140;
 const THUMB_H = 140;
 const STRIP_PAD = 16;
+// Center band where hover does NOT scrub, so the user can click to select
+// the thumb under the cursor. Outside this band, hover triggers ff/rew scrub.
+const HOVER_DEAD_ZONE_PX = 100;
 const IMAGE_DURATION_MS = 2000; // per image
 const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
 const MAX_VIDEO_DURATION_MS = 15000;
@@ -197,6 +200,14 @@ export default function Filmstrip({
       <div
         className="hide-scrollbar"
         onMouseLeave={onLeave}
+        onMouseMove={(e) => {
+          // If the cursor drifts into the center dead zone, stop scrubbing
+          // so clicks land on the thumb under the cursor.
+          const centerX = window.innerWidth / 2;
+          if (Math.abs(e.clientX - centerX) < HOVER_DEAD_ZONE_PX) {
+            onLeave();
+          }
+        }}
         style={{
           pointerEvents: "auto",
           overflow: "visible",
@@ -256,7 +267,14 @@ function FilmstripThumb({
   onHover: (idx: number) => void;
   onSelect?: (idx: number) => void;
 }) {
-  const handleMouseEnter = () => onHover(index);
+  // Only scrub-on-hover when the cursor is outside the center dead zone.
+  // Inside it, leaving hoverIndex null lets the playhead stay put so the user
+  // can click the thumb to select it.
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const centerX = window.innerWidth / 2;
+    if (Math.abs(e.clientX - centerX) < HOVER_DEAD_ZONE_PX) return;
+    onHover(index);
+  };
   const handleClick = () => onSelect?.(index);
 
   if (item.kind === "media") {
@@ -277,7 +295,7 @@ function FilmstripThumb({
           boxSizing: "border-box",
           position: "relative",
           overflow: "hidden",
-          borderRight: "1px solid rgba(255,255,255,0.9)",
+          borderRight: "1px solid rgba(255,255,255,0.25)",
         }}
       >
         <div style={{ width: "100%", height: "100%" }}>
@@ -344,7 +362,7 @@ function FilmstripThumb({
         textAlign: "center",
         padding: "0 6px",
         background: "#b0b0b0",
-        borderRight: "1px solid rgba(255,255,255,0.9)",
+        borderRight: "1px solid rgba(255,255,255,0.25)",
         boxSizing: "border-box",
       }}
     >
