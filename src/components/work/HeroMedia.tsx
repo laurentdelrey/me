@@ -260,13 +260,23 @@ function renderItem(
 function StoryCard({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="section-xpad"
+      className="section-xpad story-card"
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
+      {/* Mobile: bump the era/tldr/social paragraph text a notch — inline
+          fontSize on each <p> needs !important to override. */}
+      <style jsx global>{`
+        @media (max-width: 767px) {
+          .story-card p {
+            font-size: 1.35rem !important;
+            line-height: 1.6 !important;
+          }
+        }
+      `}</style>
       {children}
     </div>
   );
