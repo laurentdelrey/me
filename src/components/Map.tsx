@@ -78,9 +78,9 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
           console.log('Map resized');
         }, 100);
 
-        // Drift doesn't start here anymore — it starts only after the first
-        // flyTo completes (i.e. we've left tldr and the map is actually visible).
-        // No point animating the map behind an opaque grey veil.
+        // Start the slow living drift once tiles are laid out so the map feels
+        // alive on the very first step.
+        setTimeout(() => startDrift(), 800);
       });
       
       map.on('error', (e) => {
