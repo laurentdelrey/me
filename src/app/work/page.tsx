@@ -25,6 +25,7 @@ const PlayheadInfo = dynamic(() => import("@/components/work/PlayheadInfo"), { s
 export default function WorkPage() {
   const [mounted, setMounted] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(false);
   const [headerStartY, setHeaderStartY] = useState(240);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
@@ -107,6 +108,15 @@ export default function WorkPage() {
     return () => clearTimeout(t);
   }, [mounted]);
 
+  // Defer mounting the Map component by a few hundred ms so React doesn't
+  // try to bring up mapbox-gl on the same frame as the tldr reveal. The
+  // browser stays responsive for the first animation.
+  useEffect(() => {
+    if (!mounted) return;
+    const t = setTimeout(() => setMapMounted(true), 600);
+    return () => clearTimeout(t);
+  }, [mounted]);
+
   const displayIndex = hoverIndex ?? currentIndex;
   const currentItem = timeline[displayIndex];
   const currentEraId = currentItem ? getItemEraId(currentItem) : null;
@@ -136,11 +146,13 @@ export default function WorkPage() {
     <>
       {mounted && typeof window !== "undefined" && window.innerWidth > 768 && <PlayheadCursor />}
 
-      <Map
-        center={mapCenter as [number, number]}
-        zoom={mapZoom}
-        onLoad={() => setMapLoaded(true)}
-      />
+      {mapMounted && (
+        <Map
+          center={mapCenter as [number, number]}
+          zoom={mapZoom}
+          onLoad={() => setMapLoaded(true)}
+        />
+      )}
 
       <SiteHeader
         animated

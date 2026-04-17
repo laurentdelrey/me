@@ -121,19 +121,29 @@ export default function Map({ center, zoom, onLoad }: MapProps) {
   // Animate to new location when props change or map loads.
   // Mapbox handles the interpolation internally — no RAF loop needed.
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current) return;
+    const m = mapRef.current;
+    if (!mapLoaded || !m) return;
+
+    // Skip no-op flyTo: if the map is already at the requested location, don't
+    // run a 3.5s animation to nowhere (with random bearing/pitch jitter) —
+    // that's pure wasted GPU behind the grey veil on the first step.
+    const cur = m.getCenter();
+    const lngDelta = Math.abs(cur.lng - center[0]);
+    const latDelta = Math.abs(cur.lat - center[1]);
+    const zoomDelta = Math.abs(m.getZoom() - zoom);
+    if (lngDelta < 0.001 && latDelta < 0.001 && zoomDelta < 0.01) return;
 
     console.log('Animating to:', center, zoom);
 
-    const currentBearing = mapRef.current.getBearing();
-    const currentPitch = mapRef.current.getPitch();
+    const currentBearing = m.getBearing();
+    const currentPitch = m.getPitch();
 
     // Small incremental changes instead of random values
     const bearing = currentBearing + (Math.random() * 20 - 10); // ±10 from current
     const pitch = currentPitch + (Math.random() * 10 - 5); // ±5 from current, clamped 45–60
     const finalPitch = Math.max(45, Math.min(60, pitch));
 
-    mapRef.current.flyTo({
+    m.flyTo({
       center: center,
       zoom: zoom,
       duration: 3500,
