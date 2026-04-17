@@ -32,8 +32,8 @@ export default function HeroMedia({
         key={keyForItem(item)}
         className="pointer-events-auto"
         style={{
-          maxWidth: "min(62vw, 820px)",
-          maxHeight: "min(52vh, 480px)",
+          width: "min(62vw, 820px)",
+          height: "min(40vh, 380px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

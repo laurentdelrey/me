@@ -57,7 +57,7 @@ export default function Filmstrip({
       if (hoverIndexRef.current !== null) {
         // Lock to hovered thumb's center with gentle easing
         const target = hoverIndexRef.current * THUMB_W;
-        positionRef.current += (target - positionRef.current) * 0.06;
+        positionRef.current += (target - positionRef.current) * 0.025;
       } else if (!playingRef.current) {
         // Intro hasn't finished yet — stay at start position
         positionRef.current = START_POSITION;
