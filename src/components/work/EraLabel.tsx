@@ -10,9 +10,9 @@ export default function EraLabel({ eraId }: { eraId: EraId | null }) {
       className="fixed"
       style={{
         left: 32,
-        // Bottom-aligned with the PlayheadInfo controls row
-        // (FILMSTRIP_HEIGHT 124 + GAP_ABOVE_FILMSTRIP 16 = 140)
-        bottom: 140,
+        // Bottom-aligned with PlayheadInfo controls row
+        // (bottom-gap 16 + filmstrip 124 + top-gap 16 = 156)
+        bottom: 156,
         zIndex: 40,
         pointerEvents: "none",
       }}

@@ -149,7 +149,7 @@ function HeroCaption({
       <style jsx>{`
         @keyframes hero-caption-fade-in {
           from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 0.75; transform: translateY(0); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </a>

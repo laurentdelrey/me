@@ -175,9 +175,12 @@ export default function Filmstrip({
 
   return (
     <div
-      className="fixed left-0 right-0 bottom-0 pointer-events-none"
+      className="fixed left-0 right-0 pointer-events-none"
       data-filmstrip
       style={{
+        // Mirror the gap above the filmstrip (16px between filmstrip top
+        // and controls) below it as well — visually balanced.
+        bottom: 16,
         zIndex: 30,
         height: THUMB_H + STRIP_PAD * 2,
         overflow: "visible",

@@ -168,21 +168,13 @@ export default function WorkPage() {
           mounted ? "animate-fadeIn" : "opacity-0"
         }`}
       >
+        {/* Vignette — one fixed div with a radial gradient that darkens
+            all four edges evenly, replacing the separate top/bottom gradients. */}
         <div
-          className="fixed bottom-0 left-0 right-0 pointer-events-none"
+          className="fixed inset-0 pointer-events-none"
           style={{
-            height: 220,
             background:
-              "linear-gradient(to top, rgba(191,191,191,1) 0%, rgba(191,191,191,0.6) 30%, rgba(191,191,191,0.15) 65%, transparent 100%)",
-            zIndex: 20,
-          }}
-        />
-        <div
-          className="fixed top-0 left-0 right-0 pointer-events-none"
-          style={{
-            height: 180,
-            background:
-              "linear-gradient(to bottom, rgba(191,191,191,1) 0%, rgba(191,191,191,0.6) 30%, rgba(191,191,191,0.15) 65%, transparent 100%)",
+              "radial-gradient(ellipse at center, transparent 45%, rgba(191,191,191,0.35) 78%, rgba(191,191,191,0.85) 100%)",
             zIndex: 15,
           }}
         />

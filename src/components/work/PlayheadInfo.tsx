@@ -15,6 +15,7 @@ import { SlidingNumber } from "@/../components/motion-primitives/sliding-number"
 
 const FILMSTRIP_HEIGHT = 100 + 12 * 2; // matches Filmstrip (thumb 100 + pad 12)
 const GAP_ABOVE_FILMSTRIP = 16;
+const FILMSTRIP_BOTTOM_GAP = 16; // must match Filmstrip's `bottom: 16`
 
 export default function PlayheadInfo({
   year,
@@ -45,7 +46,7 @@ export default function PlayheadInfo({
     <div
       className="fixed left-0 right-0 pointer-events-none"
       style={{
-        bottom: FILMSTRIP_HEIGHT + GAP_ABOVE_FILMSTRIP,
+        bottom: FILMSTRIP_BOTTOM_GAP + FILMSTRIP_HEIGHT + GAP_ABOVE_FILMSTRIP,
         // Above Filmstrip (z-30) so the filmstrip's bleed shadow doesn't show behind the date.
         zIndex: 35,
         display: "flex",
