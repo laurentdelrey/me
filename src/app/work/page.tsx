@@ -6,6 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { PlayheadCursor } from "@/components/PlayheadCursor";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
+import VignetteTuner, { DEFAULT_VIGNETTE, vignetteBackground } from "@/components/work/VignetteTuner";
 
 function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
@@ -62,6 +63,8 @@ export default function WorkPage() {
     index: 0,
     nonce: 0,
   });
+  // TEMP — vignette live-tuning panel. Remove once locked in.
+  const [vignette, setVignette] = useState(DEFAULT_VIGNETTE);
   const isPlaying = playingStarted && !userPaused;
 
   // Walk the timeline from `from` in `direction` (±1), skipping media items,
@@ -145,6 +148,7 @@ export default function WorkPage() {
   return (
     <>
       {mounted && typeof window !== "undefined" && window.innerWidth > 768 && <PlayheadCursor />}
+      {mounted && <VignetteTuner config={vignette} onChange={setVignette} />}
 
       {mapMounted && (
         <Map
@@ -168,13 +172,11 @@ export default function WorkPage() {
           mounted ? "animate-fadeIn" : "opacity-0"
         }`}
       >
-        {/* Vignette — page grey narrowed to the outer band: center stays
-            clear, then a quick ramp up to full grey in the last ~25%. */}
+        {/* Vignette — driven by the live tuner while we dial it in. */}
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 72%, rgba(191,191,191,0.55) 92%, rgba(191,191,191,1) 100%)",
+            background: vignetteBackground(vignette),
             zIndex: 15,
           }}
         />
