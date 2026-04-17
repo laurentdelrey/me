@@ -174,7 +174,7 @@ export default function WorkPage() {
           className="fixed inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 45%, rgba(191,191,191,0.35) 78%, rgba(191,191,191,0.85) 100%)",
+              "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.25) 75%, rgba(0,0,0,0.6) 100%)",
             zIndex: 15,
           }}
         />

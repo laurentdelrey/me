@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
 const THUMB_W = 100;
@@ -256,6 +256,12 @@ export default function Filmstrip({
           </motion.div>
         </div>
       </div>
+      <style jsx global>{`
+        @keyframes filmstrip-pulse {
+          0%, 100% { background-color: #888; }
+          50% { background-color: #a8a8a8; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -278,6 +284,7 @@ function FilmstripThumb({
   onSelect?: (idx: number) => void;
   shouldLoad?: boolean;
 }) {
+  const [loaded, setLoaded] = useState(false);
   // Only scrub-on-hover when the cursor is outside the center dead zone.
   // Inside it, leaving hoverIndex null lets the playhead stay put so the user
   // can click the thumb to select it.
@@ -309,7 +316,16 @@ function FilmstripThumb({
           borderRight: "1px solid rgba(255,255,255,0.25)",
         }}
       >
-        <div style={{ width: "100%", height: "100%" }}>
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            background: "#888",
+            // Pulse while the thumb hasn't loaded its real pixels yet.
+            animation: loaded ? "none" : "filmstrip-pulse 1.4s ease-in-out infinite",
+          }}
+        >
           {isVideo ? (
             // Videos only load near the playhead — preloading all 45 at once
             // choked the network and caused the original page-load lag.
@@ -318,7 +334,15 @@ function FilmstripThumb({
               muted
               playsInline
               preload={shouldLoad ? "metadata" : "none"}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#888" }}
+              onLoadedData={() => setLoaded(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                opacity: loaded ? 1 : 0,
+                transition: "opacity 0.4s ease-out",
+              }}
             />
           ) : (
             <img
@@ -326,7 +350,15 @@ function FilmstripThumb({
               alt=""
               loading="lazy"
               decoding="async"
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onLoad={() => setLoaded(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                opacity: loaded ? 1 : 0,
+                transition: "opacity 0.4s ease-out",
+              }}
             />
           )}
         </div>
