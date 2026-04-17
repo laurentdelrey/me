@@ -64,8 +64,10 @@ export function PlayheadCursor() {
     };
   }, [x, y]);
 
-  // Rotation: ff 0° (right), rew 180° (left), idle 135° (up-left cursor angle).
-  const rotation = mode === "ff" ? 0 : mode === "rew" ? 180 : 135;
+  // Rotation: ff 0° (right), rew 180° (left), idle 225° (up-left — top-left cursor angle).
+  // Note: SVG rotations are clockwise; 225° = -135° = pointing up-left.
+  const rotation = mode === "ff" ? 0 : mode === "rew" ? 180 : 225;
+  const isScrubbing = mode === "ff" || mode === "rew";
 
   return (
     <motion.div
@@ -92,20 +94,23 @@ export function PlayheadCursor() {
         }}
       >
         <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
+          width="22"
+          height="16"
+          viewBox="0 0 22 16"
+          fill="#ffffff"
           aria-hidden
-          style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.45))" }}
+          style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))" }}
         >
-          {/* Horizontal arrow pointing right. Rotated by the parent motion.div. */}
-          <path
-            d="M3 10 H15 M11 6 L15 10 L11 14"
-            stroke="#ffffff"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          {/* Primary triangle — always visible. Points right in SVG; rotated by parent. */}
+          <path d="M4 3 L10 8 L4 13 Z" />
+          {/* Secondary triangle — appears only when scrubbing (ff/rew). */}
+          <motion.path
+            d="M11 3 L17 8 L11 13 Z"
+            animate={{
+              opacity: isScrubbing ? 1 : 0,
+              x: isScrubbing ? 0 : -5,
+            }}
+            transition={{ type: "spring", stiffness: 450, damping: 28 }}
           />
         </svg>
       </motion.div>
