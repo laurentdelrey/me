@@ -17,7 +17,23 @@ export type Era = {
   content: React.ReactElement;
 };
 
-const linkClass = "hover:underline";
+const linkClass = "hover:bg-white/30 transition-colors";
+
+// Shared pill-button style for all inline links inside era text.
+// Matches the speed-toggle pill in PlayheadInfo — subtle glass, no accent colors.
+// NOTE: WordReveal reads `style.color` to fade the text in; keep `color` set to white.
+const linkStyle: React.CSSProperties = {
+  color: "#ffffff",
+  textDecoration: "none",
+  display: "inline-block",
+  padding: "0 8px",
+  borderRadius: 4,
+  background: "rgba(255,255,255,0.18)",
+  border: "1px solid rgba(255,255,255,0.28)",
+  whiteSpace: "nowrap",
+  lineHeight: 1.5,
+  verticalAlign: "baseline",
+};
 
 export const ERAS: Record<EraId, Era> = {
   tldr: {
@@ -38,13 +54,13 @@ export const ERAS: Record<EraId, Era> = {
           href="https://x.com/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >twitter/x</a> and <a
           href="https://www.threads.net/@laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >threads</a>.
       </p>
@@ -67,19 +83,19 @@ export const ERAS: Record<EraId, Era> = {
           href="https://www.meta.com/superintelligence/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#60C4FF', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >meta</a> super intelligence lab in january. since then i've been jamming with frontier models to design original social experiences mostly on ios and web sometimes. i recently joined <a
           href="https://www.instagram.com"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#60C4FF', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >instagram</a> to do similar things directly within the <a
           href="https://www.threads.net/@laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#60C4FF', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >threads</a> product team.
       </p>
@@ -102,7 +118,7 @@ export const ERAS: Record<EraId, Era> = {
           href="https://twitter.com/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >twitter/x</a>,
         on apr 1 2021. the first idea was an april fool and i kept going from there.
@@ -127,7 +143,7 @@ export const ERAS: Record<EraId, Era> = {
           href="https://www.snap.com/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFEE00', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >snapchat</a>.
         a small pioneer group of inventors who disrupted the space.
@@ -153,32 +169,32 @@ export const ERAS: Record<EraId, Era> = {
           href="https://www.sequoiacap.com/#"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#B8FFA9', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >sequoia capital</a> and <a
           href="https://www.kleinerperkins.com/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#B8FFA9', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >kpcb</a>.
         a <a
           href="https://www.producthunt.com/posts/tribe-2-0"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#B8FFA9', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >messaging app</a>, a <a
           href="https://www.producthunt.com/posts/tribe-calls"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#B8FFA9', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >calling app</a> and a <a
           href="https://www.producthunt.com/posts/tribe-games"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#B8FFA9', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >gaming app</a>.
       </p>
@@ -201,27 +217,27 @@ export const ERAS: Record<EraId, Era> = {
           href="https://www.instagram.com/balencyoga/"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#F68364', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >ironic fan brand</a> inspired by balenciaga,
         the missing <a
           href="https://www.producthunt.com/posts/snapchatters"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#F68364', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >"explore" section</a> of snapchat, or <a
           href="https://twitter.com/laurentdelrey/status/1009135685960232961"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#F68364', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >collectible cards</a> on the ethereum network.
         the one that blew up the most though was a controversial email-based app called <a
           href="https://twitter.com/justleakit"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#F68364', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >leak</a>.
       </p>
@@ -245,7 +261,7 @@ export const ERAS: Record<EraId, Era> = {
           href="https://www.konbini.com/fr/3-0/un-tumblr-histoire-internet-picasso-jay-z"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >tumblrs</a>,
         curated a newsletter of torrent links, made merch for several french colleges, interned at leetchi and also created my first social app.
@@ -288,18 +304,18 @@ export const ERAS: Record<EraId, Era> = {
           href="https://twitter.com/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >twitter/x</a> <span style={{ color: 'rgba(255,255,255,0.5)' }}>and</span> <a
           href="https://t.me/laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >telegram</a><span style={{ color: 'rgba(255,255,255,0.5)' }}>. </span>
         <span style={{ color: 'rgba(255,255,255,0.5)' }}>i can do</span> <a
           href="mailto:laurent.desserrey@gmail.com?subject=Hi%20there"
-          style={{ color: '#FFB48F', textDecoration: 'none' }}
+          style={linkStyle}
           className={linkClass}
         >email</a> <span style={{ color: 'rgba(255,255,255,0.5)' }}>too.</span>
         <br />
