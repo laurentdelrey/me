@@ -154,10 +154,12 @@ export default function Filmstrip({
       >
         <motion.div
           style={{
-            display: "flex",
+            display: "inline-flex",
             gap: 0,
             x,
             willChange: "transform",
+            // Single tight wrapper around ALL thumbs gets the shadow
+            boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
           }}
         >
           {timeline.map((item, i) => (
@@ -211,7 +213,6 @@ function FilmstripThumb({
           position: "relative",
           overflow: "hidden",
           borderRight: "1px solid rgba(255,255,255,0.9)",
-          boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
         }}
       >
         <div style={{ width: "100%", height: "100%" }}>
@@ -279,7 +280,6 @@ function FilmstripThumb({
         background: "#b0b0b0",
         borderRight: "1px solid rgba(255,255,255,0.9)",
         boxSizing: "border-box",
-        boxShadow: "0 14px 40px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.12)",
       }}
     >
       {label}
