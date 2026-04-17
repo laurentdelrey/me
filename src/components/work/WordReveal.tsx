@@ -30,9 +30,12 @@ export function WordReveal({
   let wordIndex = 0;
   const process = (node: React.ReactNode): React.ReactNode => {
     if (typeof node === "string") {
-      const trimmed = node;
-      if (!trimmed.trim()) return node;
-      const parts = trimmed.split(/(\s+)/); // keep whitespace
+      if (!node.trim()) return node;
+      // Keep whitespace, but drop empty strings that appear at string boundaries
+      // (e.g. " and ".split(/(\s+)/) produces ["", " ", "and", " ", ""]) — otherwise
+      // those empties would get counted as phantom words and drift wordIndex past
+      // what `countWords` expects, leaving trailing links never revealed.
+      const parts = node.split(/(\s+)/).filter((p) => p.length > 0);
       return parts.map((part, i) => {
         if (/^\s+$/.test(part)) {
           return <React.Fragment key={i}>{part}</React.Fragment>;
@@ -68,7 +71,11 @@ export function WordReveal({
           style: {
             ...el.props.style,
             opacity: allVisible ? 1 : 0,
-            transition: "opacity 0.3s ease-out",
+            transform: allVisible ? "scale(1)" : "scale(0.7)",
+            transformOrigin: "center",
+            // easeOutBack — gives the pill a little overshoot as it pops in
+            transition:
+              "opacity 0.25s ease-out, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
           },
         });
       }
