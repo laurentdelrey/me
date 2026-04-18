@@ -154,7 +154,7 @@ const socialPillStyle: React.CSSProperties = {
   padding: "0 8px",
   borderRadius: 0,
   background: "transparent",
-  border: "none",
+  border: "1px solid rgba(255,255,255,0.5)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   cursor: "none",

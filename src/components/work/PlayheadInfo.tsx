@@ -46,82 +46,35 @@ export default function PlayheadInfo({
   nextLabel: string;
   isMobile?: boolean;
 }) {
+  const bottomOffset =
+    FILMSTRIP_BOTTOM_GAP +
+    (isMobile ? FILMSTRIP_HEIGHT_MOBILE : FILMSTRIP_HEIGHT_DESKTOP) +
+    GAP_ABOVE_FILMSTRIP;
+  const edgeInset = isMobile ? 16 : 32;
+
   return (
-    <div
-      className="fixed left-0 right-0 pointer-events-none"
-      style={{
-        bottom: FILMSTRIP_BOTTOM_GAP + (isMobile ? FILMSTRIP_HEIGHT_MOBILE : FILMSTRIP_HEIGHT_DESKTOP) + GAP_ABOVE_FILMSTRIP,
-        // Above Filmstrip (z-30) so the filmstrip's bleed shadow doesn't show behind the date.
-        zIndex: 35,
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
+    <>
+      {/* Prev chapter — anchored to the left edge */}
       <div
-        className="text-white"
-        style={{
-          pointerEvents: "auto",
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          alignItems: "center",
-          columnGap: isMobile ? 10 : 18,
-          // Responsive width — caps at 680 on desktop / 360 on mobile,
-          // but never wider than the viewport (minus edge inset).
-          width: `min(${isMobile ? 360 : 680}px, calc(100vw - 24px))`,
-          // NOTE: no text-shadow here — SlidingNumber clips each digit with
-          // overflow-y: clip, and a text-shadow gets cropped by that box,
-          // leaving a visible rectangular artifact inside the date.
-        }}
+        className="fixed pointer-events-none"
+        style={{ left: edgeInset, bottom: bottomOffset, zIndex: 35 }}
       >
-        {/* Left controls — previous chapter, then play/pause, pushed toward the date */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: 12,
-          }}
-        >
+        <div style={{ pointerEvents: "auto" }}>
           <ChapterButton
             side="prev"
             label={prevLabel}
             onClick={onBack}
             iconOnly={isMobile}
           />
-          <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
         </div>
+      </div>
 
-        {/* Date — centered on the playhead; kept chrome-less so it reads as
-            the primary label (paired visually with just the play/pause pill). */}
-        <div
-          className="tabular-nums playhead-text"
-          style={{
-            fontSize: "1rem",
-            fontWeight: 400,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 5,
-            color: "#fff",
-          }}
-        >
-          <SlidingNumber value={year} />
-          <span className="text-white/30">.</span>
-          <SlidingNumber value={month} padStart />
-          <span className="text-white/30">.</span>
-          <SlidingNumber value={day} padStart />
-        </div>
-
-        {/* Right controls — next chapter, then speed toggle */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            gap: 12,
-          }}
-        >
-          <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
+      {/* Next chapter — anchored to the right edge */}
+      <div
+        className="fixed pointer-events-none"
+        style={{ right: edgeInset, bottom: bottomOffset, zIndex: 35 }}
+      >
+        <div style={{ pointerEvents: "auto" }}>
           <ChapterButton
             side="next"
             label={nextLabel}
@@ -130,6 +83,49 @@ export default function PlayheadInfo({
           />
         </div>
       </div>
+
+      {/* Centered cluster — play/pause + date + speed, stays on the playhead */}
+      <div
+        className="fixed left-0 right-0 pointer-events-none"
+        style={{
+          bottom: bottomOffset,
+          zIndex: 35,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          className="text-white"
+          style={{
+            pointerEvents: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: isMobile ? 10 : 14,
+          }}
+        >
+          <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
+          <div
+            className="tabular-nums playhead-text"
+            style={{
+              fontSize: "1rem",
+              fontWeight: 400,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+              color: "#fff",
+            }}
+          >
+            <SlidingNumber value={year} />
+            <span className="text-white/30">.</span>
+            <SlidingNumber value={month} padStart />
+            <span className="text-white/30">.</span>
+            <SlidingNumber value={day} padStart />
+          </div>
+          <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
+        </div>
+      </div>
+
       <style jsx global>{`
         @media (max-width: 640px) {
           .playhead-text {
@@ -137,7 +133,7 @@ export default function PlayheadInfo({
           }
         }
       `}</style>
-    </div>
+    </>
   );
 }
 
@@ -147,7 +143,7 @@ const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
   borderRadius: 0,
   background: "transparent",
-  border: "none",
+  border: "1px solid rgba(255,255,255,0.5)",
   color: "#fff",
   cursor: "none",
 };

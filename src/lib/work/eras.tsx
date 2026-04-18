@@ -24,16 +24,12 @@ const linkClass = "hover:brightness-110 transition";
 // NOTE: WordReveal reads `style.color` to fade the text in; keep `color` set to white.
 const linkStyle: React.CSSProperties = {
   color: "#ffffff",
-  display: "inline",
-  padding: 0,
+  textDecoration: "none",
+  display: "inline-block",
+  padding: "0 8px",
   borderRadius: 0,
   background: "transparent",
-  border: "none",
-  // Subtle dotted underline so inline pills still read as links.
-  textDecoration: "underline",
-  textDecorationColor: "rgba(255,255,255,0.5)",
-  textUnderlineOffset: "3px",
-  textDecorationThickness: "1px",
+  border: "1px solid rgba(255,255,255,0.5)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   verticalAlign: "baseline",

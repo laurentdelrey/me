@@ -187,7 +187,7 @@ export default function WorkPage() {
           }}
         />
 
-        {!isMobile && <EraLabel eraId={currentEraId} isMobile={isMobile} />}
+        {/* Era label removed — map location + timeline chapter convey the era now. */}
 
         {currentItem && (
           <HeroMedia
