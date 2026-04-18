@@ -147,7 +147,7 @@ const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
   borderRadius: 0,
   background: "transparent",
-  border: "1px solid rgba(255,255,255,0.5)",
+  border: "none",
   color: "#fff",
   cursor: "none",
 };
