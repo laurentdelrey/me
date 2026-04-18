@@ -45,7 +45,11 @@ export default function PlayheadInfo({
   prevLabel: string;
   nextLabel: string;
   isMobile?: boolean;
+  visible?: boolean;
 }) {
+  // When invisible, we keep the DOM mounted but drop opacity so the chrome
+  // fades out on idle (and fades back in on any mouse activity).
+  const opacity = visible === false ? 0 : 1;
   const bottomOffset =
     FILMSTRIP_BOTTOM_GAP +
     (isMobile ? FILMSTRIP_HEIGHT_MOBILE : FILMSTRIP_HEIGHT_DESKTOP) +
@@ -57,7 +61,13 @@ export default function PlayheadInfo({
       {/* Prev chapter — anchored to the left edge */}
       <div
         className="fixed pointer-events-none"
-        style={{ left: edgeInset, bottom: bottomOffset, zIndex: 35 }}
+        style={{
+          left: edgeInset,
+          bottom: bottomOffset,
+          zIndex: 35,
+          opacity,
+          transition: "opacity 500ms ease-out",
+        }}
       >
         <div style={{ pointerEvents: "auto" }}>
           <ChapterButton
@@ -72,7 +82,13 @@ export default function PlayheadInfo({
       {/* Next chapter — anchored to the right edge */}
       <div
         className="fixed pointer-events-none"
-        style={{ right: edgeInset, bottom: bottomOffset, zIndex: 35 }}
+        style={{
+          right: edgeInset,
+          bottom: bottomOffset,
+          zIndex: 35,
+          opacity,
+          transition: "opacity 500ms ease-out",
+        }}
       >
         <div style={{ pointerEvents: "auto" }}>
           <ChapterButton
@@ -92,6 +108,8 @@ export default function PlayheadInfo({
           zIndex: 35,
           display: "flex",
           justifyContent: "center",
+          opacity,
+          transition: "opacity 500ms ease-out",
         }}
       >
         <div

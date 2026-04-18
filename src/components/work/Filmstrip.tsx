@@ -27,6 +27,7 @@ export default function Filmstrip({
   speed = 1,
   seek,
   isMobile = false,
+  visible = true,
 }: {
   timeline: TimelineItem[];
   hoverIndex: number | null;
@@ -41,6 +42,7 @@ export default function Filmstrip({
   // Nonce lets callers re-trigger the same index (e.g. clicking "back to start" twice).
   seek?: { index: number; nonce: number };
   isMobile?: boolean;
+  visible?: boolean;
 }) {
   const THUMB_W = isMobile ? THUMB_W_MOBILE : THUMB_W_DESKTOP;
   const THUMB_H = THUMB_W;
@@ -219,6 +221,8 @@ export default function Filmstrip({
         zIndex: 30,
         height: THUMB_H + STRIP_PAD * 2,
         overflow: "visible",
+        opacity: visible ? 1 : 0,
+        transition: "opacity 700ms ease-out",
       }}
     >
       {/* Playhead — vertically aligned with the thumbs */}

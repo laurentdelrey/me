@@ -70,6 +70,50 @@ export default function WorkPage() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Staggered landing reveal — chrome doesn't all shout at once.
+  //   stage 0: nothing
+  //   stage 1: header + hero
+  //   stage 2: + filmstrip
+  //   stage 3: + playback controls
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (!mounted) return;
+    const timers = [
+      setTimeout(() => setStage(1), 150),
+      setTimeout(() => setStage(2), 700),
+      setTimeout(() => setStage(3), 1200),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [mounted]);
+
+  // Auto-hide chrome on idle — mouse stops for ~2.5s, header + controls fade out.
+  // Any movement (or touch on mobile) brings them right back.
+  const [isIdle, setIsIdle] = useState(false);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const poke = () => {
+      setIsIdle(false);
+      if (t) clearTimeout(t);
+      t = setTimeout(() => setIsIdle(true), 2500);
+    };
+    poke();
+    window.addEventListener("mousemove", poke);
+    window.addEventListener("touchstart", poke);
+    window.addEventListener("keydown", poke);
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener("mousemove", poke);
+      window.removeEventListener("touchstart", poke);
+      window.removeEventListener("keydown", poke);
+    };
+  }, []);
+
+  // Chrome visibility: must be revealed by stage AND active (not idle).
+  const chromeActive = !isIdle;
+  const headerVisibleFinal = stage >= 1 && chromeActive;
+  const filmstripVisible = stage >= 2; // filmstrip stays visible once revealed
+  const controlsVisible = stage >= 3 && chromeActive;
   const isPlaying = playingStarted && !userPaused;
 
   // Walk the timeline from `from` in `direction` (±1), skipping media items,
@@ -170,7 +214,7 @@ export default function WorkPage() {
       <SiteHeader
         animated
         toTop={mounted}
-        visible={headerVisible && mounted}
+        visible={headerVisibleFinal}
         startY={headerStartY}
         topPaddingPx={28}
         color="#ffffff"
@@ -216,6 +260,7 @@ export default function WorkPage() {
             prevLabel={prevLabel}
             nextLabel={nextLabel}
             isMobile={isMobile}
+            visible={controlsVisible}
           />
         )}
 
@@ -231,6 +276,7 @@ export default function WorkPage() {
           speed={speed}
           seek={seek}
           isMobile={isMobile}
+          visible={filmstripVisible}
         />
       </main>
     </>
