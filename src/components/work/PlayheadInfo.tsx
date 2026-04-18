@@ -91,7 +91,8 @@ export default function PlayheadInfo({
           <PlayPauseButton isPlaying={isPlaying} onToggle={onTogglePlaying} />
         </div>
 
-        {/* Date — centered, so its midpoint lines up with the playhead */}
+        {/* Date — centered on the playhead; kept chrome-less so it reads as
+            the primary label (paired visually with just the play/pause pill). */}
         <div
           className="tabular-nums playhead-text"
           style={{
@@ -101,6 +102,7 @@ export default function PlayheadInfo({
             alignItems: "center",
             justifyContent: "center",
             gap: 5,
+            color: "#fff",
           }}
         >
           <SlidingNumber value={year} />
@@ -204,13 +206,18 @@ function ChapterButton({
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="lowercase playhead-text"
       style={{
-        ...pillBase,
-        padding: iconOnly ? 0 : "0 12px",
+        // Chapter buttons are secondary — no pill chrome, just text + icon.
+        height: PILL_HEIGHT,
+        padding: iconOnly ? 0 : "0 4px",
         width: iconOnly ? 38 : undefined,
         display: "flex",
         alignItems: "center",
         justifyContent: iconOnly ? "center" : undefined,
         gap: 8,
+        background: "transparent",
+        border: "none",
+        color: "#fff",
+        cursor: "none",
         fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
@@ -283,12 +290,17 @@ function SpeedToggle({
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="tabular-nums playhead-text"
       style={{
-        ...pillBase,
-        minWidth: 46,
-        padding: "0 10px",
+        // Speed toggle is secondary — no pill chrome, just text.
+        height: PILL_HEIGHT,
+        minWidth: 30,
+        padding: "0 4px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        background: "transparent",
+        border: "none",
+        color: "#fff",
+        cursor: "none",
         fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
