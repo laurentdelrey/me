@@ -121,13 +121,13 @@ export default function PlayheadInfo({
             gap: 12,
           }}
         >
+          <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
           <ChapterButton
             side="next"
             label={nextLabel}
             onClick={onNext}
             iconOnly={isMobile}
           />
-          <SpeedToggle speed={speed} onToggle={onToggleSpeed} />
         </div>
       </div>
       <style jsx global>{`
@@ -146,8 +146,8 @@ const PILL_HEIGHT = 32;
 const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
   borderRadius: 0,
-  background: "#b0b0b0", // accent grey — matches filmstrip text cards
-  border: "1px solid rgba(255,255,255,0.15)",
+  background: "transparent",
+  border: "1px solid rgba(255,255,255,0.5)",
   color: "#fff",
   cursor: "none",
 };
@@ -206,18 +206,13 @@ function ChapterButton({
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="lowercase playhead-text"
       style={{
-        // Chapter buttons are secondary — no pill chrome, just text + icon.
-        height: PILL_HEIGHT,
-        padding: iconOnly ? 0 : "0 4px",
+        ...pillBase,
+        padding: iconOnly ? 0 : "0 12px",
         width: iconOnly ? 38 : undefined,
         display: "flex",
         alignItems: "center",
         justifyContent: iconOnly ? "center" : undefined,
         gap: 8,
-        background: "transparent",
-        border: "none",
-        color: "#fff",
-        cursor: "none",
         fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
@@ -290,17 +285,12 @@ function SpeedToggle({
       transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="tabular-nums playhead-text"
       style={{
-        // Speed toggle is secondary — no pill chrome, just text.
-        height: PILL_HEIGHT,
-        minWidth: 30,
-        padding: "0 4px",
+        ...pillBase,
+        minWidth: 46,
+        padding: "0 10px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "transparent",
-        border: "none",
-        color: "#fff",
-        cursor: "none",
         fontSize: "1rem",
         fontWeight: 400,
         lineHeight: 1,
