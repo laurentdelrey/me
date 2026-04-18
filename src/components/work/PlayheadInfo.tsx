@@ -32,6 +32,7 @@ export default function PlayheadInfo({
   prevLabel,
   nextLabel,
   isMobile = false,
+  visible = true,
 }: {
   year: number;
   month: number;
