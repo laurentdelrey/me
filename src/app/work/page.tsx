@@ -57,7 +57,7 @@ export default function WorkPage() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [playingStarted, setPlayingStarted] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
-  const [speed, setSpeed] = useState<1 | 2 | 10>(1);
+  const [speed, setSpeed] = useState<1 | 10>(1);
   const [seek, setSeek] = useState<{ index: number; nonce: number }>({
     index: 0,
     nonce: 0,
@@ -97,7 +97,12 @@ export default function WorkPage() {
   // On the very first chapter (tldr), there's no meaningful "previous" —
   // hide the back pill rather than wrap around to `@ me`.
   const onFirstChapter = timeline[currentIndex]?.kind === "tldr";
-  const prevLabel = onFirstChapter ? "" : chapterLabel(timeline[prevChapterIndex]);
+  // Only show the prev-chapter button once the earliest (leftmost) thumb has
+  // scrolled off-screen; otherwise it's redundant with the visible filmstrip.
+  // THUMB_W matches Filmstrip's desktop/mobile sizes.
+  const thumbW = isMobile ? 72 : 100;
+  const leftmostVisible = currentIndex * thumbW <= (typeof window !== "undefined" ? window.innerWidth / 2 : 800);
+  const prevLabel = onFirstChapter || leftmostVisible ? "" : chapterLabel(timeline[prevChapterIndex]);
   const nextLabel = chapterLabel(timeline[nextChapterIndex]);
 
   const seekTo = (idx: number) => {
@@ -205,9 +210,7 @@ export default function WorkPage() {
             isPlaying={isPlaying}
             onTogglePlaying={() => setUserPaused((p) => !p)}
             speed={speed}
-            onToggleSpeed={() =>
-              setSpeed((s) => (s === 1 ? 2 : s === 2 ? 10 : 1))
-            }
+            onToggleSpeed={() => setSpeed((s) => (s === 1 ? 10 : 1))}
             onBack={goToPrevChapter}
             onNext={goToNextChapter}
             prevLabel={prevLabel}
