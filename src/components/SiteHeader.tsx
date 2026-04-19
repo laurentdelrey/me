@@ -3,28 +3,20 @@
 import { motion } from "motion/react";
 
 type SiteHeaderProps = {
-  animated?: boolean;
-  toTop?: boolean; // whether header should be at the top (true once map is ready)
-  visible?: boolean;
-  startY?: number; // starting offset from top when centered
+  visible?: boolean; // controls the right-side social block only
   topPaddingPx?: number;
-  onClick?: () => void; // optional click handler
-  color?: string; // text color override
+  onClick?: () => void;
+  color?: string;
 };
 
 export default function SiteHeader({
-  animated = false,
-  toTop = true,
   visible = true,
-  startY = 240,
   topPaddingPx = 16,
   onClick,
   color,
 }: SiteHeaderProps) {
-  const Container: any = animated ? motion.div : "div";
-
   return (
-    <Container
+    <div
       className="fixed left-0 right-0 z-50 header-bar"
       style={{
         top: 0,
@@ -37,15 +29,6 @@ export default function SiteHeader({
         paddingLeft: 24,
         paddingRight: 24,
       }}
-      {...(animated
-        ? {
-            // Header just fades in at its final position — no drop-from-center
-            // spring animation on load.
-            initial: { opacity: 0 },
-            animate: { opacity: visible ? 1 : 0 },
-            transition: { opacity: { duration: 0.5, ease: "easeOut" } },
-          }
-        : {})}
     >
       {/* Left column — empty spacer to keep the title centered on desktop.
           Hidden on mobile (see media query at the bottom). */}
@@ -92,6 +75,10 @@ export default function SiteHeader({
           fontSize: "1rem",
           color: color || "#ffffff",
           pointerEvents: "auto",
+          // Only the social block follows the idle-hide behavior;
+          // the title stays on the page at all times.
+          opacity: visible ? 1 : 0,
+          transition: "opacity 500ms ease-out",
         }}
       >
         <span>on</span>
@@ -152,9 +139,9 @@ const socialPillStyle: React.CSSProperties = {
   textDecoration: "none",
   display: "inline-block",
   padding: "0 8px",
-  borderRadius: 0,
-  background: "transparent",
-  border: "1px solid rgba(255,255,255,0.5)",
+  borderRadius: 4,
+  background: "#b0b0b0",
+  border: "1px solid rgba(255,255,255,0.2)",
   whiteSpace: "nowrap",
   lineHeight: 1.5,
   cursor: "none",

@@ -160,9 +160,9 @@ export default function PlayheadInfo({
 const PILL_HEIGHT = 32;
 const pillBase: React.CSSProperties = {
   height: PILL_HEIGHT,
-  borderRadius: 0,
-  background: "transparent",
-  border: "1px solid rgba(255,255,255,0.5)",
+  borderRadius: 4,
+  background: "#b0b0b0",
+  border: "1px solid rgba(255,255,255,0.2)",
   color: "#fff",
   cursor: "none",
 };

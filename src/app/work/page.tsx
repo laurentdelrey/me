@@ -212,10 +212,7 @@ export default function WorkPage() {
       )}
 
       <SiteHeader
-        animated
-        toTop={mounted}
-        visible={headerVisibleFinal}
-        startY={headerStartY}
+        visible={chromeActive}
         topPaddingPx={28}
         color="#ffffff"
       />
