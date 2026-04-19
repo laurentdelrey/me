@@ -130,7 +130,7 @@ export default function SiteHeader({
           }
         }
       `}</style>
-    </Container>
+    </div>
   );
 }
 
