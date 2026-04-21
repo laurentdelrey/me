@@ -116,10 +116,30 @@ export default function Filmstrip({
           positionRef.current = to;
           seekAnimRef.current = null;
         }
+      } else if (!isTouchingRef.current && Math.abs(inertiaVelRef.current) > 20) {
+        // Fling: coast with exponential friction so the strip glides to rest
+        // like a physical filmstrip rather than snapping stop.
+        const maxPos = Math.max(0, (lenRef.current - 1) * THUMB_W);
+        positionRef.current = Math.max(
+          0,
+          Math.min(maxPos, positionRef.current + inertiaVelRef.current * dt)
+        );
+        // Stop fling hard if we hit either end.
+        if (positionRef.current === 0 || positionRef.current === maxPos) {
+          inertiaVelRef.current = 0;
+        } else {
+          // ~4.5 e-folds per second → comes to rest in roughly 0.8–1.2s
+          // depending on flick strength. Feels native.
+          const decay = Math.exp(-4.5 * dt);
+          inertiaVelRef.current *= decay;
+        }
       } else if (hoverIndexRef.current !== null) {
         // Lock to hovered thumb's center with gentle easing
         const target = hoverIndexRef.current * THUMB_W;
         positionRef.current += (target - positionRef.current) * 0.025;
+      } else if (isTouchingRef.current) {
+        // Finger is down — position is being driven by touchmove directly.
+        // Don't let autoplay add velocity on top of the user's drag.
       } else if (!playingRef.current) {
         // Before intro starts → pin to start. After that, pause in place.
         if (!hasStartedRef.current) {
@@ -189,32 +209,66 @@ export default function Filmstrip({
     };
   }, [x, onCurrentIndexChange]);
 
-  // Touch scrub (mobile) — dragging the strip moves the playhead.
+  // Touch scrub (mobile) — dragging the strip moves the playhead, and
+  // releasing imparts momentum that decays like a real filmstrip spinning
+  // down. Velocity is sampled from the last few touchmove events so a flick
+  // coasts convincingly while a slow drag stops immediately.
+  const inertiaVelRef = useRef(0); // px/sec, position-space (drag right → negative)
+  const isTouchingRef = useRef(false);
   useEffect(() => {
     if (!isMobile) return;
     let startX = 0;
     let startPos = 0;
+    let lastX = 0;
+    let lastT = 0;
+    let velocity = 0; // px/sec in position space
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
+      isTouchingRef.current = true;
+      inertiaVelRef.current = 0; // cancel any existing fling
       startX = e.touches[0].clientX;
       startPos = positionRef.current;
+      lastX = startX;
+      lastT = performance.now();
+      velocity = 0;
     };
     const onMove = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
-      const dx = e.touches[0].clientX - startX;
-      // Drag right → content moves right → position decreases (back in time)
+      const now = performance.now();
+      const curX = e.touches[0].clientX;
+      const dt = Math.max(1, now - lastT) / 1000;
+      // Position velocity is the negative of finger velocity (drag right →
+      // position decreases). Blend with previous sample to smooth jitter.
+      const instVel = -(curX - lastX) / dt;
+      velocity = velocity * 0.6 + instVel * 0.4;
+      lastX = curX;
+      lastT = now;
+
+      const dx = curX - startX;
       positionRef.current = Math.max(
         0,
         Math.min((lenRef.current - 1) * THUMB_W, startPos - dx),
       );
     };
+    const onEnd = () => {
+      isTouchingRef.current = false;
+      // If the last sample is stale (finger held still before release), treat
+      // as no fling. Otherwise hand off velocity to the animation loop.
+      const stale = performance.now() - lastT > 80;
+      inertiaVelRef.current = stale ? 0 : velocity;
+      velocity = 0;
+    };
     const el = document.querySelector('[data-filmstrip]');
     if (!el) return;
     el.addEventListener('touchstart', onStart as EventListener, { passive: true });
     el.addEventListener('touchmove', onMove as EventListener, { passive: true });
+    el.addEventListener('touchend', onEnd as EventListener, { passive: true });
+    el.addEventListener('touchcancel', onEnd as EventListener, { passive: true });
     return () => {
       el.removeEventListener('touchstart', onStart as EventListener);
       el.removeEventListener('touchmove', onMove as EventListener);
+      el.removeEventListener('touchend', onEnd as EventListener);
+      el.removeEventListener('touchcancel', onEnd as EventListener);
     };
   }, [isMobile, THUMB_W]);
 
