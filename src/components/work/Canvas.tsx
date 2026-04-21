@@ -322,10 +322,14 @@ function CanvasTile({
       }}
       initial={false}
       transition={{
+        // Default for all sub-animations (rotate/scale/shadow on hover)
         type: "spring",
         stiffness: 260,
         damping: 28,
         mass: 0.6,
+        // Layout (= the hero<->tile morph) gets a deliberately heavier spring
+        // so it reads as a single confident gesture, not a fast snap.
+        layout: { type: "spring", stiffness: 220, damping: 26, mass: 0.8 },
       }}
       style={{
         position: "absolute",

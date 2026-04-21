@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { LayoutGroup } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import { PlayheadCursor } from "@/components/PlayheadCursor";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
@@ -158,6 +159,29 @@ export default function WorkPage() {
   const goToPrevChapter = () => seekTo(prevChapterIndex);
   const goToNextChapter = () => seekTo(nextChapterIndex);
 
+  // Pre-warm the Canvas chunk on idle so the first timeline -> grid toggle
+  // has no JS-load delay. Without this, the dynamic import resolves AFTER
+  // HeroMedia has already unmounted, and Framer loses the bbox needed to
+  // morph the hero into its tile.
+  useEffect(() => {
+    if (!mounted) return;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let idleId: number | null = null;
+    if (w.requestIdleCallback) {
+      idleId = w.requestIdleCallback(() => void import("@/components/work/Canvas"));
+    } else {
+      timer = setTimeout(() => void import("@/components/work/Canvas"), 800);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (idleId !== null && w.cancelIdleCallback) w.cancelIdleCallback(idleId);
+    };
+  }, [mounted]);
+
   // Start the playhead as soon as the page mounts — don't wait for the map.
   // The map loads in the background while the tldr card plays; by the time
   // the user advances to meta, the map is ready (or nearly so).
@@ -237,14 +261,28 @@ export default function WorkPage() {
 
         {/* Era label removed — map location + timeline chapter convey the era now. */}
 
-        {currentItem && view === "timeline" && (
-          <HeroMedia
-            item={currentItem}
-            onVideoEnded={() => {}}
-            isMobile={isMobile}
-            speed={speed}
-          />
-        )}
+        <LayoutGroup>
+          {currentItem && view === "timeline" && (
+            <HeroMedia
+              item={currentItem}
+              onVideoEnded={() => {}}
+              isMobile={isMobile}
+              speed={speed}
+            />
+          )}
+          {mounted && view === "grid" && (
+            <Canvas
+              timeline={timeline}
+              currentIndex={currentIndex}
+              onSelectItem={(idx) => {
+                setView("timeline");
+                seekTo(idx);
+              }}
+              visible={true}
+              isMobile={isMobile}
+            />
+          )}
+        </LayoutGroup>
 
         {mounted && (
           <PlayheadInfo
@@ -278,19 +316,6 @@ export default function WorkPage() {
           isMobile={isMobile}
           visible={filmstripVisible && view === "timeline"}
         />
-
-        {mounted && view === "grid" && (
-          <Canvas
-            timeline={timeline}
-            currentIndex={currentIndex}
-            onSelectItem={(idx) => {
-              setView("timeline");
-              seekTo(idx);
-            }}
-            visible={true}
-            isMobile={isMobile}
-          />
-        )}
 
         {mounted && (
           <ViewToggle

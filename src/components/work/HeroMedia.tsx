@@ -365,9 +365,12 @@ function MediaCard({
   };
 
   const layoutId = `hero-${item.tweetId}-${item.mediaIndex}`;
-  const media = isVideo ? (
-    <motion.video
-      layoutId={layoutId}
+  // Wrap the replaced element (img/video) in a motion.div with the layoutId.
+  // Replaced elements have known issues with layout animations; a div wrapper
+  // sized via inline-flex hugs the media's natural rendered size and gives
+  // Framer a clean bbox to morph.
+  const innerEl = isVideo ? (
+    <video
       ref={videoRef}
       key={m.blobUrl}
       src={m.blobUrl}
@@ -382,8 +385,7 @@ function MediaCard({
       data-no-cursor-expand
     />
   ) : (
-    <motion.img
-      layoutId={layoutId}
+    <img
       ref={imgRef}
       src={m.blobUrl}
       alt={item.text}
@@ -391,6 +393,20 @@ function MediaCard({
       style={mediaStyle}
       data-no-cursor-expand
     />
+  );
+  const media = (
+    <motion.div
+      layoutId={layoutId}
+      transition={{ type: "spring", stiffness: 220, damping: 26, mass: 0.8 }}
+      style={{
+        display: "inline-flex",
+        lineHeight: 0,
+        maxWidth: "100%",
+        maxHeight: "100%",
+      }}
+    >
+      {innerEl}
+    </motion.div>
   );
 
   // Hero is clickable — opens the original tweet on x.com in a new tab.
