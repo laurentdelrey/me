@@ -327,9 +327,10 @@ function CanvasTile({
         stiffness: 260,
         damping: 28,
         mass: 0.6,
-        // Layout (= the hero<->tile morph) gets a deliberately heavier spring
-        // so it reads as a single confident gesture, not a fast snap.
-        layout: { type: "spring", stiffness: 220, damping: 26, mass: 0.8 },
+        // Layout (= the hero<->tile morph) uses an explicit duration + ease
+        // so the timing matches between the two sides of the morph and the
+        // motion is unmistakable.
+        layout: { duration: 0.65, ease: [0.32, 0.72, 0, 1] },
       }}
       style={{
         position: "absolute",

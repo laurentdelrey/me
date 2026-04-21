@@ -366,9 +366,17 @@ function MediaCard({
 
   const layoutId = `hero-${item.tweetId}-${item.mediaIndex}`;
   // Wrap the replaced element (img/video) in a motion.div with the layoutId.
-  // Replaced elements have known issues with layout animations; a div wrapper
-  // sized via inline-flex hugs the media's natural rendered size and gives
-  // Framer a clean bbox to morph.
+  // Critical: the motion.div needs an explicit, measurable bounding box for
+  // Framer to morph from. We seed it with the media's natural intrinsic
+  // dimensions and then let max-width/max-height constrain it to the parent
+  // box — the aspect ratio is preserved, and Framer reads a real bbox.
+  const innerStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    display: "block",
+    filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.18))",
+  };
   const innerEl = isVideo ? (
     <video
       ref={videoRef}
@@ -381,7 +389,7 @@ function MediaCard({
       onEnded={onVideoEnded}
       onLoadedMetadata={(e) => reportWidth(e.currentTarget)}
       onLoadedData={(e) => reportWidth(e.currentTarget)}
-      style={mediaStyle}
+      style={innerStyle}
       data-no-cursor-expand
     />
   ) : (
@@ -390,19 +398,22 @@ function MediaCard({
       src={m.blobUrl}
       alt={item.text}
       onLoad={(e) => reportWidth(e.currentTarget)}
-      style={mediaStyle}
+      style={innerStyle}
       data-no-cursor-expand
     />
   );
   const media = (
     <motion.div
       layoutId={layoutId}
-      transition={{ type: "spring", stiffness: 220, damping: 26, mass: 0.8 }}
+      transition={{ layout: { duration: 0.65, ease: [0.32, 0.72, 0, 1] } }}
       style={{
-        display: "inline-flex",
-        lineHeight: 0,
+        // Intrinsic media dimensions seed the box; max-* constrain it within
+        // the hero container while preserving aspect ratio.
+        width: m.width || "auto",
+        height: m.height || "auto",
         maxWidth: "100%",
         maxHeight: "100%",
+        display: "block",
       }}
     >
       {innerEl}
