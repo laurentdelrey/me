@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { LayoutGroup } from "motion/react";
 import SiteHeader from "@/components/SiteHeader";
 import { PlayheadCursor } from "@/components/PlayheadCursor";
+import HeroMedia from "@/components/work/HeroMedia";
+import Canvas from "@/components/work/Canvas";
+import MorphHero from "@/components/work/MorphHero";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
+import { computeHeroBox } from "@/lib/work/hero-box";
+import {
+  computeMosaic,
+  keyForMedia,
+  mediaItemsFromTimeline,
+  mosaicLayoutFor,
+} from "@/lib/work/mosaic";
 
 function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
@@ -16,13 +25,14 @@ function chapterLabel(item: TimelineItem | undefined): string {
   return "";
 }
 
-// Dynamic imports (client-only)
+// HeroMedia + Canvas + MorphHero are imported directly so they always share
+// the same render commit — MorphHero needs to know each frame whether it's
+// targeting the hero or the tile, with no dynamic-import gap that would
+// freeze its position mid-toggle.
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
-const HeroMedia = dynamic(() => import("@/components/work/HeroMedia"), { ssr: false });
 const Filmstrip = dynamic(() => import("@/components/work/Filmstrip"), { ssr: false });
 const EraLabel = dynamic(() => import("@/components/work/EraLabel"), { ssr: false });
 const PlayheadInfo = dynamic(() => import("@/components/work/PlayheadInfo"), { ssr: false });
-const Canvas = dynamic(() => import("@/components/work/Canvas"), { ssr: false });
 
 export default function WorkPage() {
   const [mounted, setMounted] = useState(false);
@@ -159,29 +169,6 @@ export default function WorkPage() {
   const goToPrevChapter = () => seekTo(prevChapterIndex);
   const goToNextChapter = () => seekTo(nextChapterIndex);
 
-  // Pre-warm the Canvas chunk on idle so the first timeline -> grid toggle
-  // has no JS-load delay. Without this, the dynamic import resolves AFTER
-  // HeroMedia has already unmounted, and Framer loses the bbox needed to
-  // morph the hero into its tile.
-  useEffect(() => {
-    if (!mounted) return;
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let idleId: number | null = null;
-    if (w.requestIdleCallback) {
-      idleId = w.requestIdleCallback(() => void import("@/components/work/Canvas"));
-    } else {
-      timer = setTimeout(() => void import("@/components/work/Canvas"), 800);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (idleId !== null && w.cancelIdleCallback) w.cancelIdleCallback(idleId);
-    };
-  }, [mounted]);
-
   // Start the playhead as soon as the page mounts — don't wait for the map.
   // The map loads in the background while the tldr card plays; by the time
   // the user advances to meta, the map is ready (or nearly so).
@@ -205,6 +192,61 @@ export default function WorkPage() {
   const currentEraId = currentItem ? getItemEraId(currentItem) : null;
   const mapCenter = currentEraId ? ERAS[currentEraId].location : ERAS.tldr.location;
   const mapZoom = currentEraId ? ERAS[currentEraId].zoom : ERAS.tldr.zoom;
+
+  // Page-level viewport tracking — shared by hero-box math and mosaic so the
+  // morph element knows both its source (hero) and target (tile) coordinates.
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window !== "undefined" ? window.innerWidth : 1600,
+    h: typeof window !== "undefined" ? window.innerHeight : 900,
+  }));
+  useEffect(() => {
+    const onResize = () =>
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Single source of truth for media tiles — page-level so MorphHero can
+  // look up the current item's tile box directly.
+  const mediaWithIndex = useMemo(
+    () => mediaItemsFromTimeline(timeline),
+    [timeline],
+  );
+  const mosaicLayout = useMemo(
+    () => mosaicLayoutFor(viewport.w, viewport.h, isMobile),
+    [viewport.w, viewport.h, isMobile],
+  );
+  const mosaic = useMemo(
+    () => computeMosaic(mediaWithIndex, mosaicLayout.cw, mosaicLayout.ch),
+    [mediaWithIndex, mosaicLayout.cw, mosaicLayout.ch],
+  );
+
+  const currentMediaKey =
+    currentItem?.kind === "media" ? keyForMedia(currentItem) : null;
+
+  // Hero box (timeline mode) for the morph element — viewport coords.
+  const heroBox =
+    currentItem?.kind === "media"
+      ? computeHeroBox(currentItem, viewport.w, viewport.h, isMobile)
+      : null;
+
+  // Tile box (grid mode) for the morph element — convert mosaic-local coords
+  // (origin = top-left of the inner mosaic box, then scaled by overflowScale)
+  // into viewport coords.
+  const currentTileBox = useMemo(() => {
+    if (!currentMediaKey) return null;
+    const tile = mosaic.tiles.find(
+      (t) => keyForMedia(t.item) === currentMediaKey,
+    );
+    if (!tile) return null;
+    const s = mosaic.overflowScale;
+    return {
+      x: mosaicLayout.insetSides + tile.x * s,
+      y: mosaicLayout.insetTop + tile.y * s,
+      w: tile.w * s,
+      h: tile.h * s,
+    };
+  }, [currentMediaKey, mosaic, mosaicLayout]);
 
   useEffect(() => {
     setMounted(true);
@@ -261,28 +303,53 @@ export default function WorkPage() {
 
         {/* Era label removed — map location + timeline chapter convey the era now. */}
 
-        <LayoutGroup>
-          {currentItem && view === "timeline" && (
-            <HeroMedia
-              item={currentItem}
-              onVideoEnded={() => {}}
-              isMobile={isMobile}
-              speed={speed}
-            />
-          )}
-          {mounted && view === "grid" && (
-            <Canvas
-              timeline={timeline}
-              currentIndex={currentIndex}
-              onSelectItem={(idx) => {
-                setView("timeline");
-                seekTo(idx);
-              }}
-              visible={true}
-              isMobile={isMobile}
-            />
-          )}
-        </LayoutGroup>
+        {/* HeroMedia (timeline-only) renders the caption + non-media cards.
+            For media items it intentionally does NOT render the image —
+            MorphHero owns the image so it can morph between hero and tile. */}
+        {currentItem && view === "timeline" && (
+          <HeroMedia
+            item={currentItem}
+            onVideoEnded={() => {}}
+            isMobile={isMobile}
+            speed={speed}
+          />
+        )}
+
+        {/* Canvas is always mounted once the page is hydrated; opacity drives
+            visibility. Always-mounted means MorphHero's tile target is
+            measured the same way in both modes — no race conditions. */}
+        {mounted && (
+          <Canvas
+            timeline={timeline}
+            currentIndex={currentIndex}
+            currentMediaKey={currentMediaKey}
+            onSelectItem={(idx) => {
+              // Two-phase commit: park MorphHero at the clicked tile FIRST
+              // (this render), then flip to timeline on the next frame so
+              // the morph travels tile -> hero of the clicked item rather
+              // than sliding diagonally from the previous current item.
+              seekTo(idx);
+              requestAnimationFrame(() => setView("timeline"));
+            }}
+            visible={view === "grid"}
+            isMobile={isMobile}
+          />
+        )}
+
+        {/* The single shared morph element. Always mounted whenever the
+            current item is media; its position/size animate between hero
+            box and tile box on view toggle. This replaces the cross-
+            component layoutId approach that wasn't reconciling. */}
+        {currentItem?.kind === "media" && heroBox && (
+          <MorphHero
+            item={currentItem}
+            mode={view === "grid" ? "tile" : "hero"}
+            heroBox={heroBox}
+            tileBox={currentTileBox}
+            speed={speed}
+            onClickInGrid={() => setView("timeline")}
+          />
+        )}
 
         {mounted && (
           <PlayheadInfo
