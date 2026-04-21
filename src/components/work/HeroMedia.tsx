@@ -16,16 +16,20 @@ const HERO_W_MAX = 920;
 const HERO_H_VH = 0.58;
 const HERO_H_MAX = 580;
 
+const VIDEO_FAST_PLAYBACK_RATE = 3;
+
 export default function HeroMedia({
   item,
   onVideoEnded,
   onVideoStarted,
   isMobile = false,
+  speed = 1,
 }: {
   item: TimelineItem;
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
   isMobile?: boolean;
+  speed?: number;
 }) {
   const heroWidthVw = isMobile ? 0.9 : 0.68;
   const caption = item.kind === "media" ? item.text : null;
@@ -100,7 +104,7 @@ export default function HeroMedia({
             justifyContent: "center",
           }}
         >
-          {renderItem(item, onVideoEnded, onVideoStarted, setCaptionWidthPx)}
+          {renderItem(item, onVideoEnded, onVideoStarted, setCaptionWidthPx, speed)}
         </div>
       </div>
     </div>
@@ -191,6 +195,7 @@ function renderItem(
   onVideoEnded: () => void,
   onVideoStarted?: () => void,
   onMeasureWidth?: (w: number) => void,
+  speed: number = 1,
 ) {
   if (item.kind === "media") {
     return (
@@ -199,6 +204,7 @@ function renderItem(
         onVideoEnded={onVideoEnded}
         onVideoStarted={onVideoStarted}
         onMeasureWidth={onMeasureWidth}
+        speed={speed}
       />
     );
   }
@@ -292,16 +298,24 @@ function MediaCard({
   onVideoEnded,
   onVideoStarted,
   onMeasureWidth,
+  speed = 1,
 }: {
   item: Extract<TimelineItem, { kind: "media" }>;
   onVideoEnded: () => void;
   onVideoStarted?: () => void;
   onMeasureWidth?: (w: number) => void;
+  speed?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const m = item.media;
   const isVideo = m.type === "video" || m.type === "animated_gif";
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !isVideo) return;
+    el.playbackRate = speed > 1 ? VIDEO_FAST_PLAYBACK_RATE : 1;
+  }, [speed, isVideo, m.blobUrl]);
 
   // Measure the ACTUAL rendered width of the media element so the caption
   // can match the visible media (not the metadata-declared box, which can be

@@ -240,6 +240,7 @@ export default function WorkPage() {
             item={currentItem}
             onVideoEnded={() => {}}
             isMobile={isMobile}
+            speed={speed}
           />
         )}
 

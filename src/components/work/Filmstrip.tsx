@@ -14,6 +14,8 @@ const HOVER_DEAD_ZONE_PX = 250;
 const IMAGE_DURATION_MS = 2000; // per image
 const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
 const MAX_VIDEO_DURATION_MS = 15000;
+const CARD_FAST_MULTIPLIER = 3;
+const VIDEO_FAST_MULTIPLIER = 3;
 
 export default function Filmstrip({
   timeline,
@@ -133,25 +135,36 @@ export default function Filmstrip({
         );
         const item = timelineRef.current[idx];
         let durationMs = IMAGE_DURATION_MS;
-        // The user-facing speed toggle (1× / 10×) only affects still images.
-        // Videos/gifs stay at real-time so they remain watchable, and text
-        // cards (era intro, tl;dr, @ me) stay readable at their natural pace.
-        let isStillImage = false;
+        // Tiered speed multiplier when the user flips 1x -> 10x:
+        //   images: full user speed (up to 10x)
+        //   cards (era intro / tldr / social): CARD_FAST_MULTIPLIER so text
+        //     stays readable but the toggle still feels responsive
+        //   videos/gifs: VIDEO_FAST_MULTIPLIER, matched by playbackRate on
+        //     the HeroMedia <video> so the filmstrip advances in sync
+        type SpeedKind = "image" | "card" | "video";
+        let speedKind: SpeedKind = "image";
         if (item) {
           if (item.kind === "media") {
             const t = item.media.type;
             if (t === "video" || t === "animated_gif") {
               const d = item.media.durationMs ?? IMAGE_DURATION_MS;
               durationMs = Math.max(IMAGE_DURATION_MS, Math.min(MAX_VIDEO_DURATION_MS, d));
-            } else {
-              isStillImage = true;
+              speedKind = "video";
             }
           } else {
-            // tldr, eraIntro, social — all text cards, give them more time
             durationMs = CARD_DURATION_MS;
+            speedKind = "card";
           }
         }
-        const effectiveSpeed = isStillImage ? speedRef.current : 1;
+        const userSpeed = speedRef.current;
+        const effectiveSpeed =
+          userSpeed <= 1
+            ? 1
+            : speedKind === "image"
+            ? userSpeed
+            : speedKind === "card"
+            ? CARD_FAST_MULTIPLIER
+            : VIDEO_FAST_MULTIPLIER;
         const pxPerSec = (THUMB_W / (durationMs / 1000)) * effectiveSpeed;
         positionRef.current += pxPerSec * dt;
         if (positionRef.current > maxPosition) positionRef.current = 0;
