@@ -133,19 +133,26 @@ export default function Filmstrip({
         );
         const item = timelineRef.current[idx];
         let durationMs = IMAGE_DURATION_MS;
+        // The user-facing speed toggle (1× / 10×) only affects still images.
+        // Videos/gifs stay at real-time so they remain watchable, and text
+        // cards (era intro, tl;dr, @ me) stay readable at their natural pace.
+        let isStillImage = false;
         if (item) {
           if (item.kind === "media") {
             const t = item.media.type;
             if (t === "video" || t === "animated_gif") {
               const d = item.media.durationMs ?? IMAGE_DURATION_MS;
               durationMs = Math.max(IMAGE_DURATION_MS, Math.min(MAX_VIDEO_DURATION_MS, d));
+            } else {
+              isStillImage = true;
             }
           } else {
             // tldr, eraIntro, social — all text cards, give them more time
             durationMs = CARD_DURATION_MS;
           }
         }
-        const pxPerSec = (THUMB_W / (durationMs / 1000)) * speedRef.current;
+        const effectiveSpeed = isStillImage ? speedRef.current : 1;
+        const pxPerSec = (THUMB_W / (durationMs / 1000)) * effectiveSpeed;
         positionRef.current += pxPerSec * dt;
         if (positionRef.current > maxPosition) positionRef.current = 0;
       }
