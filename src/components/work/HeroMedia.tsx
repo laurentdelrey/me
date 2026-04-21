@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 import { WordReveal } from "@/components/work/WordReveal";
@@ -363,8 +364,10 @@ function MediaCard({
     if (w > 0) onMeasureWidth?.(w);
   };
 
+  const layoutId = `hero-${item.tweetId}-${item.mediaIndex}`;
   const media = isVideo ? (
-    <video
+    <motion.video
+      layoutId={layoutId}
       ref={videoRef}
       key={m.blobUrl}
       src={m.blobUrl}
@@ -379,7 +382,8 @@ function MediaCard({
       data-no-cursor-expand
     />
   ) : (
-    <img
+    <motion.img
+      layoutId={layoutId}
       ref={imgRef}
       src={m.blobUrl}
       alt={item.text}

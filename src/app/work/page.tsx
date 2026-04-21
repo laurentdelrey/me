@@ -21,6 +21,7 @@ const HeroMedia = dynamic(() => import("@/components/work/HeroMedia"), { ssr: fa
 const Filmstrip = dynamic(() => import("@/components/work/Filmstrip"), { ssr: false });
 const EraLabel = dynamic(() => import("@/components/work/EraLabel"), { ssr: false });
 const PlayheadInfo = dynamic(() => import("@/components/work/PlayheadInfo"), { ssr: false });
+const Canvas = dynamic(() => import("@/components/work/Canvas"), { ssr: false });
 
 export default function WorkPage() {
   const [mounted, setMounted] = useState(false);
@@ -58,6 +59,7 @@ export default function WorkPage() {
   const [playingStarted, setPlayingStarted] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
   const [speed, setSpeed] = useState<1 | 10>(1);
+  const [view, setView] = useState<"timeline" | "grid">("timeline");
   const [seek, setSeek] = useState<{ index: number; nonce: number }>({
     index: 0,
     nonce: 0,
@@ -235,7 +237,7 @@ export default function WorkPage() {
 
         {/* Era label removed — map location + timeline chapter convey the era now. */}
 
-        {currentItem && (
+        {currentItem && view === "timeline" && (
           <HeroMedia
             item={currentItem}
             onVideoEnded={() => {}}
@@ -258,7 +260,7 @@ export default function WorkPage() {
             prevLabel={prevLabel}
             nextLabel={nextLabel}
             isMobile={isMobile}
-            visible={controlsVisible}
+            visible={controlsVisible && view === "timeline"}
           />
         )}
 
@@ -270,13 +272,99 @@ export default function WorkPage() {
           onCurrentIndexChange={setCurrentIndex}
           onSelectItem={seekTo}
           currentIndex={currentIndex}
-          playing={isPlaying}
+          playing={isPlaying && view === "timeline"}
           speed={speed}
           seek={seek}
           isMobile={isMobile}
-          visible={filmstripVisible}
+          visible={filmstripVisible && view === "timeline"}
         />
+
+        {mounted && view === "grid" && (
+          <Canvas
+            timeline={timeline}
+            currentIndex={currentIndex}
+            onSelectItem={(idx) => {
+              setView("timeline");
+              seekTo(idx);
+            }}
+            visible={true}
+            isMobile={isMobile}
+          />
+        )}
+
+        {mounted && (
+          <ViewToggle
+            view={view}
+            onChange={setView}
+            isMobile={isMobile}
+          />
+        )}
       </main>
     </>
+  );
+}
+
+function ViewToggle({
+  view,
+  onChange,
+  isMobile,
+}: {
+  view: "timeline" | "grid";
+  onChange: (v: "timeline" | "grid") => void;
+  isMobile: boolean;
+}) {
+  const options: { id: "timeline" | "grid"; label: string }[] = [
+    { id: "timeline", label: "timeline" },
+    { id: "grid", label: "grid" },
+  ];
+  return (
+    <div
+      className="lowercase"
+      style={{
+        position: "fixed",
+        top: isMobile ? 68 : 72,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 60,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 2,
+        padding: 2,
+        borderRadius: 6,
+        background: "rgba(0,0,0,0.25)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        border: "1px solid rgba(255,255,255,0.18)",
+        fontSize: isMobile ? "0.85rem" : "0.9rem",
+        color: "#ffffff",
+        pointerEvents: "auto",
+      }}
+      data-no-cursor-expand
+    >
+      {options.map((opt) => {
+        const active = view === opt.id;
+        return (
+          <button
+            key={opt.id}
+            onClick={() => onChange(opt.id)}
+            aria-pressed={active}
+            data-no-cursor-expand
+            style={{
+              padding: isMobile ? "4px 10px" : "4px 12px",
+              borderRadius: 4,
+              background: active ? "#b0b0b0" : "transparent",
+              color: "#ffffff",
+              border: "none",
+              cursor: "none",
+              fontSize: "inherit",
+              lineHeight: 1.4,
+              transition: "background-color 200ms ease-out",
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
