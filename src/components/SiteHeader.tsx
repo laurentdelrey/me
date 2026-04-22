@@ -34,6 +34,11 @@ export default function SiteHeader({
   // open/close routes through this state so the motion system can
   // coordinate without racing against CSS transitions.
   const [open, setOpen] = useState(false);
+  // Briefly flipped true the moment a pick is committed. While it's
+  // true, non-active pills fade to opacity 0 in parallel with the
+  // shared-layout reorder — so the menu "clears out" quickly without
+  // waiting for the hold-then-close path to run its exit animations.
+  const [committing, setCommitting] = useState(false);
   const hostRef = useRef<HTMLSpanElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -97,19 +102,16 @@ export default function SiteHeader({
       return;
     }
     cancelClose();
+    // Kick the non-active pills toward opacity 0 immediately so the
+    // menu visibly clears while the clicked pill is still morphing to
+    // slot 0. The shared-layout motion runs in parallel — by the time
+    // the fades finish (~180ms) the clicked pill has reached the
+    // trigger slot and the unmount at t=340ms is invisible.
+    setCommitting(true);
     onFilterChange?.(f);
-    // Keep the menu open through the reorder morph. Because every pill
-    // carries its own layoutId, changing effectiveFilter reshuffles
-    // orderedFilters and framer springs all three pills to their new
-    // slots simultaneously (clicked pill → slot 0, old active → its new
-    // menu slot, third pill → its new slot). Collapsing the menu on the
-    // same frame as the click would exit-animate the old active from
-    // slot 0 while the clicked pill is morphing into slot 0 — the two
-    // briefly overlap at the same position. Letting the reorder settle
-    // first means every pill has already reached its new slot by the
-    // time the non-active ones start fading out.
     closeTimerRef.current = setTimeout(() => {
       setOpen(false);
+      setCommitting(false);
       closeTimerRef.current = null;
     }, 340);
   };
@@ -221,18 +223,33 @@ export default function SiteHeader({
                             // initial/exit so framer owns its motion
                             // fully. Non-active pills bloom in with a
                             // short drop + fade; their exit reverses it.
+                            // While `committing` is true, non-active
+                            // pills animate opacity to 0 so they clear
+                            // immediately, independently of the hold-
+                            // then-close timing that keeps the morph
+                            // running for everyone.
                             initial={
                               isActive
                                 ? false
                                 : { opacity: 0, y: -6, scale: 0.94 }
                             }
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            animate={{
+                              opacity: committing && !isActive ? 0 : 1,
+                              y: 0,
+                              scale: 1,
+                            }}
                             exit={
                               isActive
                                 ? undefined
                                 : { opacity: 0, y: -6, scale: 0.94 }
                             }
-                            transition={SPRING}
+                            transition={{
+                              default: SPRING,
+                              // Opacity rides on a crisp ease-out so
+                              // the fade has a clean "snap out" feel,
+                              // rather than the spring's softer tail.
+                              opacity: { duration: 0.18, ease: [0.4, 0, 1, 1] },
+                            }}
                             data-no-cursor-expand
                           >
                             {f}
