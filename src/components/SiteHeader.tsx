@@ -98,7 +98,20 @@ export default function SiteHeader({
     }
     cancelClose();
     onFilterChange?.(f);
-    setOpen(false);
+    // Keep the menu open through the reorder morph. Because every pill
+    // carries its own layoutId, changing effectiveFilter reshuffles
+    // orderedFilters and framer springs all three pills to their new
+    // slots simultaneously (clicked pill → slot 0, old active → its new
+    // menu slot, third pill → its new slot). Collapsing the menu on the
+    // same frame as the click would exit-animate the old active from
+    // slot 0 while the clicked pill is morphing into slot 0 — the two
+    // briefly overlap at the same position. Letting the reorder settle
+    // first means every pill has already reached its new slot by the
+    // time the non-active ones start fading out.
+    closeTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      closeTimerRef.current = null;
+    }, 340);
   };
 
   // Only the items currently mounted. When closed that's just the
