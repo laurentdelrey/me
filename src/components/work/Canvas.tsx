@@ -75,6 +75,30 @@ export default function Canvas({
     [mediaWithIndex, cw, ch],
   );
 
+  // Per-tile entrance/exit stagger: tiles closer to the current item appear
+  // first and disappear last, so the grid feels like it's rippling outward
+  // from (and collapsing inward to) the hero. Computed in mosaic-local
+  // coords; exact distances don't matter, just relative ordering.
+  const stagger = useMemo(() => {
+    if (tiles.length === 0) return new Map<string, number>();
+    const current = tiles.find((t) => keyFor(t.item) === currentMediaKey);
+    const cx = current
+      ? current.x + current.w / 2
+      : cw / 2;
+    const cy = current
+      ? current.y + current.h / 2
+      : (totalHeight || ch) / 2;
+    const maxDist = Math.hypot(cw, totalHeight || ch);
+    const out = new Map<string, number>();
+    for (const t of tiles) {
+      const dx = t.x + t.w / 2 - cx;
+      const dy = t.y + t.h / 2 - cy;
+      const d = Math.hypot(dx, dy);
+      out.set(keyFor(t.item), maxDist > 0 ? d / maxDist : 0);
+    }
+    return out;
+  }, [tiles, currentMediaKey, cw, ch, totalHeight]);
+
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
@@ -83,9 +107,8 @@ export default function Canvas({
       style={{
         position: "fixed",
         inset: 0,
+        // Block pointer events while hidden; per-tile opacity handles fades.
         pointerEvents: visible ? "auto" : "none",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 400ms ease-out",
         zIndex: 25,
       }}
     >
@@ -111,10 +134,13 @@ export default function Canvas({
             const k = keyFor(tile.item);
             const { tilt, jx, jy } = tiltFor(k);
             const isHovered = hovered === k;
-            // Hide the current item's tile — MorphHero floats above and IS
-            // the tile for that item. Keeping the slot in the layout (just
-            // invisible) means the surrounding mosaic stays put.
             const isCurrent = currentMediaKey === k;
+            const norm = stagger.get(k) ?? 0;
+            // Entrance: tiles close to hero appear first; total spread ~600ms.
+            // Exit: outer tiles leave first, inner last — feels like the
+            // grid is collapsing toward the hero before it morphs back.
+            const entranceDelay = norm * 0.55;
+            const exitDelay = (1 - norm) * 0.3;
             return (
               <CanvasTile
                 key={k}
@@ -124,6 +150,9 @@ export default function Canvas({
                 jy={jy}
                 isHovered={isHovered}
                 hidden={isCurrent}
+                visible={visible}
+                entranceDelay={entranceDelay}
+                exitDelay={exitDelay}
                 onHoverStart={() => setHovered(k)}
                 onHoverEnd={() =>
                   setHovered((cur) => (cur === k ? null : cur))
@@ -150,6 +179,9 @@ function CanvasTile({
   jy,
   isHovered,
   hidden,
+  visible,
+  entranceDelay,
+  exitDelay,
   onHoverStart,
   onHoverEnd,
   onClick,
@@ -159,7 +191,12 @@ function CanvasTile({
   jx: number;
   jy: number;
   isHovered: boolean;
+  /** true for the current item — MorphHero floats in this slot. */
   hidden: boolean;
+  /** true when the canvas is on (grid view). */
+  visible: boolean;
+  entranceDelay: number;
+  exitDelay: number;
   onHoverStart: () => void;
   onHoverEnd: () => void;
   onClick: () => void;
@@ -181,30 +218,24 @@ function CanvasTile({
   }, [isHovered, isVideo]);
 
   const previewScale = 3.2;
-  const hoverScale = isHovered ? previewScale : 1;
-
+  // Outer wrapper handles position + entrance/exit (opacity, scale, y rise).
+  // Inner wrapper handles hover/tilt (rotate, scale-up). Nesting them keeps
+  // their transitions independent so the entrance stagger doesn't make
+  // hover feel sluggish, and the snappy hover spring doesn't overwrite the
+  // staggered fade-in.
+  const inactive = !visible || hidden;
   return (
     <motion.div
-      onClick={onClick}
-      onMouseEnter={onHoverStart}
-      onMouseLeave={onHoverEnd}
-      data-no-cursor-expand
-      animate={{
-        rotate: isHovered ? 0 : tiltDeg,
-        scale: hoverScale,
-        zIndex: isHovered ? 50 : 1,
-        boxShadow: isHovered
-          ? "0 30px 80px rgba(0,0,0,0.35)"
-          : "0 6px 18px rgba(0,0,0,0.18)",
-        opacity: hidden ? 0 : 1,
-      }}
       initial={false}
+      animate={{
+        opacity: hidden ? 0 : visible ? 1 : 0,
+        scale: visible ? 1 : 0.78,
+        y: visible ? 0 : 18,
+      }}
       transition={{
-        type: "spring",
-        stiffness: 260,
-        damping: 28,
-        mass: 0.6,
-        opacity: { duration: 0.18, ease: "linear" },
+        duration: visible ? 0.45 : 0.32,
+        delay: visible ? entranceDelay : exitDelay,
+        ease: [0.32, 0.72, 0, 1],
       }}
       style={{
         position: "absolute",
@@ -212,46 +243,74 @@ function CanvasTile({
         top: y + jy,
         width: w,
         height: h,
-        transformOrigin: "center center",
-        cursor: hidden ? "default" : "none",
-        overflow: "hidden",
-        background: "#b0b0b0",
-        borderRadius: 2,
-        willChange: "transform",
-        // Avoid intercepting clicks while hidden — MorphHero handles them.
-        pointerEvents: hidden ? "none" : "auto",
+        pointerEvents: inactive ? "none" : "auto",
+        // Clip overflow so the rotated inner card doesn't leak during
+        // entrance, but allow the hover scale to escape — handled by the
+        // inner wrapper having no clip.
+        willChange: "transform, opacity",
       }}
     >
-      {m.blobUrl && !isVideo && (
-        <img
-          src={m.blobUrl}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      )}
-      {m.blobUrl && isVideo && (
-        <video
-          ref={videoRef}
-          src={m.blobUrl}
-          muted
-          playsInline
-          loop
-          preload="metadata"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
-        />
-      )}
+      <motion.div
+        onClick={onClick}
+        onMouseEnter={onHoverStart}
+        onMouseLeave={onHoverEnd}
+        data-no-cursor-expand
+        animate={{
+          rotate: isHovered ? 0 : tiltDeg,
+          scale: isHovered ? previewScale : 1,
+          zIndex: isHovered ? 50 : 1,
+          boxShadow: isHovered
+            ? "0 30px 80px rgba(0,0,0,0.35)"
+            : "0 6px 18px rgba(0,0,0,0.18)",
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 260,
+          damping: 28,
+          mass: 0.6,
+        }}
+        style={{
+          width: "100%",
+          height: "100%",
+          transformOrigin: "center center",
+          cursor: hidden ? "default" : "none",
+          overflow: "hidden",
+          background: "#b0b0b0",
+          borderRadius: 2,
+          willChange: "transform",
+        }}
+      >
+        {m.blobUrl && !isVideo && (
+          <img
+            src={m.blobUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        )}
+        {m.blobUrl && isVideo && (
+          <video
+            ref={videoRef}
+            src={m.blobUrl}
+            muted
+            playsInline
+            loop
+            preload="metadata"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        )}
+      </motion.div>
     </motion.div>
   );
 }
