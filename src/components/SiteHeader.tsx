@@ -10,8 +10,7 @@ type SiteHeaderProps = {
   topPaddingPx?: number;
   onClick?: () => void;
   color?: string;
-  // When provided, the title becomes a filter menu that lets the user switch
-  // between "story" (default, everything) and the individual tag filters.
+  // When provided, the last word of the title becomes a filter menu.
   filter?: TagFilter;
   onFilterChange?: (f: TagFilter) => void;
 };
@@ -25,10 +24,8 @@ export default function SiteHeader({
   onFilterChange,
 }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLSpanElement | null>(null);
 
-  // Filter menu shows only when the parent wires both `filter` + `onFilterChange`,
-  // so plain pages without a filtered timeline keep the minimal title.
   const hasFilter = !!filter && !!onFilterChange;
   const effectiveFilter: TagFilter = filter ?? "story";
   const titleColor = color || "#ffffff";
@@ -50,8 +47,8 @@ export default function SiteHeader({
     };
   }, [menuOpen]);
 
-  // Hover-to-open with a brief close grace so the cursor can travel from the
-  // title into the menu without it collapsing.
+  // Hover-to-open with a grace period so cursor travel from the word into the
+  // dropped menu doesn't close it.
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openOnHover = () => {
     if (!hasFilter) return;
@@ -62,14 +59,6 @@ export default function SiteHeader({
     if (!hasFilter) return;
     if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
     hoverCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
-  };
-
-  const handleTitleClick = () => {
-    if (hasFilter) {
-      setMenuOpen((v) => !v);
-      return;
-    }
-    onClick?.();
   };
 
   return (
@@ -90,130 +79,169 @@ export default function SiteHeader({
       <div className="header-spacer" />
 
       <div
-        ref={menuRef}
         className="header-title-wrap"
-        style={{ position: "relative", justifySelf: "center" }}
-        onMouseEnter={openOnHover}
-        onMouseLeave={closeOnHoverLeave}
+        style={{ justifySelf: "center" }}
       >
-        <button
-          className={`lowercase header-title ${onClick || hasFilter ? "cursor-pointer" : ""}`}
+        <span
+          className="lowercase header-title"
           style={{
             fontSize: "1rem",
             lineHeight: "1.5",
             fontWeight: 400,
             color: titleColor,
             transition: "color 0.5s ease",
-            margin: 0,
-            background: "transparent",
-            border: "none",
-            padding: 0,
-            pointerEvents: onClick || hasFilter ? "auto" : "none",
-          }}
-          onClick={handleTitleClick}
-          aria-label={
-            hasFilter ? "Change filter" : onClick ? "Scroll to start" : undefined
-          }
-          aria-haspopup={hasFilter ? "menu" : undefined}
-          aria-expanded={hasFilter ? menuOpen : undefined}
-          tabIndex={onClick || hasFilter ? 0 : -1}
-          onKeyDown={(e) => {
-            if (hasFilter && (e.key === "Enter" || e.key === " ")) {
-              e.preventDefault();
-              setMenuOpen((v) => !v);
-              return;
-            }
-            if (onClick && (e.key === "Enter" || e.key === " ")) {
-              e.preventDefault();
-              onClick();
-            }
+            display: "inline-flex",
+            alignItems: "baseline",
           }}
         >
           {hasFilter ? (
             <>
-              laurent del rey&rsquo;s{" "}
-              {/* Current filter word is dotted-underlined to hint that it's
-                  swappable without introducing a foreign dropdown chrome. */}
               <span
-                style={{
-                  textDecoration: "underline dotted",
-                  textUnderlineOffset: 4,
-                  textDecorationThickness: 1,
-                  textDecorationColor: "rgba(255,255,255,0.6)",
+                onClick={(e) => {
+                  // Clicking the static prefix should behave like the
+                  // non-filter title: optional scroll-to-start (if `onClick`
+                  // was provided). The filter word has its own click handler.
+                  onClick?.();
+                  e.stopPropagation();
                 }}
-              >
-                {effectiveFilter}
-              </span>
-            </>
-          ) : (
-            "laurent del rey"
-          )}
-        </button>
-
-        {/* Filter menu — stacked text options below the title, styled to
-            disappear into the page: no card, no border, no shadow. Just the
-            same typography as the header, with inactive options at reduced
-            opacity and the active one marked with a leading dot. */}
-        {hasFilter && (
-          <AnimatePresence>
-            {menuOpen && (
-              <motion.div
-                role="menu"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                 style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 4,
-                  zIndex: 60,
-                  paddingTop: 4,
-                  paddingBottom: 4,
+                  pointerEvents: onClick ? "auto" : "none",
+                  cursor: onClick ? "none" : "default",
                 }}
                 data-no-cursor-expand
               >
-                {TAG_FILTERS.map((f) => {
-                  const active = f === effectiveFilter;
-                  return (
-                    <button
-                      key={f}
-                      role="menuitemradio"
-                      aria-checked={active}
-                      onClick={() => {
-                        onFilterChange?.(f);
-                        setMenuOpen(false);
-                      }}
-                      className="lowercase filter-item"
+                laurent del rey&rsquo;s&nbsp;
+              </span>
+
+              {/* Anchor for the popup menu. The filter word owns the
+                  hover/click interaction and the menu positions itself
+                  flush against its left edge, so the dropped options align
+                  with where the word starts (not centered under the title). */}
+              <span
+                ref={menuRef}
+                style={{ position: "relative", display: "inline-block" }}
+                onMouseEnter={openOnHover}
+                onMouseLeave={closeOnHoverLeave}
+              >
+                <button
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setMenuOpen((v) => !v);
+                    }
+                  }}
+                  className="lowercase"
+                  style={{
+                    ...pillBase,
+                    padding: "0 10px",
+                    fontSize: "1rem",
+                    fontWeight: 400,
+                    lineHeight: 1.5,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 28,
+                  }}
+                  data-no-cursor-expand
+                >
+                  {effectiveFilter}
+                </button>
+
+                <AnimatePresence>
+                  {menuOpen && (
+                    <motion.div
+                      role="menu"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                       style={{
-                        background: "transparent",
-                        border: "none",
-                        padding: "2px 8px",
-                        color: titleColor,
-                        fontSize: "1rem",
-                        lineHeight: 1.5,
-                        fontWeight: 400,
-                        opacity: active ? 1 : 0.55,
-                        cursor: "pointer",
-                        transition: "opacity 140ms ease-out",
-                        textDecoration: active ? "underline" : "none",
-                        textUnderlineOffset: 4,
-                        textDecorationThickness: 1,
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 6,
+                        zIndex: 60,
                       }}
+                      data-no-cursor-expand
                     >
-                      {f}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
+                      {TAG_FILTERS.map((f) => {
+                        const active = f === effectiveFilter;
+                        return (
+                          <motion.button
+                            key={f}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={active}
+                            onClick={() => {
+                              onFilterChange?.(f);
+                              setMenuOpen(false);
+                            }}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 20,
+                            }}
+                            className="lowercase"
+                            style={{
+                              ...pillBase,
+                              padding: "0 10px",
+                              fontSize: "1rem",
+                              fontWeight: 400,
+                              lineHeight: 1.5,
+                              height: 28,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              // Mark the active filter with a subtle outline
+                              // rather than a heavy-handed highlight, so the
+                              // menu reads as a family of choices, not a form.
+                              boxShadow: active
+                                ? "inset 0 0 0 1px rgba(255,255,255,0.85)"
+                                : undefined,
+                              opacity: active ? 1 : 0.9,
+                            }}
+                            data-no-cursor-expand
+                          >
+                            {f}
+                          </motion.button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </span>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onClick}
+              aria-label={onClick ? "Scroll to start" : undefined}
+              tabIndex={onClick ? 0 : -1}
+              className="lowercase"
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                color: titleColor,
+                fontSize: "1rem",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                cursor: onClick ? "none" : "default",
+                pointerEvents: onClick ? "auto" : "none",
+              }}
+              data-no-cursor-expand
+            >
+              laurent del rey
+            </button>
+          )}
+        </span>
       </div>
 
       <div
@@ -226,8 +254,6 @@ export default function SiteHeader({
           fontSize: "1rem",
           color: titleColor,
           pointerEvents: "auto",
-          // Only the social block follows the idle-hide behavior;
-          // the title stays on the page at all times.
           opacity: visible ? 1 : 0,
           transition: "opacity 500ms ease-out",
         }}
@@ -261,15 +287,7 @@ export default function SiteHeader({
       </div>
 
       <style jsx>{`
-        .filter-item:hover {
-          opacity: 1 !important;
-        }
         @media (max-width: 640px) {
-          /* Mobile layout: anchor the title left. The title is long enough on
-             its own (especially when it's "laurent del rey's prototypes") so
-             we hide the social block to keep one line. The links still live on
-             desktop / tablet; on phones they're one tap away via the filmstrip
-             cards or the /work content, and clutter matters more. */
           :global(.header-bar) {
             grid-template-columns: auto 1fr !important;
           }
@@ -289,15 +307,22 @@ export default function SiteHeader({
   );
 }
 
-const socialPillStyle: React.CSSProperties = {
-  color: "#fff",
-  textDecoration: "none",
-  display: "inline-block",
-  padding: "0 8px",
+// Same chrome as the filmstrip chapter pills and the social links — this is
+// the site's button language, so the filter menu feels like "part of the
+// family" rather than a dropdown bolted on from somewhere else.
+const pillBase: React.CSSProperties = {
   borderRadius: 4,
   background: "#b0b0b0",
   border: "1px solid rgba(255,255,255,0.2)",
-  whiteSpace: "nowrap",
-  lineHeight: 1.5,
+  color: "#fff",
   cursor: "none",
+  whiteSpace: "nowrap",
+  textDecoration: "none",
+};
+
+const socialPillStyle: React.CSSProperties = {
+  ...pillBase,
+  display: "inline-block",
+  padding: "0 8px",
+  lineHeight: 1.5,
 };

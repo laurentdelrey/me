@@ -7,12 +7,8 @@ import {
   Copy,
   Eye,
   EyeOff,
-  Image as ImageIcon,
   Loader2,
   Search,
-  Sparkles,
-  Wand2,
-  Zap,
 } from "lucide-react";
 
 import tweetsData from "@/data/tweets.json";
@@ -22,23 +18,23 @@ import { heuristicTag, type MediaTag } from "@/lib/work/tags";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 type TagValue = MediaTag;
-type TagOverrideValue = TagValue | "auto"; // "auto" = no override, use heuristic
+type TagOverrideValue = TagValue | "auto";
 
 type DuplicateInfo = {
   canonical: string;
@@ -54,9 +50,9 @@ type FilterTab = "all" | "visible" | "hidden" | "duplicates";
 type Row = {
   tweet: Tweet;
   media: MediaItem;
-  mediaIndex: number; // index among media with blobUrl
+  mediaIndex: number;
   totalMedia: number;
-  key: string; // `${tweetId}:${mediaIndex}`
+  key: string;
   hidden: boolean;
   duplicateOf?: DuplicateInfo;
   heuristic: TagValue;
@@ -76,6 +72,8 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [query, setQuery] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
+  // Which row's detail dialog is open (null = none).
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,6 +147,8 @@ export default function DashboardPage() {
         return a.mediaIndex - b.mediaIndex;
       });
   }, [tweets, hiddenIds, tagOverrides, filter, query, duplicates]);
+
+  const openRow = openKey ? rows.find((r) => r.key === openKey) ?? null : null;
 
   const counts = useMemo(() => {
     let visible = 0;
@@ -246,7 +246,7 @@ export default function DashboardPage() {
         const data = (await res.json()) as { ids: string[] };
         setHiddenIds(new Set(data.ids ?? []));
       } catch {
-        // leave optimistic state as-is
+        // leave optimistic state
       }
     } finally {
       setPending((p) => {
@@ -293,125 +293,224 @@ export default function DashboardPage() {
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <main className="shadcn-scope min-h-screen bg-background text-foreground">
-        <div className="mx-auto max-w-5xl px-4 sm:px-8 py-8">
-          <header className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Work Dashboard
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {loading ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Loader2 className="size-3.5 animate-spin" /> Loading…
+    <main className="shadcn-scope min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-6xl px-4 sm:px-8 py-8">
+        <header className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Work Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {loading ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="size-3.5 animate-spin" /> Loading…
+                </span>
+              ) : (
+                <>
+                  {counts.total} media · {counts.visible} visible ·{" "}
+                  {counts.hidden} hidden · {counts.duplicates} duplicate
+                  {counts.duplicates === 1 ? "" : "s"}
+                </>
+              )}
+            </p>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/work">
+              view /work
+              <ArrowUpRight className="ml-1" />
+            </Link>
+          </Button>
+        </header>
+
+        <div className="sticky top-0 z-10 -mx-4 sm:-mx-8 px-4 sm:px-8 py-3 mb-5 bg-background/85 backdrop-blur border-b">
+          <div className="flex flex-wrap items-center gap-3">
+            <Tabs
+              value={filter}
+              onValueChange={(v) => setFilter(v as FilterTab)}
+            >
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="visible">
+                  Visible
+                  <span className="ml-1.5 text-[10px] text-muted-foreground">
+                    {counts.visible}
                   </span>
+                </TabsTrigger>
+                <TabsTrigger value="hidden">
+                  Hidden
+                  <span className="ml-1.5 text-[10px] text-muted-foreground">
+                    {counts.hidden}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="duplicates">
+                  Duplicates
+                  <span className="ml-1.5 text-[10px] text-muted-foreground">
+                    {counts.duplicates}
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search caption or tweet ID…"
+                className="pl-8"
+              />
+            </div>
+
+            {counts.duplicatesStillVisible > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={hideAllDuplicates}
+                disabled={bulkBusy || loading}
+              >
+                {bulkBusy ? (
+                  <>
+                    <Loader2 className="animate-spin" /> Hiding…
+                  </>
                 ) : (
                   <>
-                    {counts.total} media · {counts.visible} visible ·{" "}
-                    {counts.hidden} hidden · {counts.duplicates} duplicate
-                    {counts.duplicates === 1 ? "" : "s"}
+                    Hide {counts.duplicatesStillVisible} duplicate
+                    {counts.duplicatesStillVisible === 1 ? "" : "s"}
                   </>
                 )}
-              </p>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/work">
-                view /work
-                <ArrowUpRight className="ml-1" />
-              </Link>
-            </Button>
-          </header>
-
-          {/* Sticky toolbar — filter, search, bulk action all on one row.
-              Stays visible while scrolling long lists. */}
-          <div className="sticky top-0 z-10 -mx-4 sm:-mx-8 px-4 sm:px-8 py-3 mb-4 bg-background/80 backdrop-blur border-b">
-            <div className="flex flex-wrap items-center gap-3">
-              <Tabs
-                value={filter}
-                onValueChange={(v) => setFilter(v as FilterTab)}
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="visible">
-                    Visible
-                    <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
-                      {counts.visible}
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="hidden">
-                    Hidden
-                    <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
-                      {counts.hidden}
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="duplicates">
-                    Duplicates
-                    <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
-                      {counts.duplicates}
-                    </Badge>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search caption or tweet ID…"
-                  className="pl-8"
-                />
-              </div>
-
-              {counts.duplicatesStillVisible > 0 && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={hideAllDuplicates}
-                  disabled={bulkBusy || loading}
-                >
-                  {bulkBusy ? (
-                    <>
-                      <Loader2 className="animate-spin" /> Hiding…
-                    </>
-                  ) : (
-                    <>
-                      <Copy />
-                      Hide {counts.duplicatesStillVisible} duplicate
-                      {counts.duplicatesStillVisible === 1 ? "" : "s"}
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+              </Button>
+            )}
           </div>
-
-          <ul className="space-y-3">
-            {rows.map((row) => (
-              <RowCard
-                key={row.key}
-                row={row}
-                isBusy={pending.has(row.key)}
-                isTagBusy={tagPending.has(row.key)}
-                onToggleHidden={() => toggleHidden(row.key, !row.hidden)}
-                onSetTag={(t) => setTag(row.key, t)}
-              />
-            ))}
-          </ul>
-
-          {!loading && rows.length === 0 && (
-            <p className="text-sm text-muted-foreground py-8 text-center">
-              No media matches.
-            </p>
-          )}
         </div>
-      </main>
-    </TooltipProvider>
+
+        {/* Tile grid — square thumbnails, responsive column count. The whole
+            tile is clickable; the dialog holds the details and every control.
+            Status (hidden/duplicate/tag-override) is expressed with minimal
+            visual markers on the tile itself so the grid reads at a glance. */}
+        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {rows.map((row) => (
+            <Tile
+              key={row.key}
+              row={row}
+              onClick={() => setOpenKey(row.key)}
+            />
+          ))}
+        </ul>
+
+        {!loading && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            No media matches.
+          </p>
+        )}
+      </div>
+
+      <Dialog
+        open={!!openKey}
+        onOpenChange={(v) => {
+          if (!v) setOpenKey(null);
+        }}
+      >
+        <DialogContent className="shadcn-scope max-w-2xl">
+          {openRow && (
+            <DetailPanel
+              row={openRow}
+              isBusy={pending.has(openRow.key)}
+              isTagBusy={tagPending.has(openRow.key)}
+              onToggleHidden={() => toggleHidden(openRow.key, !openRow.hidden)}
+              onSetTag={(t) => setTag(openRow.key, t)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </main>
   );
 }
 
-function RowCard({
+// ------------------------------------------------------------
+// Tile — the at-a-glance grid cell. Status is conveyed by three
+// minimal affordances (no badge noise):
+//   · hidden     → monochrome + reduced opacity
+//   · duplicate  → small violet dot in the top-right
+//   · override   → subtle "!" dot in the top-left (manual tag)
+// Tag and caption are intentionally absent; the dialog has those.
+// ------------------------------------------------------------
+function Tile({ row, onClick }: { row: Row; onClick: () => void }) {
+  const { media, hidden, duplicateOf, override } = row;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "group relative block w-full aspect-square overflow-hidden rounded-lg border bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition",
+          hidden && "opacity-50 grayscale hover:opacity-70"
+        )}
+      >
+        {media.type === "video" || media.type === "animated_gif" ? (
+          <video
+            src={media.blobUrl}
+            className="absolute inset-0 size-full object-cover"
+            muted
+            playsInline
+            preload="metadata"
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={media.blobUrl}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            loading="lazy"
+          />
+        )}
+
+        {/* Hover scrim with just enough gradient to surface the hint. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+        {/* Hidden overlay — takes over the corner when the tile is excluded. */}
+        {hidden && (
+          <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/70 text-white px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm">
+            <EyeOff className="size-3" />
+            hidden
+          </div>
+        )}
+
+        {/* Tag override indicator — a single dot, only when set. */}
+        {override && !hidden && (
+          <span
+            title={`Tagged "${override}"`}
+            className="absolute top-2 left-2 size-2 rounded-full bg-amber-400 ring-2 ring-black/30"
+          />
+        )}
+
+        {/* Duplicate indicator — top-right dot. */}
+        {duplicateOf && (
+          <span
+            title={
+              duplicateOf.kind === "exact"
+                ? "Exact duplicate"
+                : `Near-duplicate (hamming ${duplicateOf.distance})`
+            }
+            className={cn(
+              "absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm",
+              duplicateOf.kind === "exact"
+                ? "bg-violet-600/90 text-white"
+                : "bg-violet-500/80 text-white"
+            )}
+          >
+            <Copy className="size-2.5" />
+          </span>
+        )}
+      </button>
+    </li>
+  );
+}
+
+// ------------------------------------------------------------
+// DetailPanel — everything about ONE media inside the dialog.
+// Single pane: preview on top, facts below, actions at the bottom.
+// ------------------------------------------------------------
+function DetailPanel({
   row,
   isBusy,
   isTagBusy,
@@ -433,203 +532,163 @@ function RowCard({
     duplicateOf,
     heuristic,
     override,
-    effective,
   } = row;
   const canonicalTweetId = duplicateOf?.canonical.split(":")[0];
 
   return (
-    <li>
-      <Card
-        className={hidden ? "opacity-70 transition-opacity" : "transition-opacity"}
-      >
-        <CardContent className="p-3 flex gap-4">
-          <div className="shrink-0 size-32 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-            {media.type === "video" || media.type === "animated_gif" ? (
-              <video
-                src={media.blobUrl}
-                className="size-full object-cover"
-                muted
-                playsInline
-                preload="metadata"
-              />
+    <>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <span className="font-mono text-sm">{tweet.date}</span>
+          <span className="text-muted-foreground text-sm font-normal">
+            · media {mediaIndex + 1}/{totalMedia}
+          </span>
+        </DialogTitle>
+        <DialogDescription className="text-xs">
+          <a
+            href={`https://x.com/laurentdelrey/status/${tweet.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-0.5 hover:text-foreground underline underline-offset-2 decoration-muted-foreground/40"
+          >
+            {tweet.id}
+            <ArrowUpRight className="size-3" />
+          </a>
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="relative w-full aspect-video rounded-md overflow-hidden bg-muted">
+        {media.type === "video" || media.type === "animated_gif" ? (
+          <video
+            src={media.blobUrl}
+            className="absolute inset-0 size-full object-contain"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={media.blobUrl}
+            alt=""
+            className="absolute inset-0 size-full object-contain"
+          />
+        )}
+      </div>
+
+      {/* Status strip — the single place all status lives. */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {hidden ? (
+          <Badge variant="default">
+            <EyeOff className="mr-1 size-3" />
+            hidden
+          </Badge>
+        ) : (
+          <Badge variant="secondary">
+            <Eye className="mr-1 size-3" />
+            visible
+          </Badge>
+        )}
+        {duplicateOf && canonicalTweetId && (
+          <a
+            href={`https://x.com/laurentdelrey/status/${canonicalTweetId}`}
+            target="_blank"
+            rel="noreferrer"
+            title="Open the canonical tweet on X"
+            className="no-underline"
+          >
+            <Badge
+              variant="secondary"
+              className="bg-violet-100 text-violet-900 hover:bg-violet-200 cursor-pointer"
+            >
+              <Copy className="mr-1 size-3" />
+              {duplicateOf.kind === "exact"
+                ? "duplicate"
+                : `near-dup · ${duplicateOf.distance}`}
+              <ArrowUpRight className="ml-0.5 size-3" />
+            </Badge>
+          </a>
+        )}
+      </div>
+
+      {tweet.text ? (
+        <p className="text-sm leading-snug whitespace-pre-wrap max-h-40 overflow-auto">
+          {tweet.text}
+        </p>
+      ) : (
+        <p className="text-sm italic text-muted-foreground">no caption</p>
+      )}
+
+      {/* Actions — two rows, each with an explicit label so nothing is
+          inferred from icon alone. */}
+      <div className="space-y-3 pt-2 border-t">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Visibility</span>
+            <span className="text-xs text-muted-foreground">
+              Hidden items are excluded from /work.
+            </span>
+          </div>
+          <Button
+            variant={hidden ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleHidden}
+            disabled={isBusy}
+            className="min-w-24"
+          >
+            {isBusy ? (
+              <Loader2 className="animate-spin" />
+            ) : hidden ? (
+              <>
+                <Eye /> Unhide
+              </>
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={media.blobUrl}
-                alt=""
-                className="size-full object-cover"
-                loading="lazy"
-              />
+              <>
+                <EyeOff /> Hide
+              </>
             )}
-          </div>
+          </Button>
+        </div>
 
-          <div className="min-w-0 flex-1 flex flex-col gap-2">
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              <span>{tweet.date}</span>
-              <Separator orientation="vertical" className="h-3" />
-              <span>
-                media {mediaIndex + 1}/{totalMedia}
-              </span>
-              <Separator orientation="vertical" className="h-3" />
-              <a
-                href={`https://x.com/laurentdelrey/status/${tweet.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-0.5 hover:text-foreground underline underline-offset-2 decoration-muted-foreground/40"
-              >
-                {tweet.id}
-                <ArrowUpRight className="size-3" />
-              </a>
-
-              <span className="ml-auto flex items-center gap-1.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        effective === "prototype"
-                          ? "bg-sky-100 text-sky-900 hover:bg-sky-100"
-                          : effective === "both"
-                            ? "bg-amber-100 text-amber-900 hover:bg-amber-100"
-                            : "bg-neutral-100 text-neutral-800 hover:bg-neutral-100"
-                      }
-                    >
-                      {effective === "prototype" ? (
-                        <Zap className="mr-1 size-3" />
-                      ) : effective === "both" ? (
-                        <Sparkles className="mr-1 size-3" />
-                      ) : (
-                        <ImageIcon className="mr-1 size-3" />
-                      )}
-                      {effective}
-                      {override && (
-                        <span className="ml-1 opacity-60 text-[10px]">•</span>
-                      )}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {override
-                      ? `Manually tagged "${override}"`
-                      : `Auto-tagged "${heuristic}" (by media type)`}
-                  </TooltipContent>
-                </Tooltip>
-
-                {duplicateOf && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge
-                        variant="secondary"
-                        className="bg-violet-100 text-violet-900 hover:bg-violet-100"
-                      >
-                        <Copy className="mr-1 size-3" />
-                        {duplicateOf.kind === "exact" ? "duplicate" : "near-dup"}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {duplicateOf.kind === "exact"
-                        ? `Byte-identical to ${duplicateOf.canonical}`
-                        : `Near-match of ${duplicateOf.canonical} (hamming ${duplicateOf.distance})`}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                {hidden ? (
-                  <Badge>
-                    <EyeOff className="mr-1 size-3" />
-                    hidden
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-100 text-emerald-900 hover:bg-emerald-100"
-                  >
-                    <Eye className="mr-1 size-3" />
-                    visible
-                  </Badge>
-                )}
-              </span>
-            </div>
-
-            {duplicateOf && canonicalTweetId && (
-              <p className="text-xs text-violet-700 dark:text-violet-300">
-                Duplicate of{" "}
-                <a
-                  href={`https://x.com/laurentdelrey/status/${canonicalTweetId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2 hover:text-violet-900"
-                >
-                  {duplicateOf.canonical}
-                </a>
-                {duplicateOf.kind === "near" &&
-                  ` · hamming ${duplicateOf.distance}`}
-              </p>
-            )}
-
-            <p className="text-sm leading-snug whitespace-pre-wrap line-clamp-4">
-              {tweet.text || (
-                <span className="italic text-muted-foreground">no caption</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Tag</span>
+            <span className="text-xs text-muted-foreground">
+              Controls which filter on /work shows this item.
+              {override ? (
+                <> Manual override — auto would be &ldquo;{heuristic}&rdquo;.</>
+              ) : (
+                <> Auto: &ldquo;{heuristic}&rdquo; (from media type).</>
               )}
-            </p>
-
-            <div className="mt-auto flex items-center gap-2 flex-wrap">
-              <Button
-                variant={hidden ? "default" : "outline"}
-                size="sm"
-                onClick={onToggleHidden}
-                disabled={isBusy}
-              >
-                {isBusy ? (
-                  <Loader2 className="animate-spin" />
-                ) : hidden ? (
-                  <>
-                    <Eye /> Unhide
-                  </>
-                ) : (
-                  <>
-                    <EyeOff /> Hide
-                  </>
-                )}
-              </Button>
-
-              {/* Tag selector. "Auto" keeps the heuristic ({heuristic}); the
-                  other three set an explicit override stored server-side. */}
-              <ToggleGroup
-                type="single"
-                size="sm"
-                variant="outline"
-                value={override ?? "auto"}
-                onValueChange={(v) => {
-                  if (!v) return; // radix emits "" when active item is clicked
-                  onSetTag(v as TagOverrideValue);
-                }}
-                disabled={isTagBusy}
-                className="gap-0"
-              >
-                <ToggleGroupItem value="auto" aria-label="Auto tag">
-                  <Wand2 />
-                  <span className="hidden sm:inline ml-1">auto</span>
-                  <span className="text-muted-foreground text-[10px] ml-1">
-                    ({heuristic})
-                  </span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="image" aria-label="Image">
-                  <ImageIcon />
-                  <span className="hidden sm:inline ml-1">image</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="prototype" aria-label="Prototype">
-                  <Zap />
-                  <span className="hidden sm:inline ml-1">prototype</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="both" aria-label="Both">
-                  <Sparkles />
-                  <span className="hidden sm:inline ml-1">both</span>
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+            </span>
           </div>
-        </CardContent>
-      </Card>
-    </li>
+          <ToggleGroup
+            type="single"
+            size="sm"
+            variant="outline"
+            value={override ?? "auto"}
+            onValueChange={(v) => {
+              if (!v) return;
+              onSetTag(v as TagOverrideValue);
+            }}
+            disabled={isTagBusy}
+          >
+            <ToggleGroupItem value="auto" className="px-3">
+              auto
+            </ToggleGroupItem>
+            <ToggleGroupItem value="image" className="px-3">
+              image
+            </ToggleGroupItem>
+            <ToggleGroupItem value="prototype" className="px-3">
+              prototype
+            </ToggleGroupItem>
+            <ToggleGroupItem value="both" className="px-3">
+              both
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      </div>
+    </>
   );
 }
