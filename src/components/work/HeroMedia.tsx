@@ -1,35 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 import { WordReveal } from "@/components/work/WordReveal";
-import {
-  HERO_TOP_MARGIN as TOP_MARGIN,
-  HERO_BOTTOM_MARGIN as BOTTOM_MARGIN,
-  computeHeroBox,
-} from "@/lib/work/hero-box";
+
+// Hero sits between the top (below header) and the filmstrip.
+// These match the actual UI: header ~70px, filmstrip area ~160px.
+const TOP_MARGIN = 80;
+const BOTTOM_MARGIN = 200;
 
 const HERO_W_MAX = 920;
+const HERO_H_VH = 0.58;
+const HERO_H_MAX = 580;
 
-/**
- * HeroMedia owns the chrome around the hero area:
- *   - For media items: only the caption (the image itself is rendered by
- *     MorphHero so it can morph into the grid tile).
- *   - For non-media items (tldr / era intros / @ me): the full card.
- */
+const VIDEO_FAST_PLAYBACK_RATE = 3;
+
 export default function HeroMedia({
   item,
+  onVideoEnded,
+  onVideoStarted,
   isMobile = false,
+  speed = 1,
 }: {
   item: TimelineItem;
-  // Kept for parent API compatibility; MorphHero now handles video lifecycle.
-  onVideoEnded?: () => void;
+  onVideoEnded: () => void;
   onVideoStarted?: () => void;
   isMobile?: boolean;
   speed?: number;
 }) {
   const heroWidthVw = isMobile ? 0.9 : 0.68;
+  const caption = item.kind === "media" ? item.text : null;
 
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== "undefined" ? window.innerWidth : 1600,
@@ -42,14 +43,21 @@ export default function HeroMedia({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Caption width = the image's actual rendered width, derived from the same
-  // hero-box math MorphHero uses, so the caption stays aligned with the
-  // visible media without needing DOM measurement.
-  let captionWidthPx = Math.min(heroWidthVw * viewport.w, HERO_W_MAX);
-  if (item.kind === "media") {
-    const box = computeHeroBox(item, viewport.w, viewport.h, isMobile);
-    captionWidthPx = box.w;
+  const heroMaxW = Math.min(heroWidthVw * viewport.w, HERO_W_MAX);
+  const heroMaxH = Math.min(HERO_H_VH * viewport.h, HERO_H_MAX);
+
+  // First-paint guess from metadata; refined by the ResizeObserver in MediaCard.
+  let initialWidth = heroMaxW;
+  if (item.kind === "media" && item.media.width && item.media.height) {
+    const aspect = item.media.width / item.media.height;
+    initialWidth = Math.min(heroMaxW, heroMaxH * aspect);
   }
+  const [captionWidthPx, setCaptionWidthPx] = useState(initialWidth);
+  const itemKey = keyForItem(item);
+  useEffect(() => {
+    setCaptionWidthPx(initialWidth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemKey]);
 
   return (
     <div
@@ -71,39 +79,25 @@ export default function HeroMedia({
           gap: 12,
         }}
       >
-        {item.kind === "media" && !isMobile && (
+        {caption && item.kind === "media" && !isMobile && (
           <HeroCaption
-            text={item.text}
+            text={caption}
             itemKey={keyForItem(item)}
             widthPx={captionWidthPx}
             url={item.url}
           />
         )}
-        {item.kind !== "media" && (
-          <div
-            style={{
-              width: `min(${heroWidthVw * 100}vw, ${HERO_W_MAX}px)`,
-              height: "min(58vh, 580px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {renderCard(item)}
-          </div>
-        )}
-        {item.kind === "media" && (
-          // Spacer reserves the hero area's vertical real estate so the
-          // caption stays parked at the top of the visible image. MorphHero
-          // floats above this and supplies the actual visual.
-          <div
-            style={{
-              width: 1,
-              height: "min(58vh, 580px)",
-              pointerEvents: "none",
-            }}
-          />
-        )}
+        <div
+          style={{
+            width: `min(${heroWidthVw * 100}vw, ${HERO_W_MAX}px)`,
+            height: "min(58vh, 580px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {renderItem(item, onVideoEnded, onVideoStarted, setCaptionWidthPx, speed)}
+        </div>
       </div>
     </div>
   );
@@ -188,7 +182,25 @@ function keyForItem(item: TimelineItem): string {
   return item.id;
 }
 
-function renderCard(item: Exclude<TimelineItem, { kind: "media" }>) {
+function renderItem(
+  item: TimelineItem,
+  onVideoEnded: () => void,
+  onVideoStarted?: () => void,
+  onMeasureWidth?: (w: number) => void,
+  speed: number = 1,
+) {
+  if (item.kind === "media") {
+    return (
+      <MediaCard
+        item={item}
+        onVideoEnded={onVideoEnded}
+        onVideoStarted={onVideoStarted}
+        onMeasureWidth={onMeasureWidth}
+        speed={speed}
+      />
+    );
+  }
+
   if (item.kind === "tldr") {
     return (
       <StoryCard>
@@ -224,9 +236,7 @@ function renderCard(item: Exclude<TimelineItem, { kind: "media" }>) {
         >
           {era.label}{" "}
           {era.years && (
-            <span
-              style={{ color: "rgba(255,255,255,0.5)", marginLeft: "12px" }}
-            >
+            <span style={{ color: "rgba(255,255,255,0.5)", marginLeft: "12px" }}>
               {era.years}
             </span>
           )}
@@ -274,5 +284,117 @@ function StoryCard({ children }: { children: React.ReactNode }) {
       `}</style>
       {children}
     </div>
+  );
+}
+
+function MediaCard({
+  item,
+  onVideoEnded,
+  onVideoStarted,
+  onMeasureWidth,
+  speed = 1,
+}: {
+  item: Extract<TimelineItem, { kind: "media" }>;
+  onVideoEnded: () => void;
+  onVideoStarted?: () => void;
+  onMeasureWidth?: (w: number) => void;
+  speed?: number;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const m = item.media;
+  const isVideo = m.type === "video" || m.type === "animated_gif";
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !isVideo) return;
+    el.playbackRate = speed > 1 ? VIDEO_FAST_PLAYBACK_RATE : 1;
+  }, [speed, isVideo, m.blobUrl]);
+
+  useEffect(() => {
+    const el = isVideo ? videoRef.current : imgRef.current;
+    if (!el || !onMeasureWidth) return;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) onMeasureWidth(w);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (el instanceof HTMLImageElement) {
+      el.addEventListener("load", measure);
+    } else if (el instanceof HTMLVideoElement) {
+      el.addEventListener("loadedmetadata", measure);
+      el.addEventListener("loadeddata", measure);
+    }
+    return () => {
+      ro.disconnect();
+      if (el instanceof HTMLImageElement) el.removeEventListener("load", measure);
+      if (el instanceof HTMLVideoElement) {
+        el.removeEventListener("loadedmetadata", measure);
+        el.removeEventListener("loadeddata", measure);
+      }
+    };
+  }, [onMeasureWidth, isVideo, m.blobUrl]);
+
+  if (!m.blobUrl) return null;
+
+  const mediaStyle: React.CSSProperties = {
+    maxWidth: "100%",
+    maxHeight: "100%",
+    width: "auto",
+    height: "auto",
+    objectFit: "contain",
+    display: "block",
+    filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.18))",
+  };
+
+  const reportWidth = (el: HTMLElement) => {
+    const w = el.getBoundingClientRect().width;
+    if (w > 0) onMeasureWidth?.(w);
+  };
+
+  const media = isVideo ? (
+    <video
+      ref={videoRef}
+      key={m.blobUrl}
+      src={m.blobUrl}
+      muted
+      playsInline
+      autoPlay
+      onPlay={onVideoStarted}
+      onEnded={onVideoEnded}
+      onLoadedMetadata={(e) => reportWidth(e.currentTarget)}
+      onLoadedData={(e) => reportWidth(e.currentTarget)}
+      style={mediaStyle}
+      data-no-cursor-expand
+    />
+  ) : (
+    <img
+      ref={imgRef}
+      src={m.blobUrl}
+      alt={item.text}
+      onLoad={(e) => reportWidth(e.currentTarget)}
+      style={mediaStyle}
+      data-no-cursor-expand
+    />
+  );
+
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        cursor: "none",
+      }}
+    >
+      {media}
+    </a>
   );
 }

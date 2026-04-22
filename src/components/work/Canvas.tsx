@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "motion/react";
 import type { TimelineItem } from "@/lib/work/timeline";
 import {
   computeMosaic,
@@ -11,57 +10,29 @@ import {
   type MosaicTile,
 } from "@/lib/work/mosaic";
 
-// Deterministic per-item "hand-placed" jitter. Same item always gets the
-// same rotation + offset across re-renders and page loads — feels composed,
-// not random.
-function hashKey(key: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function tiltFor(key: string): { tilt: number; jx: number; jy: number } {
-  const h = hashKey(key);
-  const tilt = ((h % 360) / 100) - 1.8;
-  const jx = ((h >> 8) % 9) - 4;
-  const jy = ((h >> 16) % 9) - 4;
-  return { tilt, jx, jy };
-}
-
-/**
- * Deterministic scatter offset for a tile's entrance/exit — each tile flies
- * in from a position offset from its final slot, on a random angle, with an
- * extra rotation that unwinds as it settles. Same key always produces the
- * same scatter, so the "deal" feels choreographed rather than random noise.
- */
-function scatterFor(key: string): { sx: number; sy: number; srot: number } {
-  const h = hashKey(key + ":scatter");
-  const angle = ((h % 1000) / 1000) * Math.PI * 2;
-  const dist = 80 + ((h >> 10) % 80); // 80..160 px
-  const srot = (((h >> 20) % 300) / 10) - 15; // -15°..+15°
-  return {
-    sx: Math.cos(angle) * dist,
-    sy: Math.sin(angle) * dist,
-    srot,
-  };
-}
-
 type CanvasProps = {
   timeline: TimelineItem[];
   currentIndex: number;
-  /** key of the current media item — its tile is hidden so MorphHero can occupy that slot. */
-  currentMediaKey: string | null;
   onSelectItem: (timelineIndex: number) => void;
+  /** true = grid is on (fade in); false = fading out (parent will unmount soon) */
   visible: boolean;
   isMobile?: boolean;
 };
 
+/**
+ * Justified-mosaic grid view. Clean, no decoration:
+ *   - no tilt, no jitter — straight grid
+ *   - no scatter / morph animation — plain crossfade with subtle stagger
+ *   - tiles only mounted while parent says we're showing (`visible` true or
+ *     fading out) so the timeline page never carries the cost
+ *   - <video> elements are NOT mounted unless the tile is hovered; idle
+ *     tiles render a flat placeholder. This was the main perf killer at
+ *     ~200 tiles where every video preloaded metadata.
+ *   - <img> uses loading="lazy" + decoding="async" so the browser can
+ *     amortize work across frames.
+ */
 export default function Canvas({
   timeline,
-  currentMediaKey,
   onSelectItem,
   visible,
   isMobile = false,
@@ -93,30 +64,6 @@ export default function Canvas({
     [mediaWithIndex, cw, ch],
   );
 
-  // Per-tile entrance/exit stagger: tiles closer to the current item appear
-  // first and disappear last, so the grid feels like it's rippling outward
-  // from (and collapsing inward to) the hero. Computed in mosaic-local
-  // coords; exact distances don't matter, just relative ordering.
-  const stagger = useMemo(() => {
-    if (tiles.length === 0) return new Map<string, number>();
-    const current = tiles.find((t) => keyFor(t.item) === currentMediaKey);
-    const cx = current
-      ? current.x + current.w / 2
-      : cw / 2;
-    const cy = current
-      ? current.y + current.h / 2
-      : (totalHeight || ch) / 2;
-    const maxDist = Math.hypot(cw, totalHeight || ch);
-    const out = new Map<string, number>();
-    for (const t of tiles) {
-      const dx = t.x + t.w / 2 - cx;
-      const dy = t.y + t.h / 2 - cy;
-      const d = Math.hypot(dx, dy);
-      out.set(keyFor(t.item), maxDist > 0 ? d / maxDist : 0);
-    }
-    return out;
-  }, [tiles, currentMediaKey, cw, ch, totalHeight]);
-
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
@@ -125,8 +72,9 @@ export default function Canvas({
       style={{
         position: "fixed",
         inset: 0,
-        // Block pointer events while hidden; per-tile opacity handles fades.
         pointerEvents: visible ? "auto" : "none",
+        opacity: visible ? 1 : 0,
+        transition: "opacity 320ms ease-out",
         zIndex: 25,
       }}
     >
@@ -148,33 +96,20 @@ export default function Canvas({
             transformOrigin: "top left",
           }}
         >
-          {tiles.map((tile) => {
+          {tiles.map((tile, i) => {
             const k = keyFor(tile.item);
-            const { tilt, jx, jy } = tiltFor(k);
             const isHovered = hovered === k;
-            const isCurrent = currentMediaKey === k;
-            const norm = stagger.get(k) ?? 0;
-            // Entrance: tiles close to hero appear first; total spread ~600ms.
-            // Exit: outer tiles leave first, inner last — feels like the
-            // grid is collapsing toward the hero before it morphs back.
-            const entranceDelay = norm * 0.55;
-            const exitDelay = (1 - norm) * 0.3;
-            const { sx, sy, srot } = scatterFor(k);
+            // Tiny stagger so the grid feels intentional, not slammed in.
+            // Capped total so even with many tiles we don't drag past the
+            // wrapper's 320ms fade.
+            const delay = Math.min(0.18, i * 0.004);
             return (
               <CanvasTile
                 key={k}
                 tile={tile}
-                tiltDeg={tilt}
-                jx={jx}
-                jy={jy}
-                scatterX={sx}
-                scatterY={sy}
-                scatterRot={srot}
                 isHovered={isHovered}
-                hidden={isCurrent}
                 visible={visible}
-                entranceDelay={entranceDelay}
-                exitDelay={exitDelay}
+                fadeDelay={delay}
                 onHoverStart={() => setHovered(k)}
                 onHoverEnd={() =>
                   setHovered((cur) => (cur === k ? null : cur))
@@ -196,35 +131,17 @@ export default function Canvas({
 
 function CanvasTile({
   tile,
-  tiltDeg,
-  jx,
-  jy,
-  scatterX,
-  scatterY,
-  scatterRot,
   isHovered,
-  hidden,
   visible,
-  entranceDelay,
-  exitDelay,
+  fadeDelay,
   onHoverStart,
   onHoverEnd,
   onClick,
 }: {
   tile: MosaicTile;
-  tiltDeg: number;
-  jx: number;
-  jy: number;
-  scatterX: number;
-  scatterY: number;
-  scatterRot: number;
   isHovered: boolean;
-  /** true for the current item — MorphHero floats in this slot. */
-  hidden: boolean;
-  /** true when the canvas is on (grid view). */
   visible: boolean;
-  entranceDelay: number;
-  exitDelay: number;
+  fadeDelay: number;
   onHoverStart: () => void;
   onHoverEnd: () => void;
   onClick: () => void;
@@ -234,113 +151,114 @@ function CanvasTile({
   const isVideo = m.type === "video" || m.type === "animated_gif";
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Only mount the actual <video> element when the tile has been hovered at
+  // least once. After that we keep it mounted (cheap) so re-hovering plays
+  // immediately, but autoplay/pause is still gated by the current hover.
+  const [activatedVideo, setActivatedVideo] = useState(false);
+  useEffect(() => {
+    if (isHovered && isVideo) setActivatedVideo(true);
+  }, [isHovered, isVideo]);
+
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !isVideo) return;
+    if (!v || !activatedVideo) return;
     if (isHovered) {
       v.currentTime = 0;
       void v.play().catch(() => {});
     } else {
       v.pause();
     }
-  }, [isHovered, isVideo]);
+  }, [isHovered, activatedVideo]);
 
-  const previewScale = 3.2;
-  // Outer wrapper handles position + entrance/exit (opacity, scale, y rise).
-  // Inner wrapper handles hover/tilt (rotate, scale-up). Nesting them keeps
-  // their transitions independent so the entrance stagger doesn't make
-  // hover feel sluggish, and the snappy hover spring doesn't overwrite the
-  // staggered fade-in.
-  const inactive = !visible || hidden;
   return (
-    <motion.div
-      initial={false}
-      animate={{
-        opacity: hidden ? 0 : visible ? 1 : 0,
-        scale: visible ? 1 : 0.55,
-        // When closed, the tile is translated to its scatter position and
-        // rotated; when open it travels back to (0,0) with zero extra
-        // rotation — the inner motion.div still carries the steady tilt.
-        x: visible ? 0 : scatterX,
-        y: visible ? 0 : scatterY,
-        rotate: visible ? 0 : scatterRot,
-      }}
-      transition={{
-        duration: visible ? 0.55 : 0.38,
-        delay: visible ? entranceDelay : exitDelay,
-        ease: [0.32, 0.72, 0, 1],
-      }}
+    <div
+      onClick={onClick}
+      onMouseEnter={onHoverStart}
+      onMouseLeave={onHoverEnd}
+      data-no-cursor-expand
       style={{
         position: "absolute",
-        left: x + jx,
-        top: y + jy,
+        left: x,
+        top: y,
         width: w,
         height: h,
-        pointerEvents: inactive ? "none" : "auto",
-        willChange: "transform, opacity",
+        cursor: "none",
+        overflow: "hidden",
+        background: "#9a9a9a",
+        opacity: visible ? 1 : 0,
+        transform: `scale(${isHovered ? 1.04 : 1})`,
+        transformOrigin: "center center",
+        zIndex: isHovered ? 10 : 1,
+        boxShadow: isHovered
+          ? "0 16px 36px rgba(0,0,0,0.28)"
+          : "0 1px 2px rgba(0,0,0,0.10)",
+        transition: [
+          `opacity 320ms ease-out ${fadeDelay}s`,
+          "transform 220ms ease-out",
+          "box-shadow 220ms ease-out",
+        ].join(", "),
+        willChange: "opacity, transform",
       }}
     >
-      <motion.div
-        onClick={onClick}
-        onMouseEnter={onHoverStart}
-        onMouseLeave={onHoverEnd}
-        data-no-cursor-expand
-        animate={{
-          rotate: isHovered ? 0 : tiltDeg,
-          scale: isHovered ? previewScale : 1,
-          zIndex: isHovered ? 50 : 1,
-          boxShadow: isHovered
-            ? "0 30px 80px rgba(0,0,0,0.35)"
-            : "0 6px 18px rgba(0,0,0,0.18)",
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 260,
-          damping: 28,
-          mass: 0.6,
-        }}
-        style={{
-          width: "100%",
-          height: "100%",
-          transformOrigin: "center center",
-          cursor: hidden ? "default" : "none",
-          overflow: "hidden",
-          background: "#b0b0b0",
-          borderRadius: 2,
-          willChange: "transform",
-        }}
-      >
-        {m.blobUrl && !isVideo && (
-          <img
-            src={m.blobUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        )}
-        {m.blobUrl && isVideo && (
-          <video
-            ref={videoRef}
-            src={m.blobUrl}
-            muted
-            playsInline
-            loop
-            preload="metadata"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        )}
-      </motion.div>
-    </motion.div>
+      {!isVideo && m.blobUrl && (
+        <img
+          src={m.blobUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      )}
+      {isVideo && (
+        <>
+          {!activatedVideo && (
+            // Flat placeholder while the <video> is unmounted. A subtle
+            // play glyph signals it's interactive without loading bytes.
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#7d7d7d",
+                color: "rgba(255,255,255,0.7)",
+              }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 22 22"
+                fill="none"
+                aria-hidden
+              >
+                <path d="M7 5 L17 11 L7 17 Z" fill="currentColor" />
+              </svg>
+            </div>
+          )}
+          {activatedVideo && m.blobUrl && (
+            <video
+              ref={videoRef}
+              src={m.blobUrl}
+              muted
+              playsInline
+              loop
+              preload="metadata"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 }

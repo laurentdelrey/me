@@ -5,17 +5,13 @@ import dynamic from "next/dynamic";
 import SiteHeader from "@/components/SiteHeader";
 import { PlayheadCursor } from "@/components/PlayheadCursor";
 import HeroMedia from "@/components/work/HeroMedia";
-import Canvas from "@/components/work/Canvas";
-import MorphHero from "@/components/work/MorphHero";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
-import { computeHeroBox } from "@/lib/work/hero-box";
-import {
-  computeMosaic,
-  keyForMedia,
-  mediaItemsFromTimeline,
-  mosaicLayoutFor,
-} from "@/lib/work/mosaic";
+
+// Canvas is heavy (renders 200+ tiles + lazy media). Keep it dynamic so the
+// initial timeline page load doesn't pay for it. The tiles inside Canvas are
+// only mounted while the grid is open (see `gridMounted` below).
+const Canvas = dynamic(() => import("@/components/work/Canvas"), { ssr: false });
 
 function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
@@ -25,10 +21,6 @@ function chapterLabel(item: TimelineItem | undefined): string {
   return "";
 }
 
-// HeroMedia + Canvas + MorphHero are imported directly so they always share
-// the same render commit — MorphHero needs to know each frame whether it's
-// targeting the hero or the tile, with no dynamic-import gap that would
-// freeze its position mid-toggle.
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 const Filmstrip = dynamic(() => import("@/components/work/Filmstrip"), { ssr: false });
 const EraLabel = dynamic(() => import("@/components/work/EraLabel"), { ssr: false });
@@ -193,60 +185,18 @@ export default function WorkPage() {
   const mapCenter = currentEraId ? ERAS[currentEraId].location : ERAS.tldr.location;
   const mapZoom = currentEraId ? ERAS[currentEraId].zoom : ERAS.tldr.zoom;
 
-  // Page-level viewport tracking — shared by hero-box math and mosaic so the
-  // morph element knows both its source (hero) and target (tile) coordinates.
-  const [viewport, setViewport] = useState(() => ({
-    w: typeof window !== "undefined" ? window.innerWidth : 1600,
-    h: typeof window !== "undefined" ? window.innerHeight : 900,
-  }));
+  // Mount Canvas only while the grid is open (plus a short tail so the
+  // fade-out completes). This is the single biggest perf win — without it,
+  // 200+ <img>/<video> elements live in the DOM the whole time.
+  const [gridMounted, setGridMounted] = useState(false);
   useEffect(() => {
-    const onResize = () =>
-      setViewport({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  // Single source of truth for media tiles — page-level so MorphHero can
-  // look up the current item's tile box directly.
-  const mediaWithIndex = useMemo(
-    () => mediaItemsFromTimeline(timeline),
-    [timeline],
-  );
-  const mosaicLayout = useMemo(
-    () => mosaicLayoutFor(viewport.w, viewport.h, isMobile),
-    [viewport.w, viewport.h, isMobile],
-  );
-  const mosaic = useMemo(
-    () => computeMosaic(mediaWithIndex, mosaicLayout.cw, mosaicLayout.ch),
-    [mediaWithIndex, mosaicLayout.cw, mosaicLayout.ch],
-  );
-
-  const currentMediaKey =
-    currentItem?.kind === "media" ? keyForMedia(currentItem) : null;
-
-  // Hero box (timeline mode) for the morph element — viewport coords.
-  const heroBox =
-    currentItem?.kind === "media"
-      ? computeHeroBox(currentItem, viewport.w, viewport.h, isMobile)
-      : null;
-
-  // Tile box (grid mode) for the morph element — convert mosaic-local coords
-  // (origin = top-left of the inner mosaic box, then scaled by overflowScale)
-  // into viewport coords.
-  const currentTileBox = useMemo(() => {
-    if (!currentMediaKey) return null;
-    const tile = mosaic.tiles.find(
-      (t) => keyForMedia(t.item) === currentMediaKey,
-    );
-    if (!tile) return null;
-    const s = mosaic.overflowScale;
-    return {
-      x: mosaicLayout.insetSides + tile.x * s,
-      y: mosaicLayout.insetTop + tile.y * s,
-      w: tile.w * s,
-      h: tile.h * s,
-    };
-  }, [currentMediaKey, mosaic, mosaicLayout]);
+    if (view === "grid") {
+      setGridMounted(true);
+      return;
+    }
+    const t = setTimeout(() => setGridMounted(false), 350);
+    return () => clearTimeout(t);
+  }, [view]);
 
   useEffect(() => {
     setMounted(true);
@@ -303,9 +253,6 @@ export default function WorkPage() {
 
         {/* Era label removed — map location + timeline chapter convey the era now. */}
 
-        {/* HeroMedia (timeline-only) renders the caption + non-media cards.
-            For media items it intentionally does NOT render the image —
-            MorphHero owns the image so it can morph between hero and tile. */}
         {currentItem && view === "timeline" && (
           <HeroMedia
             item={currentItem}
@@ -315,39 +262,18 @@ export default function WorkPage() {
           />
         )}
 
-        {/* Canvas is always mounted once the page is hydrated; opacity drives
-            visibility. Always-mounted means MorphHero's tile target is
-            measured the same way in both modes — no race conditions. */}
-        {mounted && (
+        {/* Canvas is mounted only while the grid is on (or fading out).
+            No tiles in the DOM at all in timeline mode. */}
+        {gridMounted && (
           <Canvas
             timeline={timeline}
             currentIndex={currentIndex}
-            currentMediaKey={currentMediaKey}
             onSelectItem={(idx) => {
-              // Two-phase commit: park MorphHero at the clicked tile FIRST
-              // (this render), then flip to timeline on the next frame so
-              // the morph travels tile -> hero of the clicked item rather
-              // than sliding diagonally from the previous current item.
               seekTo(idx);
-              requestAnimationFrame(() => setView("timeline"));
+              setView("timeline");
             }}
             visible={view === "grid"}
             isMobile={isMobile}
-          />
-        )}
-
-        {/* The single shared morph element. Always mounted whenever the
-            current item is media; its position/size animate between hero
-            box and tile box on view toggle. This replaces the cross-
-            component layoutId approach that wasn't reconciling. */}
-        {currentItem?.kind === "media" && heroBox && (
-          <MorphHero
-            item={currentItem}
-            mode={view === "grid" ? "tile" : "hero"}
-            heroBox={heroBox}
-            tileBox={currentTileBox}
-            speed={speed}
-            onClickInGrid={() => setView("timeline")}
           />
         )}
 
@@ -385,9 +311,9 @@ export default function WorkPage() {
         />
 
         {mounted && (
-          <ViewToggle
-            view={view}
-            onChange={setView}
+          <GridToggleIcon
+            open={view === "grid"}
+            onToggle={() => setView((v) => (v === "grid" ? "timeline" : "grid"))}
             isMobile={isMobile}
           />
         )}
@@ -396,67 +322,100 @@ export default function WorkPage() {
   );
 }
 
-function ViewToggle({
-  view,
-  onChange,
+/**
+ * Single icon button top-left. Shows a 3x3 grid glyph when the grid is off,
+ * and morphs into an X when on. Just a clean affordance — no labels.
+ */
+function GridToggleIcon({
+  open,
+  onToggle,
   isMobile,
 }: {
-  view: "timeline" | "grid";
-  onChange: (v: "timeline" | "grid") => void;
+  open: boolean;
+  onToggle: () => void;
   isMobile: boolean;
 }) {
-  const options: { id: "timeline" | "grid"; label: string }[] = [
-    { id: "timeline", label: "timeline" },
-    { id: "grid", label: "grid" },
-  ];
+  const size = isMobile ? 18 : 20;
   return (
-    <div
-      className="lowercase"
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={open ? "close grid view" : "open grid view"}
+      aria-pressed={open}
+      data-no-cursor-expand
       style={{
         position: "fixed",
-        top: isMobile ? 68 : 72,
-        left: "50%",
-        transform: "translateX(-50%)",
+        top: isMobile ? 22 : 28,
+        left: isMobile ? 18 : 28,
         zIndex: 60,
+        width: 36,
+        height: 36,
         display: "inline-flex",
         alignItems: "center",
-        gap: 2,
-        padding: 2,
-        borderRadius: 6,
-        background: "rgba(0,0,0,0.25)",
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
-        border: "1px solid rgba(255,255,255,0.18)",
-        fontSize: isMobile ? "0.85rem" : "0.9rem",
+        justifyContent: "center",
+        background: "transparent",
+        border: "none",
+        padding: 0,
+        cursor: "none",
         color: "#ffffff",
-        pointerEvents: "auto",
+        opacity: 0.92,
+        transition: "opacity 160ms ease-out, transform 200ms ease-out",
+        transform: open ? "rotate(45deg)" : "rotate(0deg)",
       }}
-      data-no-cursor-expand
+      onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+      onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.92")}
     >
-      {options.map((opt) => {
-        const active = view === opt.id;
-        return (
-          <button
-            key={opt.id}
-            onClick={() => onChange(opt.id)}
-            aria-pressed={active}
-            data-no-cursor-expand
-            style={{
-              padding: isMobile ? "4px 10px" : "4px 12px",
-              borderRadius: 4,
-              background: active ? "#b0b0b0" : "transparent",
-              color: "#ffffff",
-              border: "none",
-              cursor: "none",
-              fontSize: "inherit",
-              lineHeight: 1.4,
-              transition: "background-color 200ms ease-out",
-            }}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden
+        style={{
+          transition: "all 220ms ease-out",
+        }}
+      >
+        {open ? (
+          // X glyph (we also rotate the button 45deg, so this is a "+")
+          <>
+            <line
+              x1="3"
+              y1="10"
+              x2="17"
+              y2="10"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <line
+              x1="10"
+              y1="3"
+              x2="10"
+              y2="17"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </>
+        ) : (
+          // 3x3 grid glyph
+          <>
+            {[2, 8, 14].map((y) =>
+              [2, 8, 14].map((x) => (
+                <rect
+                  key={`${x}-${y}`}
+                  x={x}
+                  y={y}
+                  width={4}
+                  height={4}
+                  rx={0.6}
+                  fill="currentColor"
+                />
+              )),
+            )}
+          </>
+        )}
+      </svg>
+    </button>
   );
 }
