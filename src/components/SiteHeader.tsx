@@ -35,8 +35,11 @@ export default function SiteHeader({
   // mouse is still hovering the host (otherwise pure-CSS :hover keeps it
   // pinned open, which is confusing post-click). `dismissed` overrides
   // :hover until the user moves away — then the host is ready to open
-  // again on the next hover.
+  // again on the next hover. `picked` holds the chosen filter for the
+  // duration of the exit so the selected pill can run a confirmation
+  // pulse while the others slide off quietly.
   const [dismissed, setDismissed] = useState(false);
+  const [picked, setPicked] = useState<TagFilter | null>(null);
   const menuRef = useRef<HTMLSpanElement | null>(null);
 
   const hasFilter = !!filter && !!onFilterChange;
@@ -123,7 +126,10 @@ export default function SiteHeader({
                 className="filter-host"
                 data-open={clickOpen ? "true" : "false"}
                 data-dismissed={dismissed ? "true" : "false"}
-                onMouseLeave={() => setDismissed(false)}
+                onMouseLeave={() => {
+                  setDismissed(false);
+                  setPicked(null);
+                }}
               >
                 <button
                   type="button"
@@ -173,9 +179,11 @@ export default function SiteHeader({
                         onClick={() => {
                           onFilterChange?.(f);
                           setClickOpen(false);
+                          setPicked(f);
                           setDismissed(true);
                         }}
                         className="lowercase filter-menu-item"
+                        data-picked={picked === f ? "true" : "false"}
                         style={{
                           ...pillBase,
                           padding: "0 10px",
@@ -376,21 +384,51 @@ export default function SiteHeader({
           transition-delay: 0ms;
         }
 
-        /* Post-selection dismiss. After a filter is clicked we want the
-           menu to animate away even though the mouse is still hovering.
-           Higher specificity + ordering after the :hover open rules means
-           this wins without !important. Transitions reuse the closed-state
-           curves so it eases out the same way a mouse-leave would, and the
-           items collapse uniformly (no stagger on close). */
+        /* Post-selection dismiss.
+
+           Choreography (not the same as a mouse-leave close — this
+           should feel confirmed, not retreating):
+
+             1. Container stays put (no retreat translate-up, no scale).
+                Just disables pointer events. Pills carry the whole exit.
+             2. Non-picked pills fade + shrink fast with ease-IN — they're
+                leaving, so the curve should accelerate away. No translate,
+                no overshoot.
+             3. Picked pill runs a keyframe animation: quick pop to 1.1,
+                settle back to 1.0, HOLD alone on the menu for a beat, then
+                fade and slightly shrink. This is the confirmation moment —
+                the others have cleared, the chosen one is briefly alone and
+                "real" before dissolving. */
         :global(.filter-host[data-dismissed="true"] .filter-menu) {
-          opacity: 0;
+          opacity: 1;
           pointer-events: none;
-          transform: translateY(-6px) scale(0.985);
+          transform: translateY(0) scale(1);
         }
-        :global(.filter-host[data-dismissed="true"] .filter-menu button) {
+        /* [data-picked] attribute selector matches specificity of the
+           per-nth-child open-state rules so this wins cleanly by ordering
+           rather than leaking :nth-child delays into the dismiss path. */
+        :global(.filter-host[data-dismissed="true"] .filter-menu button[data-picked="false"]) {
           opacity: 0;
-          transform: translateY(-8px) scale(0.94);
+          transform: scale(0.92);
+          transition:
+            opacity 200ms cubic-bezier(0.4, 0, 1, 1),
+            transform 240ms cubic-bezier(0.4, 0, 1, 1);
           transition-delay: 0ms;
+        }
+        /* Picked pill: full keyframe animation takes over transform + opacity.
+           animation-fill-mode forwards keeps the final state (opacity 0)
+           applied after the animation ends, so the pill stays dismissed.
+           When the user moves the mouse away data-dismissed / data-picked
+           clear and it falls back to the normal rules. */
+        :global(.filter-host[data-dismissed="true"] .filter-menu button[data-picked="true"]) {
+          animation: filter-pick-confirm 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes filter-pick-confirm {
+          0%   { transform: scale(1.00); opacity: 1; }
+          16%  { transform: scale(1.10); opacity: 1; }
+          34%  { transform: scale(1.00); opacity: 1; }
+          52%  { transform: scale(1.00); opacity: 1; }
+          100% { transform: scale(0.94); opacity: 0; }
         }
 
         @media (max-width: 640px) {
