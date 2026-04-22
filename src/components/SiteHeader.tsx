@@ -10,7 +10,7 @@ type SiteHeaderProps = {
   topPaddingPx?: number;
   onClick?: () => void;
   color?: string;
-  // When provided, the title becomes a dropdown that lets the user switch
+  // When provided, the title becomes a filter menu that lets the user switch
   // between "story" (default, everything) and the individual tag filters.
   filter?: TagFilter;
   onFilterChange?: (f: TagFilter) => void;
@@ -27,12 +27,12 @@ export default function SiteHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Dropdown is available only when the parent wires `filter` + `onFilterChange`.
-  // Keeps this header usable on pages that don't have a filtered timeline.
-  const hasDropdown = !!filter && !!onFilterChange;
+  // Filter menu shows only when the parent wires both `filter` + `onFilterChange`,
+  // so plain pages without a filtered timeline keep the minimal title.
+  const hasFilter = !!filter && !!onFilterChange;
   const effectiveFilter: TagFilter = filter ?? "story";
+  const titleColor = color || "#ffffff";
 
-  // Click outside / Escape closes the menu — standard dropdown UX.
   useEffect(() => {
     if (!menuOpen) return;
     const onDocClick = (e: MouseEvent) => {
@@ -50,38 +50,34 @@ export default function SiteHeader({
     };
   }, [menuOpen]);
 
-  // Desktop: open on hover, close on leave after a short grace period so a
-  // user moving the cursor from the title into the menu doesn't lose it.
+  // Hover-to-open with a brief close grace so the cursor can travel from the
+  // title into the menu without it collapsing.
   const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openOnHover = () => {
-    if (!hasDropdown) return;
+    if (!hasFilter) return;
     if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
     setMenuOpen(true);
   };
   const closeOnHoverLeave = () => {
-    if (!hasDropdown) return;
+    if (!hasFilter) return;
     if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
-    hoverCloseTimer.current = setTimeout(() => setMenuOpen(false), 120);
+    hoverCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
   };
 
   const handleTitleClick = () => {
-    if (hasDropdown) {
+    if (hasFilter) {
       setMenuOpen((v) => !v);
       return;
     }
     onClick?.();
   };
 
-  const titleText = hasDropdown
-    ? `laurent del rey's ${effectiveFilter}`
-    : "laurent del rey";
-
   return (
     <div
       className="fixed left-0 right-0 z-50 header-bar"
       style={{
         top: 0,
-        pointerEvents: onClick || hasDropdown ? "auto" : "none",
+        pointerEvents: onClick || hasFilter ? "auto" : "none",
         paddingTop: topPaddingPx,
         display: "grid",
         gridTemplateColumns: "1fr auto 1fr",
@@ -91,8 +87,6 @@ export default function SiteHeader({
         paddingRight: 24,
       }}
     >
-      {/* Left column — empty spacer to keep the title centered on desktop.
-          Hidden on mobile (see media query at the bottom). */}
       <div className="header-spacer" />
 
       <div
@@ -103,35 +97,28 @@ export default function SiteHeader({
         onMouseLeave={closeOnHoverLeave}
       >
         <button
-          className={`lowercase header-title ${onClick || hasDropdown ? "cursor-pointer" : ""}`}
+          className={`lowercase header-title ${onClick || hasFilter ? "cursor-pointer" : ""}`}
           style={{
             fontSize: "1rem",
             lineHeight: "1.5",
             fontWeight: 400,
-            color: color || "#ffffff",
+            color: titleColor,
             transition: "color 0.5s ease",
             margin: 0,
             background: "transparent",
             border: "none",
             padding: 0,
-            pointerEvents: onClick || hasDropdown ? "auto" : "none",
-            display: "inline-flex",
-            alignItems: "baseline",
-            gap: 4,
+            pointerEvents: onClick || hasFilter ? "auto" : "none",
           }}
           onClick={handleTitleClick}
           aria-label={
-            hasDropdown
-              ? "Change filter"
-              : onClick
-                ? "Scroll to start"
-                : undefined
+            hasFilter ? "Change filter" : onClick ? "Scroll to start" : undefined
           }
-          aria-haspopup={hasDropdown ? "menu" : undefined}
-          aria-expanded={hasDropdown ? menuOpen : undefined}
-          tabIndex={onClick || hasDropdown ? 0 : -1}
+          aria-haspopup={hasFilter ? "menu" : undefined}
+          aria-expanded={hasFilter ? menuOpen : undefined}
+          tabIndex={onClick || hasFilter ? 0 : -1}
           onKeyDown={(e) => {
-            if (hasDropdown && (e.key === "Enter" || e.key === " ")) {
+            if (hasFilter && (e.key === "Enter" || e.key === " ")) {
               e.preventDefault();
               setMenuOpen((v) => !v);
               return;
@@ -142,29 +129,20 @@ export default function SiteHeader({
             }
           }}
         >
-          {hasDropdown ? (
+          {hasFilter ? (
             <>
-              <span>laurent del rey&rsquo;s </span>
+              laurent del rey&rsquo;s{" "}
+              {/* Current filter word is dotted-underlined to hint that it's
+                  swappable without introducing a foreign dropdown chrome. */}
               <span
                 style={{
-                  textDecoration: "underline",
-                  textUnderlineOffset: 3,
+                  textDecoration: "underline dotted",
+                  textUnderlineOffset: 4,
                   textDecorationThickness: 1,
+                  textDecorationColor: "rgba(255,255,255,0.6)",
                 }}
               >
                 {effectiveFilter}
-              </span>
-              <span
-                aria-hidden
-                style={{
-                  fontSize: "0.75em",
-                  transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 180ms ease-out",
-                  display: "inline-block",
-                  marginLeft: 2,
-                }}
-              >
-                ▾
               </span>
             </>
           ) : (
@@ -172,7 +150,11 @@ export default function SiteHeader({
           )}
         </button>
 
-        {hasDropdown && (
+        {/* Filter menu — stacked text options below the title, styled to
+            disappear into the page: no card, no border, no shadow. Just the
+            same typography as the header, with inactive options at reduced
+            opacity and the active one marked with a leading dot. */}
+        {hasFilter && (
           <AnimatePresence>
             {menuOpen && (
               <motion.div
@@ -183,22 +165,17 @@ export default function SiteHeader({
                 transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 8px)",
+                  top: "calc(100% + 6px)",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  background: "rgba(255,255,255,0.98)",
-                  color: "#111",
-                  borderRadius: 12,
-                  boxShadow:
-                    "0 14px 40px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08)",
-                  padding: 6,
-                  minWidth: 180,
                   display: "flex",
                   flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
                   zIndex: 60,
+                  paddingTop: 4,
+                  paddingBottom: 4,
                 }}
-                // Visible cursor over the menu even though the page uses a
-                // custom playhead cursor everywhere else.
                 data-no-cursor-expand
               >
                 {TAG_FILTERS.map((f) => {
@@ -212,42 +189,23 @@ export default function SiteHeader({
                         onFilterChange?.(f);
                         setMenuOpen(false);
                       }}
+                      className="lowercase filter-item"
                       style={{
-                        textAlign: "left",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                        background: active ? "rgba(0,0,0,0.06)" : "transparent",
-                        color: "#111",
+                        background: "transparent",
                         border: "none",
-                        fontSize: "0.95rem",
+                        padding: "2px 8px",
+                        color: titleColor,
+                        fontSize: "1rem",
+                        lineHeight: 1.5,
+                        fontWeight: 400,
+                        opacity: active ? 1 : 0.55,
                         cursor: "pointer",
-                        lineHeight: 1.4,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        textTransform: "lowercase",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background =
-                          "rgba(0,0,0,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = active
-                          ? "rgba(0,0,0,0.06)"
-                          : "transparent";
+                        transition: "opacity 140ms ease-out",
+                        textDecoration: active ? "underline" : "none",
+                        textUnderlineOffset: 4,
+                        textDecorationThickness: 1,
                       }}
                     >
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          background: active ? "#111" : "transparent",
-                          border: active ? "none" : "1px solid rgba(0,0,0,0.2)",
-                          display: "inline-block",
-                        }}
-                      />
                       {f}
                     </button>
                   );
@@ -258,8 +216,6 @@ export default function SiteHeader({
         )}
       </div>
 
-      {/* Right-aligned social links — live in the same grid row as the title
-          so they share the same vertical alignment. */}
       <div
         className="lowercase header-social"
         style={{
@@ -268,7 +224,7 @@ export default function SiteHeader({
           alignItems: "center",
           gap: 8,
           fontSize: "1rem",
-          color: color || "#ffffff",
+          color: titleColor,
           pointerEvents: "auto",
           // Only the social block follows the idle-hide behavior;
           // the title stays on the page at all times.
@@ -305,9 +261,15 @@ export default function SiteHeader({
       </div>
 
       <style jsx>{`
+        .filter-item:hover {
+          opacity: 1 !important;
+        }
         @media (max-width: 640px) {
-          /* On mobile, anchor title left and social right — drop the
-             centering spacer, restructure the grid to 2 cols. */
+          /* Mobile layout: anchor the title left. The title is long enough on
+             its own (especially when it's "laurent del rey's prototypes") so
+             we hide the social block to keep one line. The links still live on
+             desktop / tablet; on phones they're one tap away via the filmstrip
+             cards or the /work content, and clutter matters more. */
           :global(.header-bar) {
             grid-template-columns: auto 1fr !important;
           }
@@ -319,9 +281,7 @@ export default function SiteHeader({
             grid-column: 1 !important;
           }
           :global(.header-social) {
-            grid-column: 2 !important;
-            gap: 8px !important;
-            font-size: 1.05rem !important;
+            display: none !important;
           }
         }
       `}</style>

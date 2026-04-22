@@ -105,23 +105,27 @@ export function buildTimeline(
 
   const result: TimelineItem[] = [];
 
-  // tldr intro at the start
-  result.push({ kind: "tldr", id: "tldr", date: "2026-04-10" });
+  // tldr intro only belongs in "story" mode — filtered views jump straight
+  // into the content stream.
+  if (filter === "story") {
+    result.push({ kind: "tldr", id: "tldr", date: "2026-04-10" });
+  }
 
   for (const eraId of newestToOldest) {
     const era = ERAS[eraId];
-    // All media belonging to this era, already sorted newest→oldest
     const eraMedia = mediaItems.filter((m) => m.eraId === eraId);
-    // In a filtered view (prototypes/images), eras with no matching media
-    // would otherwise leave an orphaned chapter card; skip those.
-    if (filter !== "story" && eraMedia.length === 0) continue;
-    // Era intro marks the BOUNDARY into this era
-    result.push({
-      kind: "eraIntro",
-      id: `era-${eraId}`,
-      eraId,
-      date: `${Math.floor(era.endYear === Infinity ? 2026 : era.endYear)}-01-01`,
-    });
+    // Filtered views (prototypes / images) are a pure content stream — drop
+    // the era-boundary chapter cards entirely so the user scrubs through
+    // one tag's work without narrative interruptions. In "story" mode the
+    // cards stay for context.
+    if (filter === "story") {
+      result.push({
+        kind: "eraIntro",
+        id: `era-${eraId}`,
+        eraId,
+        date: `${Math.floor(era.endYear === Infinity ? 2026 : era.endYear)}-01-01`,
+      });
+    }
     result.push(...eraMedia);
   }
 
