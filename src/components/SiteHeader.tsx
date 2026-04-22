@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TagFilter } from "@/lib/work/tags";
 import { TAG_FILTERS } from "@/lib/work/tags";
 
@@ -40,7 +40,61 @@ export default function SiteHeader({
   // pulse while the others slide off quietly.
   const [dismissed, setDismissed] = useState(false);
   const [picked, setPicked] = useState<TagFilter | null>(null);
+  // When a filter is picked we measure the delta from the clicked pill's
+  // center to the header filter button's center, apply that delta to the
+  // picked pill via a CSS translate, and let it slide up so it visually
+  // *lands on* the button — replacing the old label. Since both have the
+  // same pillBase styling they're visually interchangeable; after the
+  // flight we fade the flying pill out and the button beneath (now with
+  // the updated label) is revealed seamlessly.
+  const [flyDelta, setFlyDelta] = useState<{ dx: number; dy: number } | null>(null);
   const menuRef = useRef<HTMLSpanElement | null>(null);
+  const filterBtnRef = useRef<HTMLButtonElement | null>(null);
+  const pillRefs = useRef<Map<TagFilter, HTMLButtonElement>>(new Map());
+  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setPillRef = useCallback(
+    (f: TagFilter) => (el: HTMLButtonElement | null) => {
+      if (el) pillRefs.current.set(f, el);
+      else pillRefs.current.delete(f);
+    },
+    [],
+  );
+
+  const handlePick = useCallback(
+    (f: TagFilter) => {
+      const pillEl = pillRefs.current.get(f);
+      const btnEl = filterBtnRef.current;
+      if (pillEl && btnEl) {
+        const p = pillEl.getBoundingClientRect();
+        const b = btnEl.getBoundingClientRect();
+        setFlyDelta({
+          dx: b.left + b.width / 2 - (p.left + p.width / 2),
+          dy: b.top + b.height / 2 - (p.top + p.height / 2),
+        });
+      } else {
+        setFlyDelta(null);
+      }
+      setPicked(f);
+      setDismissed(true);
+      setClickOpen(false);
+      // Delay the commit so the header button's label pop happens while
+      // the flying pill is mid-air (and covering the header button
+      // visually), not at t=0. Lands well before the pill fades out so
+      // the pill touches down on a correctly-sized target.
+      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+      commitTimerRef.current = setTimeout(() => {
+        onFilterChange?.(f);
+        commitTimerRef.current = null;
+      }, 200);
+    },
+    [onFilterChange],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+    };
+  }, []);
 
   const hasFilter = !!filter && !!onFilterChange;
   const effectiveFilter: TagFilter = filter ?? "story";
@@ -129,9 +183,11 @@ export default function SiteHeader({
                 onMouseLeave={() => {
                   setDismissed(false);
                   setPicked(null);
+                  setFlyDelta(null);
                 }}
               >
                 <button
+                  ref={filterBtnRef}
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={clickOpen}
@@ -173,15 +229,11 @@ export default function SiteHeader({
                       // override the class rules and kill the cascade.
                       <button
                         key={f}
+                        ref={setPillRef(f)}
                         type="button"
                         role="menuitemradio"
                         aria-checked={active}
-                        onClick={() => {
-                          onFilterChange?.(f);
-                          setClickOpen(false);
-                          setPicked(f);
-                          setDismissed(true);
-                        }}
+                        onClick={() => handlePick(f)}
                         className="lowercase filter-menu-item"
                         data-picked={picked === f ? "true" : "false"}
                         style={{
@@ -196,6 +248,16 @@ export default function SiteHeader({
                           boxShadow: active
                             ? "inset 0 0 0 1px rgba(255,255,255,0.85)"
                             : undefined,
+                          // Picked pill gets the fly delta as CSS custom
+                          // properties; the [data-picked="true"] CSS rule
+                          // reads them to translate the pill toward the
+                          // header button.
+                          ...(picked === f && flyDelta
+                            ? ({
+                                ["--fly-x" as string]: `${flyDelta.dx}px`,
+                                ["--fly-y" as string]: `${flyDelta.dy}px`,
+                              } as React.CSSProperties)
+                            : {}),
                         }}
                         data-no-cursor-expand
                       >
@@ -327,7 +389,7 @@ export default function SiteHeader({
            read as jumpy). */
         :global(.filter-menu button) {
           opacity: 0;
-          transform: translateY(-8px) scale(0.94);
+          transform: translate(0, -8px) scale(0.94);
           transform-origin: center center;
           transition:
             opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -339,7 +401,7 @@ export default function SiteHeader({
         :global(.filter-host[data-open="true"] .filter-menu button),
         :global(.filter-menu:hover button) {
           opacity: 1;
-          transform: translateY(0) scale(1);
+          transform: translate(0, 0) scale(1);
         }
         :global(.filter-host:hover .filter-menu button:nth-child(1)),
         :global(.filter-host[data-open="true"] .filter-menu button:nth-child(1)),
@@ -370,7 +432,7 @@ export default function SiteHeader({
         :global(.filter-host:hover .filter-menu button:hover),
         :global(.filter-host[data-open="true"] .filter-menu button:hover),
         :global(.filter-menu:hover button:hover) {
-          transform: translateY(0) scale(1.03);
+          transform: translate(0, 0) scale(1.03);
           transition:
             transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
             box-shadow 180ms ease-out;
@@ -379,56 +441,56 @@ export default function SiteHeader({
         :global(.filter-host:hover .filter-menu button:active),
         :global(.filter-host[data-open="true"] .filter-menu button:active),
         :global(.filter-menu:hover button:active) {
-          transform: translateY(0) scale(0.96);
+          transform: translate(0, 0) scale(0.96);
           transition: transform 120ms ease-out;
           transition-delay: 0ms;
         }
 
-        /* Post-selection dismiss.
+        /* Post-selection dismiss — the "pill flies up to become the label"
+           choreography.
 
-           Choreography (not the same as a mouse-leave close — this
-           should feel confirmed, not retreating):
-
-             1. Container stays put (no retreat translate-up, no scale).
-                Just disables pointer events. Pills carry the whole exit.
-             2. Non-picked pills fade + shrink fast with ease-IN — they're
-                leaving, so the curve should accelerate away. No translate,
-                no overshoot.
-             3. Picked pill runs a keyframe animation: quick pop to 1.1,
-                settle back to 1.0, HOLD alone on the menu for a beat, then
-                fade and slightly shrink. This is the confirmation moment —
-                the others have cleared, the chosen one is briefly alone and
-                "real" before dissolving. */
+           When a filter is picked:
+             1. JS measures the clicked pill's rect and the header button's
+                rect, then sets --fly-x / --fly-y CSS variables on the pill
+                to the delta between their centers.
+             2. The picked pill translates along that delta — landing
+                exactly on top of the header button. Both share the same
+                pillBase styling, so visually the pill *replaces* the label.
+             3. onFilterChange fires immediately; the header button
+                re-renders with the new label underneath the still-opaque
+                flying pill.
+             4. Near arrival, the flying pill fades out, revealing the
+                updated header button — no flicker, no swap frame.
+             5. Non-picked pills fade and shrink quietly so all attention
+                is on the picked pill's flight. */
         :global(.filter-host[data-dismissed="true"] .filter-menu) {
           opacity: 1;
           pointer-events: none;
-          transform: translateY(0) scale(1);
+          transform: translate(0, 0) scale(1);
         }
         /* [data-picked] attribute selector matches specificity of the
            per-nth-child open-state rules so this wins cleanly by ordering
            rather than leaking :nth-child delays into the dismiss path. */
         :global(.filter-host[data-dismissed="true"] .filter-menu button[data-picked="false"]) {
           opacity: 0;
-          transform: scale(0.92);
+          transform: translate(0, 0) scale(0.9);
           transition:
-            opacity 200ms cubic-bezier(0.4, 0, 1, 1),
-            transform 240ms cubic-bezier(0.4, 0, 1, 1);
+            opacity 180ms cubic-bezier(0.4, 0, 1, 1),
+            transform 220ms cubic-bezier(0.4, 0, 1, 1);
           transition-delay: 0ms;
         }
-        /* Picked pill: full keyframe animation takes over transform + opacity.
-           animation-fill-mode forwards keeps the final state (opacity 0)
-           applied after the animation ends, so the pill stays dismissed.
-           When the user moves the mouse away data-dismissed / data-picked
-           clear and it falls back to the normal rules. */
+        /* Picked pill: travels to the header button's position. Opacity
+           fade delayed so the pill stays fully opaque during the flight,
+           covering the button's in-flight label swap, then fades once it
+           has arrived and the new label is already rendered underneath. */
         :global(.filter-host[data-dismissed="true"] .filter-menu button[data-picked="true"]) {
-          animation: filter-pick-confirm 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        @keyframes filter-pick-confirm {
-          0%   { transform: scale(1.00); opacity: 1; }
-          16%  { transform: scale(1.10); opacity: 1; }
-          34%  { transform: scale(1.00); opacity: 1; }
-          52%  { transform: scale(1.00); opacity: 1; }
-          100% { transform: scale(0.94); opacity: 0; }
+          opacity: 0;
+          transform: translate(var(--fly-x, 0), var(--fly-y, 0)) scale(1);
+          z-index: 2;
+          transition:
+            transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 160ms ease-out 320ms;
+          transition-delay: 0ms;
         }
 
         @media (max-width: 640px) {
