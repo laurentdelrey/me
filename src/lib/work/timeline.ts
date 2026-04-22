@@ -1,6 +1,12 @@
 import tweetsData from "@/data/tweets.json";
 import type { Tweet, MediaItem } from "@/types/tweet";
 import { ERAS, ERA_ORDER, dateToEraId, type EraId } from "./eras";
+import {
+  getTagForMedia,
+  tagMatchesFilter,
+  type TagFilter,
+  type TagOverrides,
+} from "./tags";
 
 export type MediaTimelineItem = {
   kind: "media";
@@ -35,8 +41,13 @@ export type SocialItem = {
 
 export type TimelineItem = MediaTimelineItem | EraIntroItem | TldrItem | SocialItem;
 
-export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
+export function buildTimeline(
+  hiddenIds?: Set<string>,
+  opts?: { filter?: TagFilter; tagOverrides?: TagOverrides }
+): TimelineItem[] {
   const tweets = tweetsData as Tweet[];
+  const filter: TagFilter = opts?.filter ?? "story";
+  const tagOverrides = opts?.tagOverrides;
 
   // Keep tweets with at least one media with a blobUrl. Individual media are
   // filtered below via per-media keys ("tweetId:mediaIndex") in hiddenIds.
@@ -52,6 +63,13 @@ export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
       if (!m.blobUrl) continue;
       const key = `${t.id}:${mi}`;
       if (hiddenIds?.has(key)) {
+        mi++;
+        continue;
+      }
+      // Tag filter (prototypes / images / story). "story" lets everything
+      // through; the other two filter media by their derived-or-overridden tag.
+      const tag = getTagForMedia(t.id, mi, m, tagOverrides);
+      if (!tagMatchesFilter(tag, filter)) {
         mi++;
         continue;
       }
@@ -92,6 +110,11 @@ export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
 
   for (const eraId of newestToOldest) {
     const era = ERAS[eraId];
+    // All media belonging to this era, already sorted newest→oldest
+    const eraMedia = mediaItems.filter((m) => m.eraId === eraId);
+    // In a filtered view (prototypes/images), eras with no matching media
+    // would otherwise leave an orphaned chapter card; skip those.
+    if (filter !== "story" && eraMedia.length === 0) continue;
     // Era intro marks the BOUNDARY into this era
     result.push({
       kind: "eraIntro",
@@ -99,8 +122,6 @@ export function buildTimeline(hiddenIds?: Set<string>): TimelineItem[] {
       eraId,
       date: `${Math.floor(era.endYear === Infinity ? 2026 : era.endYear)}-01-01`,
     });
-    // All media belonging to this era, already sorted newest→oldest
-    const eraMedia = mediaItems.filter((m) => m.eraId === eraId);
     result.push(...eraMedia);
   }
 

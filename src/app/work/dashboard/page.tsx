@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import tweetsData from "@/data/tweets.json";
 import duplicatesData from "@/data/duplicates.json";
 import type { MediaItem, Tweet } from "@/types/tweet";
+import { heuristicTag, type MediaTag } from "@/lib/work/tags";
+
+type TagValue = MediaTag;
+type TagOverrideValue = TagValue | "auto"; // "auto" = no override, use heuristic
 
 type DuplicateInfo = {
   canonical: string;
@@ -22,14 +26,19 @@ type Row = {
   key: string; // `${tweetId}:${mediaIndex}`
   hidden: boolean;
   duplicateOf?: DuplicateInfo; // present if this media is a detected dup
+  heuristic: TagValue; // what the auto-rule would pick
+  override?: TagValue; // manual override if user has set one
+  effective: TagValue; // override ?? heuristic
 };
 
 export default function DashboardPage() {
   const tweets = tweetsData as Tweet[];
   const duplicates = (duplicatesData as DuplicatesPayload).duplicates;
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [tagOverrides, setTagOverrides] = useState<Record<string, TagValue>>({});
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<Set<string>>(new Set());
+  const [tagPending, setTagPending] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<"all" | "visible" | "hidden" | "duplicates">(
     "all"
   );
@@ -40,9 +49,20 @@ export default function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/hidden", { cache: "no-store" });
-        const data = (await res.json()) as { ids: string[] };
-        if (!cancelled) setHiddenIds(new Set(data.ids ?? []));
+        const [hiddenRes, tagsRes] = await Promise.all([
+          fetch("/api/hidden", { cache: "no-store" }),
+          fetch("/api/tags", { cache: "no-store" }),
+        ]);
+        if (hiddenRes.ok) {
+          const data = (await hiddenRes.json()) as { ids: string[] };
+          if (!cancelled) setHiddenIds(new Set(data.ids ?? []));
+        }
+        if (tagsRes.ok) {
+          const data = (await tagsRes.json()) as {
+            overrides: Record<string, TagValue>;
+          };
+          if (!cancelled && data?.overrides) setTagOverrides(data.overrides);
+        }
       } catch {
         // ignore
       } finally {
@@ -61,6 +81,8 @@ export default function DashboardPage() {
       if (withBlobs.length === 0) continue;
       withBlobs.forEach((media, mediaIndex) => {
         const key = `${tweet.id}:${mediaIndex}`;
+        const heuristic = heuristicTag(media);
+        const override = tagOverrides[key];
         all.push({
           tweet,
           media,
@@ -69,6 +91,9 @@ export default function DashboardPage() {
           key,
           hidden: hiddenIds.has(key),
           duplicateOf: duplicates[key],
+          heuristic,
+          override,
+          effective: override ?? heuristic,
         });
       });
     }
@@ -91,7 +116,7 @@ export default function DashboardPage() {
           return a.tweet.id < b.tweet.id ? 1 : -1;
         return a.mediaIndex - b.mediaIndex;
       });
-  }, [tweets, hiddenIds, filter, query, duplicates]);
+  }, [tweets, hiddenIds, tagOverrides, filter, query, duplicates]);
 
   const counts = useMemo(() => {
     let visible = 0;
@@ -174,6 +199,38 @@ export default function DashboardPage() {
         return next;
       });
       setBulkBusy(false);
+    }
+  }
+
+  // Set/clear a tag override. Passing "auto" clears the override so the item
+  // falls back to the heuristic. Optimistic local update + server sync.
+  async function setTag(key: string, next: TagOverrideValue) {
+    setTagPending((p) => new Set(p).add(key));
+    const prevOverrides = tagOverrides;
+    setTagOverrides((prev) => {
+      const nextState = { ...prev };
+      if (next === "auto") delete nextState[key];
+      else nextState[key] = next;
+      return nextState;
+    });
+    try {
+      const res = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: key, tag: next }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { overrides: Record<string, TagValue> };
+      setTagOverrides(data.overrides ?? {});
+    } catch (err) {
+      setTagOverrides(prevOverrides);
+      alert(`Failed to save tag: ${(err as Error).message}`);
+    } finally {
+      setTagPending((p) => {
+        const nextSet = new Set(p);
+        nextSet.delete(key);
+        return nextSet;
+      });
     }
   }
 
@@ -286,8 +343,20 @@ export default function DashboardPage() {
 
         <ul className="space-y-3">
           {rows.map((row) => {
-            const { tweet, media, mediaIndex, totalMedia, key, hidden, duplicateOf } = row;
+            const {
+              tweet,
+              media,
+              mediaIndex,
+              totalMedia,
+              key,
+              hidden,
+              duplicateOf,
+              heuristic,
+              override,
+              effective,
+            } = row;
             const isBusy = pending.has(key);
+            const isTagBusy = tagPending.has(key);
             const canonicalTweetId = duplicateOf?.canonical.split(":")[0];
             return (
               <li
@@ -333,6 +402,25 @@ export default function DashboardPage() {
                       {tweet.id}
                     </a>
                     <span className="ml-auto flex items-center gap-1.5">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          effective === "prototype"
+                            ? "bg-sky-100 text-sky-800"
+                            : effective === "both"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-neutral-100 text-neutral-700"
+                        }`}
+                        title={
+                          override
+                            ? `Manually tagged "${override}"`
+                            : `Auto-tagged "${heuristic}" (by media type)`
+                        }
+                      >
+                        {effective}
+                        {override && (
+                          <span className="ml-1 opacity-60">•</span>
+                        )}
+                      </span>
                       {duplicateOf && (
                         <span
                           className="rounded-full bg-violet-100 text-violet-800 px-2 py-0.5 text-[10px] font-medium"
@@ -372,7 +460,7 @@ export default function DashboardPage() {
                       <span className="italic text-neutral-400">no caption</span>
                     )}
                   </p>
-                  <div className="mt-auto flex items-center gap-2">
+                  <div className="mt-auto flex items-center gap-2 flex-wrap">
                     <button
                       disabled={isBusy || loading}
                       onClick={() => toggleHidden(key, !hidden)}
@@ -384,6 +472,35 @@ export default function DashboardPage() {
                     >
                       {isBusy ? "…" : hidden ? "Unhide" : "Hide"}
                     </button>
+
+                    {/* Tag override. "Auto" means fall back to the heuristic
+                        (photo → image, video/gif → prototype). "Both" opts the
+                        item into both tag views. */}
+                    <div className="inline-flex rounded-full bg-neutral-50 border border-neutral-200 p-0.5 text-[11px]">
+                      {([
+                        { id: "auto", label: `auto (${heuristic})` },
+                        { id: "image", label: "image" },
+                        { id: "prototype", label: "prototype" },
+                        { id: "both", label: "both" },
+                      ] as { id: TagOverrideValue; label: string }[]).map((opt) => {
+                        const selected =
+                          opt.id === "auto" ? !override : override === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            disabled={isTagBusy || loading}
+                            onClick={() => setTag(key, opt.id)}
+                            className={`px-2.5 py-1 rounded-full transition ${
+                              selected
+                                ? "bg-neutral-900 text-white"
+                                : "text-neutral-600 hover:text-neutral-900"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </li>

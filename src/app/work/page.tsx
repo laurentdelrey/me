@@ -7,6 +7,11 @@ import { PlayheadCursor } from "@/components/PlayheadCursor";
 import HeroMedia from "@/components/work/HeroMedia";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
+import {
+  parseTagFilter,
+  type TagFilter,
+  type TagOverrides,
+} from "@/lib/work/tags";
 
 function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
@@ -28,20 +33,54 @@ export default function WorkPage() {
   const [headerVisible, setHeaderVisible] = useState(false);
   const [headerStartY, setHeaderStartY] = useState(240);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+  const [tagOverrides, setTagOverrides] = useState<TagOverrides>({});
 
-  // Fetch the shared hidden list from /api/hidden (written by the dashboard).
+  // Tag filter driven by `?filter=` in the URL — makes filtered views
+  // shareable and survives refresh. useSearchParams would trigger Suspense
+  // requirements; read window.location directly instead since this is a
+  // "use client" page already.
+  const [filter, setFilter] = useState<TagFilter>("story");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromUrl = new URLSearchParams(window.location.search).get("filter");
+    setFilter(parseTagFilter(fromUrl));
+  }, []);
+  const changeFilter = (f: TagFilter) => {
+    setFilter(f);
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (f === "story") params.delete("filter");
+    else params.set("filter", f);
+    const qs = params.toString();
+    const nextUrl =
+      window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    window.history.replaceState(null, "", nextUrl);
+  };
+
+  // Fetch the shared hidden + tag lists in parallel (both written by the
+  // dashboard, both stored in Vercel Blob).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/hidden", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as { ids: string[] };
-        if (!cancelled && Array.isArray(data.ids)) {
-          setHiddenIds(new Set(data.ids));
+        const [hiddenRes, tagsRes] = await Promise.all([
+          fetch("/api/hidden", { cache: "no-store" }),
+          fetch("/api/tags", { cache: "no-store" }),
+        ]);
+        if (hiddenRes.ok) {
+          const data = (await hiddenRes.json()) as { ids: string[] };
+          if (!cancelled && Array.isArray(data.ids)) {
+            setHiddenIds(new Set(data.ids));
+          }
+        }
+        if (tagsRes.ok) {
+          const data = (await tagsRes.json()) as { overrides: TagOverrides };
+          if (!cancelled && data && typeof data.overrides === "object") {
+            setTagOverrides(data.overrides);
+          }
         }
       } catch {
-        // silent — fall back to showing everything
+        // silent — fall back to heuristic tags and no hidden items
       }
     })();
     return () => {
@@ -49,7 +88,10 @@ export default function WorkPage() {
     };
   }, []);
 
-  const timeline = useMemo(() => buildTimeline(hiddenIds), [hiddenIds]);
+  const timeline = useMemo(
+    () => buildTimeline(hiddenIds, { filter, tagOverrides }),
+    [hiddenIds, filter, tagOverrides]
+  );
 
   // Filmstrip drives currentIndex. Hover is the only override.
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -214,6 +256,15 @@ export default function WorkPage() {
         visible={chromeActive}
         topPaddingPx={28}
         color="#ffffff"
+        filter={filter}
+        onFilterChange={(f) => {
+          changeFilter(f);
+          // Jump the playhead back to the start of the newly-filtered stream
+          // so the user sees the freshest items in the selected tag first.
+          setCurrentIndex(0);
+          setSeek((s) => ({ index: 0, nonce: s.nonce + 1 }));
+          setUserPaused(false);
+        }}
       />
 
       <main
