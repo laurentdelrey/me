@@ -262,7 +262,12 @@ export default function SiteHeader({
                               // Opacity rides on a crisp ease-out so
                               // the fade has a clean "snap out" feel,
                               // rather than the spring's softer tail.
-                              opacity: { duration: 0.18, ease: [0.4, 0, 1, 1] },
+                              // Kept very short (~110ms) so the menu
+                              // visibly clears almost the moment a
+                              // pick commits, while the chosen pill's
+                              // shared-layout morph keeps running
+                              // underneath.
+                              opacity: { duration: 0.11, ease: [0.4, 0, 1, 1] },
                             }}
                             data-no-cursor-expand
                           >
