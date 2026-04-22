@@ -14,6 +14,11 @@ export function WordReveal({
   const [visibleWords, setVisibleWords] = useState(0);
   const [total, setTotal] = useState(0);
 
+  // Run once on mount per item. Parent remounts us with a fresh `key`
+  // whenever the item changes, so we don't need to react to `children`
+  // identity — which would otherwise flip on every upstream re-render
+  // (mounted flag, stage timers, hiddenIds fetch, map load, idle tracker)
+  // and kick the reveal back to word 0, making short cards never finish.
   useEffect(() => {
     const count = countWords(children);
     setTotal(count);
@@ -25,7 +30,8 @@ export function WordReveal({
       );
     }
     return () => timers.forEach(clearTimeout);
-  }, [children, delay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   let wordIndex = 0;
   const process = (node: React.ReactNode): React.ReactNode => {
