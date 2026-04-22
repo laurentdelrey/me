@@ -41,6 +41,7 @@ type DuplicatesPayload = {
 };
 
 type FilterTab = "all" | "visible" | "hidden" | "duplicates";
+type TagFilterValue = "any" | "image" | "prototype" | "both";
 
 type Row = {
   tweet: Tweet;
@@ -65,6 +66,7 @@ export default function DashboardPage() {
   const [pending, setPending] = useState<Set<string>>(new Set());
   const [tagPending, setTagPending] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterTab>("all");
+  const [tagFilter, setTagFilter] = useState<TagFilterValue>("any");
   const [query, setQuery] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -127,6 +129,11 @@ export default function DashboardPage() {
         if (filter === "visible" && r.hidden) return false;
         if (filter === "hidden" && !r.hidden) return false;
         if (filter === "duplicates" && !r.duplicateOf) return false;
+        // Tag filter is an exact match on the EFFECTIVE tag (override >
+        // heuristic). "any" passes everything. Matches the mental model of
+        // the /work header filter: picking "images" shows exactly what
+        // /work?filter=images would show on the live site.
+        if (tagFilter !== "any" && r.effective !== tagFilter) return false;
         if (!q) return true;
         return (
           r.tweet.text.toLowerCase().includes(q) || r.tweet.id.includes(q)
@@ -139,16 +146,17 @@ export default function DashboardPage() {
           return a.tweet.id < b.tweet.id ? 1 : -1;
         return a.mediaIndex - b.mediaIndex;
       });
-  }, [tweets, hiddenIds, tagOverrides, filter, query, duplicates]);
+  }, [tweets, hiddenIds, tagOverrides, filter, tagFilter, query, duplicates]);
 
   const counts = useMemo(() => {
     let visible = 0;
     let hidden = 0;
     let duplicateCount = 0;
     let duplicateStillVisible = 0;
+    const byTag: Record<TagValue, number> = { image: 0, prototype: 0, both: 0 };
     for (const tweet of tweets) {
       const withBlobs = tweet.media.filter((m) => m.blobUrl);
-      withBlobs.forEach((_m, i) => {
+      withBlobs.forEach((m, i) => {
         const key = `${tweet.id}:${i}`;
         const isHidden = hiddenIds.has(key);
         if (isHidden) hidden++;
@@ -157,6 +165,8 @@ export default function DashboardPage() {
           duplicateCount++;
           if (!isHidden) duplicateStillVisible++;
         }
+        const effective = tagOverrides[key] ?? heuristicTag(m);
+        byTag[effective]++;
       });
     }
     return {
@@ -165,8 +175,9 @@ export default function DashboardPage() {
       total: visible + hidden,
       duplicates: duplicateCount,
       duplicatesStillVisible: duplicateStillVisible,
+      byTag,
     };
-  }, [tweets, hiddenIds, duplicates]);
+  }, [tweets, hiddenIds, tagOverrides, duplicates]);
 
   async function setTag(key: string, next: TagOverrideValue) {
     setTagPending((p) => new Set(p).add(key));
@@ -353,6 +364,31 @@ export default function DashboardPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+
+            {/* Tag facet — orthogonal to the visibility tabs above. Picking
+                "images" here scopes the list to exactly what would appear at
+                /work?filter=images. */}
+            <Select
+              value={tagFilter}
+              onValueChange={(v) => setTagFilter(v as TagFilterValue)}
+            >
+              <SelectTrigger className="w-[170px] h-9">
+                <span className="text-muted-foreground mr-1">Tag:</span>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">any</SelectItem>
+                <SelectItem value="image">
+                  images ({counts.byTag.image})
+                </SelectItem>
+                <SelectItem value="prototype">
+                  prototypes ({counts.byTag.prototype})
+                </SelectItem>
+                <SelectItem value="both">
+                  both ({counts.byTag.both})
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
             <div className="relative flex-1 min-w-[220px]">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
