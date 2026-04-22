@@ -31,6 +31,12 @@ export default function SiteHeader({
   // breaks the hover state. We only keep JS state for the click path (and to
   // drive an outside-click / Escape close).
   const [clickOpen, setClickOpen] = useState(false);
+  // After selecting a filter we want the menu to dismiss even though the
+  // mouse is still hovering the host (otherwise pure-CSS :hover keeps it
+  // pinned open, which is confusing post-click). `dismissed` overrides
+  // :hover until the user moves away — then the host is ready to open
+  // again on the next hover.
+  const [dismissed, setDismissed] = useState(false);
   const menuRef = useRef<HTMLSpanElement | null>(null);
 
   const hasFilter = !!filter && !!onFilterChange;
@@ -116,6 +122,8 @@ export default function SiteHeader({
                 ref={menuRef}
                 className="filter-host"
                 data-open={clickOpen ? "true" : "false"}
+                data-dismissed={dismissed ? "true" : "false"}
+                onMouseLeave={() => setDismissed(false)}
               >
                 <button
                   type="button"
@@ -165,6 +173,7 @@ export default function SiteHeader({
                         onClick={() => {
                           onFilterChange?.(f);
                           setClickOpen(false);
+                          setDismissed(true);
                         }}
                         className="lowercase filter-menu-item"
                         style={{
@@ -305,11 +314,13 @@ export default function SiteHeader({
 
         /* Per-item entrance — each button pops in from above with a slight
            scale. Delays are applied only in the open state so closing is
-           uniform and fast. */
+           uniform and fast. Transform origin is center so hover scales
+           symmetrically (left-origin made the pill grow rightward and
+           read as jumpy). */
         :global(.filter-menu button) {
           opacity: 0;
           transform: translateY(-8px) scale(0.94);
-          transform-origin: left center;
+          transform-origin: center center;
           transition:
             opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
             transform 340ms cubic-bezier(0.34, 1.3, 0.64, 1),
@@ -344,15 +355,16 @@ export default function SiteHeader({
         }
 
         /* Menu-item micro-interactions. Only apply while the menu is open,
-           so they can't compete with the closed-state transform. Springy
-           pop on hover, a small squish on active. Short transitions so the
-           feedback feels live. */
+           so they can't compete with the closed-state transform. Smooth
+           ease-out on hover (a 4% scale with an overshoot curve reads as
+           jitter, not spring — small deltas want gentle curves); quick
+           squish on active. */
         :global(.filter-host:hover .filter-menu button:hover),
         :global(.filter-host[data-open="true"] .filter-menu button:hover),
         :global(.filter-menu:hover button:hover) {
-          transform: translateY(0) scale(1.04);
+          transform: translateY(0) scale(1.03);
           transition:
-            transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1),
+            transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
             box-shadow 180ms ease-out;
           transition-delay: 0ms;
         }
@@ -361,6 +373,23 @@ export default function SiteHeader({
         :global(.filter-menu:hover button:active) {
           transform: translateY(0) scale(0.96);
           transition: transform 120ms ease-out;
+          transition-delay: 0ms;
+        }
+
+        /* Post-selection dismiss. After a filter is clicked we want the
+           menu to animate away even though the mouse is still hovering.
+           Higher specificity + ordering after the :hover open rules means
+           this wins without !important. Transitions reuse the closed-state
+           curves so it eases out the same way a mouse-leave would, and the
+           items collapse uniformly (no stagger on close). */
+        :global(.filter-host[data-dismissed="true"] .filter-menu) {
+          opacity: 0;
+          pointer-events: none;
+          transform: translateY(-6px) scale(0.985);
+        }
+        :global(.filter-host[data-dismissed="true"] .filter-menu button) {
+          opacity: 0;
+          transform: translateY(-8px) scale(0.94);
           transition-delay: 0ms;
         }
 
