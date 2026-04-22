@@ -176,7 +176,16 @@ export default function SiteHeader({
                   data-no-cursor-expand
                 >
                   <LayoutGroup id="site-header-filter">
-                    <AnimatePresence initial={false}>
+                    {/* `popLayout` is the key to the select-to-trigger
+                        feeling instant: exiting pills are lifted out of
+                        the flex flow the moment they start animating
+                        out, so the remaining pill reflows to slot 0 on
+                        the same frame as the click. Without it (sync
+                        mode), exiting pills hold their flex slots until
+                        their exit animation finishes — which is the
+                        ~300ms pause where the layout visibly "resizes"
+                        before the morph begins. */}
+                    <AnimatePresence initial={false} mode="popLayout">
                       {rendered.map((f) => {
                         const isActive = f === effectiveFilter;
                         return (
@@ -195,7 +204,6 @@ export default function SiteHeader({
                             aria-checked={open ? isActive : undefined}
                             onClick={() => handlePick(f)}
                             className="lowercase filter-pill"
-                            data-active={isActive ? "true" : "false"}
                             // Active pill is layoutId-driven only — no
                             // initial/exit so framer owns its motion
                             // fully. Non-active pills bloom in with a
@@ -347,9 +355,6 @@ export default function SiteHeader({
         }
         :global(.filter-pill:hover) {
           background: #bdbdbd;
-        }
-        :global(.filter-pill[data-active="true"]) {
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.85);
         }
 
         @media (max-width: 640px) {
