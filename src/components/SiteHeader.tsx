@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { TagFilter } from "@/lib/work/tags";
 import { TAG_FILTERS } from "@/lib/work/tags";
@@ -23,7 +23,14 @@ export default function SiteHeader({
   filter,
   onFilterChange,
 }: SiteHeaderProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  // `clickOpen` is the keyboard/tap-to-open latch. Hover-to-open is handled
+  // entirely in CSS via `:hover` on the host — no JS event listeners, no
+  // timer races, no AnimatePresence mount/unmount cost. The CSS approach is
+  // bulletproof because `:hover` applies to an element AND all its descendants
+  // at once, so moving the mouse from the word into the dropped menu never
+  // breaks the hover state. We only keep JS state for the click path (and to
+  // drive an outside-click / Escape close).
+  const [clickOpen, setClickOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement | null>(null);
 
   const hasFilter = !!filter && !!onFilterChange;
@@ -31,13 +38,13 @@ export default function SiteHeader({
   const titleColor = color || "#ffffff";
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!clickOpen) return;
     const onDocClick = (e: MouseEvent) => {
       if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (!menuRef.current.contains(e.target as Node)) setClickOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") setClickOpen(false);
     };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -45,21 +52,7 @@ export default function SiteHeader({
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
-
-  // Hover-to-open with a grace period so cursor travel from the word into the
-  // dropped menu doesn't close it.
-  const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const openOnHover = () => {
-    if (!hasFilter) return;
-    if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
-    setMenuOpen(true);
-  };
-  const closeOnHoverLeave = () => {
-    if (!hasFilter) return;
-    if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
-    hoverCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
-  };
+  }, [clickOpen]);
 
   return (
     <div
@@ -113,35 +106,26 @@ export default function SiteHeader({
                 laurent del rey&rsquo;s&nbsp;
               </span>
 
-              {/* Anchor for the popup menu. The filter word owns the
-                  hover/click interaction and the menu positions itself
-                  flush against its left edge, so the dropped options align
-                  with where the word starts (not centered under the title).
-                  The menu is `top: 100%` with its own internal padding-top
-                  instead of a CSS gap — that way the visible 6px between
-                  button and menu is INSIDE the popup's bounding box, and
-                  the mouse never leaves a descendant of this span during
-                  transit. Without this, moving from button → menu would
-                  fire mouseleave mid-flight and the grace-period close
-                  could still beat the pointer. */}
+              {/* Anchor for the popup menu. Hover-to-open is pure CSS:
+                  `.filter-host:hover .filter-menu` shows the menu, and
+                  because the menu is a DOM descendant of the host, moving
+                  the mouse onto it KEEPS the host in :hover state. There's
+                  no timer, no JS state to race. Click-open is layered on
+                  top via `data-open` for mobile/keyboard users. */}
               <span
                 ref={menuRef}
-                style={{ position: "relative", display: "inline-block" }}
-                onMouseEnter={openOnHover}
-                onMouseLeave={closeOnHoverLeave}
-                onPointerEnter={openOnHover}
+                className="filter-host"
+                data-open={clickOpen ? "true" : "false"}
               >
                 <button
                   type="button"
                   aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen((v) => !v)}
-                  onMouseEnter={openOnHover}
-                  onFocus={openOnHover}
+                  aria-expanded={clickOpen}
+                  onClick={() => setClickOpen((v) => !v)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setMenuOpen((v) => !v);
+                      setClickOpen((v) => !v);
                     }
                   }}
                   className="lowercase"
@@ -160,74 +144,52 @@ export default function SiteHeader({
                   {effectiveFilter}
                 </button>
 
-                <AnimatePresence>
-                  {menuOpen && (
-                    <motion.div
-                      role="menu"
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        paddingTop: 6, // hover bridge: visible gap is inside this box
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        gap: 6,
-                        zIndex: 60,
-                      }}
-                      onMouseEnter={openOnHover}
-                      data-no-cursor-expand
-                    >
-                      {TAG_FILTERS.map((f) => {
-                        const active = f === effectiveFilter;
-                        return (
-                          <motion.button
-                            key={f}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={active}
-                            onClick={() => {
-                              onFilterChange?.(f);
-                              setMenuOpen(false);
-                            }}
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.96 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 20,
-                            }}
-                            className="lowercase"
-                            style={{
-                              ...pillBase,
-                              padding: "0 10px",
-                              fontSize: "1rem",
-                              fontWeight: 400,
-                              lineHeight: 1.5,
-                              height: 28,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              // Mark the active filter with a subtle outline
-                              // rather than a heavy-handed highlight, so the
-                              // menu reads as a family of choices, not a form.
-                              boxShadow: active
-                                ? "inset 0 0 0 1px rgba(255,255,255,0.85)"
-                                : undefined,
-                              opacity: active ? 1 : 0.9,
-                            }}
-                            data-no-cursor-expand
-                          >
-                            {f}
-                          </motion.button>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <div
+                  role="menu"
+                  className="filter-menu"
+                  data-no-cursor-expand
+                >
+                  {TAG_FILTERS.map((f) => {
+                    const active = f === effectiveFilter;
+                    return (
+                      <motion.button
+                        key={f}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => {
+                          onFilterChange?.(f);
+                          setClickOpen(false);
+                        }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.96 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 20,
+                        }}
+                        className="lowercase"
+                        style={{
+                          ...pillBase,
+                          padding: "0 10px",
+                          fontSize: "1rem",
+                          fontWeight: 400,
+                          lineHeight: 1.5,
+                          height: 28,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          boxShadow: active
+                            ? "inset 0 0 0 1px rgba(255,255,255,0.85)"
+                            : undefined,
+                          opacity: active ? 1 : 0.9,
+                        }}
+                        data-no-cursor-expand
+                      >
+                        {f}
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </span>
             </>
           ) : (
@@ -299,6 +261,40 @@ export default function SiteHeader({
       </div>
 
       <style jsx>{`
+        /* Hover-open filter menu. Pure CSS :hover is the ONLY thing that
+           toggles visibility on desktop, so there's no JS event quirk that
+           can silently break it. The menu is a descendant of .filter-host,
+           so moving the mouse from the word onto the menu keeps .filter-host
+           in :hover state and the menu stays open. A matching :hover rule
+           on the menu itself covers the (already-impossible) edge case of
+           the menu being hovered without its host being considered hovered. */
+        :global(.filter-host) {
+          position: relative;
+          display: inline-block;
+        }
+        :global(.filter-menu) {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          padding-top: 6px; /* visible gap, inside the menu's hit-box */
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+          z-index: 60;
+          opacity: 0;
+          pointer-events: none;
+          transform: translateY(-4px);
+          transition: opacity 180ms ease-out, transform 180ms ease-out;
+        }
+        :global(.filter-host:hover .filter-menu),
+        :global(.filter-host[data-open="true"] .filter-menu),
+        :global(.filter-menu:hover) {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
+
         @media (max-width: 640px) {
           :global(.header-bar) {
             grid-template-columns: auto 1fr !important;
