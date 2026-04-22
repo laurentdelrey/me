@@ -152,7 +152,12 @@ export default function SiteHeader({
                   {TAG_FILTERS.map((f) => {
                     const active = f === effectiveFilter;
                     return (
-                      <motion.button
+                      // Plain <button> (not motion.button) so CSS owns the
+                      // transform — the staggered entrance, hover-pop, and
+                      // tap-squish all compose cleanly on the same property.
+                      // A motion.button's inline `transform` style would
+                      // override the class rules and kill the cascade.
+                      <button
                         key={f}
                         type="button"
                         role="menuitemradio"
@@ -161,14 +166,7 @@ export default function SiteHeader({
                           onFilterChange?.(f);
                           setClickOpen(false);
                         }}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.96 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 20,
-                        }}
-                        className="lowercase"
+                        className="lowercase filter-menu-item"
                         style={{
                           ...pillBase,
                           padding: "0 10px",
@@ -181,12 +179,11 @@ export default function SiteHeader({
                           boxShadow: active
                             ? "inset 0 0 0 1px rgba(255,255,255,0.85)"
                             : undefined,
-                          opacity: active ? 1 : 0.9,
                         }}
                         data-no-cursor-expand
                       >
                         {f}
-                      </motion.button>
+                      </button>
                     );
                   })}
                 </div>
@@ -267,7 +264,15 @@ export default function SiteHeader({
            so moving the mouse from the word onto the menu keeps .filter-host
            in :hover state and the menu stays open. A matching :hover rule
            on the menu itself covers the (already-impossible) edge case of
-           the menu being hovered without its host being considered hovered. */
+           the menu being hovered without its host being considered hovered.
+
+           Motion:
+             - Container lands with a soft "settle" (slight scale + translateY)
+               using an ease-out curve with a subtle overshoot feel.
+             - Items cascade in from the top via per-nth-child transition-delay,
+               each with its own pop (scale 0.94 → 1 + slide + fade).
+             - Closing uses the same transitions but WITHOUT the stagger delays
+               so everything collapses together — crisp, not a reverse cascade. */
         :global(.filter-host) {
           position: relative;
           display: inline-block;
@@ -284,15 +289,79 @@ export default function SiteHeader({
           z-index: 60;
           opacity: 0;
           pointer-events: none;
-          transform: translateY(-4px);
-          transition: opacity 180ms ease-out, transform 180ms ease-out;
+          transform: translateY(-6px) scale(0.985);
+          transform-origin: top left;
+          transition:
+            opacity 220ms cubic-bezier(0.4, 0, 0.2, 1),
+            transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
         }
         :global(.filter-host:hover .filter-menu),
         :global(.filter-host[data-open="true"] .filter-menu),
         :global(.filter-menu:hover) {
           opacity: 1;
           pointer-events: auto;
-          transform: translateY(0);
+          transform: translateY(0) scale(1);
+        }
+
+        /* Per-item entrance — each button pops in from above with a slight
+           scale. Delays are applied only in the open state so closing is
+           uniform and fast. */
+        :global(.filter-menu button) {
+          opacity: 0;
+          transform: translateY(-8px) scale(0.94);
+          transform-origin: left center;
+          transition:
+            opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 340ms cubic-bezier(0.34, 1.3, 0.64, 1),
+            box-shadow 180ms ease-out;
+          transition-delay: 0ms;
+        }
+        :global(.filter-host:hover .filter-menu button),
+        :global(.filter-host[data-open="true"] .filter-menu button),
+        :global(.filter-menu:hover button) {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        :global(.filter-host:hover .filter-menu button:nth-child(1)),
+        :global(.filter-host[data-open="true"] .filter-menu button:nth-child(1)),
+        :global(.filter-menu:hover button:nth-child(1)) {
+          transition-delay: 40ms;
+        }
+        :global(.filter-host:hover .filter-menu button:nth-child(2)),
+        :global(.filter-host[data-open="true"] .filter-menu button:nth-child(2)),
+        :global(.filter-menu:hover button:nth-child(2)) {
+          transition-delay: 90ms;
+        }
+        :global(.filter-host:hover .filter-menu button:nth-child(3)),
+        :global(.filter-host[data-open="true"] .filter-menu button:nth-child(3)),
+        :global(.filter-menu:hover button:nth-child(3)) {
+          transition-delay: 140ms;
+        }
+        :global(.filter-host:hover .filter-menu button:nth-child(4)),
+        :global(.filter-host[data-open="true"] .filter-menu button:nth-child(4)),
+        :global(.filter-menu:hover button:nth-child(4)) {
+          transition-delay: 185ms;
+        }
+
+        /* Menu-item micro-interactions. Only apply while the menu is open,
+           so they can't compete with the closed-state transform. Springy
+           pop on hover, a small squish on active. Short transitions so the
+           feedback feels live. */
+        :global(.filter-host:hover .filter-menu button:hover),
+        :global(.filter-host[data-open="true"] .filter-menu button:hover),
+        :global(.filter-menu:hover button:hover) {
+          transform: translateY(0) scale(1.04);
+          transition:
+            transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 180ms ease-out;
+          transition-delay: 0ms;
+        }
+        :global(.filter-host:hover .filter-menu button:active),
+        :global(.filter-host[data-open="true"] .filter-menu button:active),
+        :global(.filter-menu:hover button:active) {
+          transform: translateY(0) scale(0.96);
+          transition: transform 120ms ease-out;
+          transition-delay: 0ms;
         }
 
         @media (max-width: 640px) {
