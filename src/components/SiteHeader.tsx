@@ -424,6 +424,22 @@ export default function SiteHeader({
             display: none !important;
           }
         }
+
+        /* Match the ≤480px header-title bump (see globals.css:213 —
+           \`.header-title { font-size: 1.5rem !important; }\`). Without
+           this override the pill stays at 1rem while the surrounding
+           title jumps to 1.5rem, leaving the dropdown text visibly
+           smaller than "laurent del rey's". The placeholder MUST mirror
+           the pill's dimensions exactly so the absolutely-positioned
+           overlay sits on top of the in-flow reservation. */
+        @media (max-width: 480px) {
+          :global(.filter-placeholder),
+          :global(.filter-pill) {
+            font-size: 1.5rem;
+            height: 32px;
+            padding: 0 12px;
+          }
+        }
       `}</style>
     </div>
   );
