@@ -31,6 +31,24 @@ function tiltFor(key: string): { tilt: number; jx: number; jy: number } {
   return { tilt, jx, jy };
 }
 
+/**
+ * Deterministic scatter offset for a tile's entrance/exit — each tile flies
+ * in from a position offset from its final slot, on a random angle, with an
+ * extra rotation that unwinds as it settles. Same key always produces the
+ * same scatter, so the "deal" feels choreographed rather than random noise.
+ */
+function scatterFor(key: string): { sx: number; sy: number; srot: number } {
+  const h = hashKey(key + ":scatter");
+  const angle = ((h % 1000) / 1000) * Math.PI * 2;
+  const dist = 80 + ((h >> 10) % 80); // 80..160 px
+  const srot = (((h >> 20) % 300) / 10) - 15; // -15°..+15°
+  return {
+    sx: Math.cos(angle) * dist,
+    sy: Math.sin(angle) * dist,
+    srot,
+  };
+}
+
 type CanvasProps = {
   timeline: TimelineItem[];
   currentIndex: number;
@@ -141,6 +159,7 @@ export default function Canvas({
             // grid is collapsing toward the hero before it morphs back.
             const entranceDelay = norm * 0.55;
             const exitDelay = (1 - norm) * 0.3;
+            const { sx, sy, srot } = scatterFor(k);
             return (
               <CanvasTile
                 key={k}
@@ -148,6 +167,9 @@ export default function Canvas({
                 tiltDeg={tilt}
                 jx={jx}
                 jy={jy}
+                scatterX={sx}
+                scatterY={sy}
+                scatterRot={srot}
                 isHovered={isHovered}
                 hidden={isCurrent}
                 visible={visible}
@@ -177,6 +199,9 @@ function CanvasTile({
   tiltDeg,
   jx,
   jy,
+  scatterX,
+  scatterY,
+  scatterRot,
   isHovered,
   hidden,
   visible,
@@ -190,6 +215,9 @@ function CanvasTile({
   tiltDeg: number;
   jx: number;
   jy: number;
+  scatterX: number;
+  scatterY: number;
+  scatterRot: number;
   isHovered: boolean;
   /** true for the current item — MorphHero floats in this slot. */
   hidden: boolean;
@@ -229,11 +257,16 @@ function CanvasTile({
       initial={false}
       animate={{
         opacity: hidden ? 0 : visible ? 1 : 0,
-        scale: visible ? 1 : 0.78,
-        y: visible ? 0 : 18,
+        scale: visible ? 1 : 0.55,
+        // When closed, the tile is translated to its scatter position and
+        // rotated; when open it travels back to (0,0) with zero extra
+        // rotation — the inner motion.div still carries the steady tilt.
+        x: visible ? 0 : scatterX,
+        y: visible ? 0 : scatterY,
+        rotate: visible ? 0 : scatterRot,
       }}
       transition={{
-        duration: visible ? 0.45 : 0.32,
+        duration: visible ? 0.55 : 0.38,
         delay: visible ? entranceDelay : exitDelay,
         ease: [0.32, 0.72, 0, 1],
       }}
@@ -244,9 +277,6 @@ function CanvasTile({
         width: w,
         height: h,
         pointerEvents: inactive ? "none" : "auto",
-        // Clip overflow so the rotated inner card doesn't leak during
-        // entrance, but allow the hover scale to escape — handled by the
-        // inner wrapper having no clip.
         willChange: "transform, opacity",
       }}
     >
