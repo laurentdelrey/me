@@ -116,18 +116,28 @@ export default function SiteHeader({
               {/* Anchor for the popup menu. The filter word owns the
                   hover/click interaction and the menu positions itself
                   flush against its left edge, so the dropped options align
-                  with where the word starts (not centered under the title). */}
+                  with where the word starts (not centered under the title).
+                  The menu is `top: 100%` with its own internal padding-top
+                  instead of a CSS gap — that way the visible 6px between
+                  button and menu is INSIDE the popup's bounding box, and
+                  the mouse never leaves a descendant of this span during
+                  transit. Without this, moving from button → menu would
+                  fire mouseleave mid-flight and the grace-period close
+                  could still beat the pointer. */}
               <span
                 ref={menuRef}
                 style={{ position: "relative", display: "inline-block" }}
                 onMouseEnter={openOnHover}
                 onMouseLeave={closeOnHoverLeave}
+                onPointerEnter={openOnHover}
               >
                 <button
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen((v) => !v)}
+                  onMouseEnter={openOnHover}
+                  onFocus={openOnHover}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -160,14 +170,16 @@ export default function SiteHeader({
                       transition={{ duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
                       style={{
                         position: "absolute",
-                        top: "calc(100% + 6px)",
+                        top: "100%",
                         left: 0,
+                        paddingTop: 6, // hover bridge: visible gap is inside this box
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "flex-start",
                         gap: 6,
                         zIndex: 60,
                       }}
+                      onMouseEnter={openOnHover}
                       data-no-cursor-expand
                     >
                       {TAG_FILTERS.map((f) => {
