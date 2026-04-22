@@ -8,11 +8,6 @@ import HeroMedia from "@/components/work/HeroMedia";
 import { buildTimeline, getItemDate, getItemEraId, type TimelineItem } from "@/lib/work/timeline";
 import { ERAS } from "@/lib/work/eras";
 
-// Canvas is heavy (renders 200+ tiles + lazy media). Keep it dynamic so the
-// initial timeline page load doesn't pay for it. The tiles inside Canvas are
-// only mounted while the grid is open (see `gridMounted` below).
-const Canvas = dynamic(() => import("@/components/work/Canvas"), { ssr: false });
-
 function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
   if (item.kind === "tldr") return "tl;dr";
@@ -62,7 +57,6 @@ export default function WorkPage() {
   const [playingStarted, setPlayingStarted] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
   const [speed, setSpeed] = useState<1 | 10>(1);
-  const [view, setView] = useState<"timeline" | "grid">("timeline");
   const [seek, setSeek] = useState<{ index: number; nonce: number }>({
     index: 0,
     nonce: 0,
@@ -185,19 +179,6 @@ export default function WorkPage() {
   const mapCenter = currentEraId ? ERAS[currentEraId].location : ERAS.tldr.location;
   const mapZoom = currentEraId ? ERAS[currentEraId].zoom : ERAS.tldr.zoom;
 
-  // Mount Canvas only while the grid is open (plus a short tail so the
-  // fade-out completes). This is the single biggest perf win — without it,
-  // 200+ <img>/<video> elements live in the DOM the whole time.
-  const [gridMounted, setGridMounted] = useState(false);
-  useEffect(() => {
-    if (view === "grid") {
-      setGridMounted(true);
-      return;
-    }
-    const t = setTimeout(() => setGridMounted(false), 350);
-    return () => clearTimeout(t);
-  }, [view]);
-
   useEffect(() => {
     setMounted(true);
     const t = setTimeout(() => setHeaderVisible(true), 500);
@@ -253,27 +234,12 @@ export default function WorkPage() {
 
         {/* Era label removed — map location + timeline chapter convey the era now. */}
 
-        {currentItem && view === "timeline" && (
+        {currentItem && (
           <HeroMedia
             item={currentItem}
             onVideoEnded={() => {}}
             isMobile={isMobile}
             speed={speed}
-          />
-        )}
-
-        {/* Canvas is mounted only while the grid is on (or fading out).
-            No tiles in the DOM at all in timeline mode. */}
-        {gridMounted && (
-          <Canvas
-            timeline={timeline}
-            currentIndex={currentIndex}
-            onSelectItem={(idx) => {
-              seekTo(idx);
-              setView("timeline");
-            }}
-            visible={view === "grid"}
-            isMobile={isMobile}
           />
         )}
 
@@ -291,7 +257,7 @@ export default function WorkPage() {
             prevLabel={prevLabel}
             nextLabel={nextLabel}
             isMobile={isMobile}
-            visible={controlsVisible && view === "timeline"}
+            visible={controlsVisible}
           />
         )}
 
@@ -303,119 +269,13 @@ export default function WorkPage() {
           onCurrentIndexChange={setCurrentIndex}
           onSelectItem={seekTo}
           currentIndex={currentIndex}
-          playing={isPlaying && view === "timeline"}
+          playing={isPlaying}
           speed={speed}
           seek={seek}
           isMobile={isMobile}
-          visible={filmstripVisible && view === "timeline"}
+          visible={filmstripVisible}
         />
-
-        {mounted && (
-          <GridToggleIcon
-            open={view === "grid"}
-            onToggle={() => setView((v) => (v === "grid" ? "timeline" : "grid"))}
-            isMobile={isMobile}
-          />
-        )}
       </main>
     </>
-  );
-}
-
-/**
- * Single icon button top-left. Shows a 3x3 grid glyph when the grid is off,
- * and morphs into an X when on. Just a clean affordance — no labels.
- */
-function GridToggleIcon({
-  open,
-  onToggle,
-  isMobile,
-}: {
-  open: boolean;
-  onToggle: () => void;
-  isMobile: boolean;
-}) {
-  const size = isMobile ? 18 : 20;
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={open ? "close grid view" : "open grid view"}
-      aria-pressed={open}
-      data-no-cursor-expand
-      style={{
-        position: "fixed",
-        top: isMobile ? 22 : 28,
-        left: isMobile ? 18 : 28,
-        zIndex: 60,
-        width: 36,
-        height: 36,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "transparent",
-        border: "none",
-        padding: 0,
-        cursor: "none",
-        color: "#ffffff",
-        opacity: 0.92,
-        transition: "opacity 160ms ease-out, transform 200ms ease-out",
-        transform: open ? "rotate(45deg)" : "rotate(0deg)",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-      onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.92")}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 20 20"
-        fill="none"
-        aria-hidden
-        style={{
-          transition: "all 220ms ease-out",
-        }}
-      >
-        {open ? (
-          // X glyph (we also rotate the button 45deg, so this is a "+")
-          <>
-            <line
-              x1="3"
-              y1="10"
-              x2="17"
-              y2="10"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-            <line
-              x1="10"
-              y1="3"
-              x2="10"
-              y2="17"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-          </>
-        ) : (
-          // 3x3 grid glyph
-          <>
-            {[2, 8, 14].map((y) =>
-              [2, 8, 14].map((x) => (
-                <rect
-                  key={`${x}-${y}`}
-                  x={x}
-                  y={y}
-                  width={4}
-                  height={4}
-                  rx={0.6}
-                  fill="currentColor"
-                />
-              )),
-            )}
-          </>
-        )}
-      </svg>
-    </button>
   );
 }
