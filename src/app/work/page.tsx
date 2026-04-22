@@ -39,12 +39,16 @@ export default function WorkPage() {
   // shareable and survives refresh. useSearchParams would trigger Suspense
   // requirements; read window.location directly instead since this is a
   // "use client" page already.
-  const [filter, setFilter] = useState<TagFilter>("story");
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const fromUrl = new URLSearchParams(window.location.search).get("filter");
-    setFilter(parseTagFilter(fromUrl));
-  }, []);
+  // Read the URL synchronously inside the useState initializer so the first
+  // client render already reflects the URL. Deferring this to useEffect would
+  // cause a visible filter swap after mount (flash / overlap of the old and
+  // new pill inside the SiteHeader dropdown).
+  const [filter, setFilter] = useState<TagFilter>(() => {
+    if (typeof window === "undefined") return "story";
+    return parseTagFilter(
+      new URLSearchParams(window.location.search).get("filter")
+    );
+  });
   const changeFilter = (f: TagFilter) => {
     setFilter(f);
     if (typeof window === "undefined") return;

@@ -138,7 +138,21 @@ export default function SiteHeader({
     >
       <div className="header-spacer" />
 
-      <div className="header-title-wrap" style={{ justifySelf: "center" }}>
+      {/* `layout="position"` on the wrap springs the title re-centering
+          when the active filter's width changes (e.g. "story" -> "prototypes").
+          The grid cell re-centers instantly in CSS; framer puts the wrap back
+          at its old viewport position via a translate and animates to
+          identity — so "laurent del rey's" glides to its new spot instead of
+          snapping. We use `layout="position"` (not `layout`) to avoid scaling
+          the text, which would distort it. Size changes still commit
+          immediately, which is fine because the pill morph itself owns the
+          visual width transition. */}
+      <motion.div
+        layout="position"
+        className="header-title-wrap"
+        style={{ justifySelf: "center" }}
+        transition={SPRING}
+      >
         <span
           className="lowercase header-title"
           style={{
@@ -285,7 +299,7 @@ export default function SiteHeader({
             </button>
           )}
         </span>
-      </div>
+      </motion.div>
 
       <div
         className="lowercase header-social"
