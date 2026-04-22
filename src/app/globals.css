@@ -1,9 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* shadcn/ui design tokens — scoped to `.shadcn-scope` so they only apply to
-   pages that explicitly opt in (currently just /work/dashboard). The rest of
-   the site keeps its custom grey-on-white atmosphere untouched. */
+/* shadcn/ui design tokens.
+   The color tokens live on `:root` so that Radix portals (dialogs, popovers)
+   that render into `document.body` still resolve `bg-background` / `text-foreground`
+   correctly. The body keeps its global grey-on-white look; individual pages
+   that want the SaaS palette (currently /work/dashboard) opt in explicitly
+   with `bg-background text-foreground` on their root element. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -30,7 +33,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-.shadcn-scope {
+:root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -51,10 +54,6 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
-}
-
-.shadcn-scope * {
-  border-color: var(--border);
 }
 
 
