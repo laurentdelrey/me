@@ -16,11 +16,14 @@ type SiteHeaderProps = {
 };
 
 // One spring, used everywhere the dropdown needs to move. Tuned to feel
-// physical but not bouncy — interruptible so that rapid hover/click
-// sequences carry velocity through instead of snapping back to start.
-// Stiffness 520 + damping 42 + mass 0.8 lands decisively without
-// overshoot at our pill scale.
-const SPRING = { type: "spring" as const, stiffness: 520, damping: 42, mass: 0.8 };
+// physical and just barely past critically damped — a single, soft
+// overshoot reads as "this is a spring" without ever crossing into
+// bouncy/cartoonish territory. Damping ratio ≈ 0.79 (damping 32 over
+// 2*sqrt(stiffness*mass) ≈ 40.4), which gives a ~5-7% overshoot that's
+// visible at pill scale but resolves in a single beat. Interruptible
+// so rapid hover/click sequences carry velocity instead of snapping
+// back to start.
+const SPRING = { type: "spring" as const, stiffness: 480, damping: 32, mass: 0.85 };
 
 export default function SiteHeader({
   visible = true,
