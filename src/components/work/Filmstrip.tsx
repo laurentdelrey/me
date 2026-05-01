@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useMotionValue } from "motion/react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
@@ -440,12 +441,16 @@ function FilmstripThumb({
           {isVideo ? (
             // Videos only load near the playhead — preloading all 45 at once
             // choked the network and caused the original page-load lag.
+            // The `#t=0.1` fragment forces iOS Safari to seek to ~100ms and
+            // render that frame; without it, mobile Safari paints nothing
+            // for `preload="metadata"` and the thumb stays blank.
             <video
-              src={shouldLoad ? m.blobUrl : undefined}
+              src={shouldLoad ? `${m.blobUrl}#t=0.1` : undefined}
               muted
               playsInline
               preload={shouldLoad ? "metadata" : "none"}
               onLoadedData={() => setLoaded(true)}
+              onLoadedMetadata={() => setLoaded(true)}
               style={{
                 width: "100%",
                 height: "100%",
@@ -456,17 +461,18 @@ function FilmstripThumb({
               }}
             />
           ) : (
-            <img
+            // next/image serves a tiny optimized variant via /_next/image.
+            // Without it, mobile downloaded the full multi-MB original just
+            // to display a 72px thumb.
+            <Image
               src={m.blobUrl}
               alt=""
+              fill
+              sizes="(max-width: 768px) 72px, 100px"
               loading="lazy"
-              decoding="async"
               onLoad={() => setLoaded(true)}
               style={{
-                width: "100%",
-                height: "100%",
                 objectFit: "cover",
-                display: "block",
                 opacity: loaded ? 1 : 0,
                 transition: "opacity 0.4s ease-out",
               }}
