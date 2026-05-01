@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, useMotionValue } from "motion/react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { TimelineItem } from "@/lib/work/timeline";
 
@@ -363,10 +362,6 @@ export default function Filmstrip({
                 onSelect={onSelectItem}
                 width={THUMB_W}
                 height={THUMB_H}
-                // Load media for thumbs within 3 slots of the playhead — far
-                // enough ahead/behind that the next-visible thumb is ready,
-                // cheap enough to not flood the network.
-                shouldLoad={Math.abs(i - currentIndex) <= 3}
               />
             ))}
           </motion.div>
@@ -386,7 +381,6 @@ function FilmstripThumb({
   index,
   onHover,
   onSelect,
-  shouldLoad = false,
   width,
   height,
 }: {
@@ -394,7 +388,6 @@ function FilmstripThumb({
   index: number;
   onHover: (idx: number) => void;
   onSelect?: (idx: number) => void;
-  shouldLoad?: boolean;
   width: number;
   height: number;
 }) {
@@ -413,6 +406,15 @@ function FilmstripThumb({
     const m = item.media;
     if (!m.blobUrl) return null;
     const isVideo = m.type === "video" || m.type === "animated_gif";
+    // Both branches now render a plain <img> against a pre-generated 200px
+    // JPEG (photo thumb or video poster frame). Each thumbnail is ~5–15 KB
+    // and served straight from Blob CDN — no Vercel image optimizer in the
+    // hot path, no cold-cache transformation cost.
+    const thumbSrc = isVideo ? m.posterBlobUrl : m.thumbBlobUrl;
+    // Fall back to the original blob if we somehow don't have a pre-baked
+    // thumb (e.g. a freshly added tweet not yet processed by
+    // scripts/generate-thumbnails.mjs).
+    const src = thumbSrc ?? m.blobUrl;
     return (
       <div
         onMouseEnter={handleMouseEnter}
@@ -438,46 +440,21 @@ function FilmstripThumb({
             background: "#b0b0b0", // accent grey — matches buttons/text-card thumbs
           }}
         >
-          {isVideo ? (
-            // Videos only load near the playhead — preloading all 45 at once
-            // choked the network and caused the original page-load lag.
-            // The `#t=0.1` fragment forces iOS Safari to seek to ~100ms and
-            // render that frame; without it, mobile Safari paints nothing
-            // for `preload="metadata"` and the thumb stays blank.
-            <video
-              src={shouldLoad ? `${m.blobUrl}#t=0.1` : undefined}
-              muted
-              playsInline
-              preload={shouldLoad ? "metadata" : "none"}
-              onLoadedData={() => setLoaded(true)}
-              onLoadedMetadata={() => setLoaded(true)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-                opacity: loaded ? 1 : 0,
-                transition: "opacity 0.4s ease-out",
-              }}
-            />
-          ) : (
-            // next/image serves a tiny optimized variant via /_next/image.
-            // Without it, mobile downloaded the full multi-MB original just
-            // to display a 72px thumb.
-            <Image
-              src={m.blobUrl}
-              alt=""
-              fill
-              sizes="(max-width: 768px) 72px, 100px"
-              loading="lazy"
-              onLoad={() => setLoaded(true)}
-              style={{
-                objectFit: "cover",
-                opacity: loaded ? 1 : 0,
-                transition: "opacity 0.4s ease-out",
-              }}
-            />
-          )}
+          <img
+            src={src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              opacity: loaded ? 1 : 0,
+              transition: "opacity 0.4s ease-out",
+            }}
+          />
         </div>
       </div>
     );
