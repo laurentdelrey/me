@@ -79,26 +79,26 @@ export const ERAS: Record<EraId, Era> = {
     startYear: 2025,
     endYear: Infinity,
     content: (
-      <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white lowercase text-left text-shadow">
-        i joined the <a
+      <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white text-left text-shadow">
+        I joined <a
           href="https://www.meta.com/superintelligence/"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyle}
           className={linkClass}
-        >meta</a> super intelligence lab in january. since then i've been jamming with frontier models to design original social experiences mostly on ios and web sometimes. i recently joined <a
+        >Meta</a> to slide back into designing social products. After a year in the Superintelligent Lab tinkering with different internal and external models, I more recently joined <a
           href="https://www.instagram.com"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyle}
           className={linkClass}
-        >instagram</a> to do similar things directly within the <a
+        >Instagram</a> to focus on <a
           href="https://www.threads.net/@laurentdelrey"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyle}
           className={linkClass}
-        >threads</a> product team.
+        >Threads</a>!
       </p>
     ),
   },
