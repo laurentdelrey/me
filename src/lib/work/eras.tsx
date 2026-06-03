@@ -80,13 +80,13 @@ export const ERAS: Record<EraId, Era> = {
     endYear: Infinity,
     content: (
       <p style={{ fontSize: '1.125rem', lineHeight: '1.75' }} className="text-white text-left text-shadow">
-        I joined <a
+        I joined Meta to slide back into designing social products. After a year tinkering with internal and external models in the <a
           href="https://www.meta.com/superintelligence/"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyle}
           className={linkClass}
-        >Meta</a> to slide back into designing social products. After a year in the Superintelligent Lab tinkering with different internal and external models, I more recently joined <a
+        >Superintelligent Lab</a> I joined <a
           href="https://www.instagram.com"
           target="_blank"
           rel="noopener noreferrer"
@@ -98,7 +98,7 @@ export const ERAS: Record<EraId, Era> = {
           rel="noopener noreferrer"
           style={linkStyle}
           className={linkClass}
-        >Threads</a>!
+        >Threads</a>
       </p>
     ),
   },
