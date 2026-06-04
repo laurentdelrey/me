@@ -12,7 +12,7 @@ const STRIP_PAD_MOBILE = 8;
 // the thumb under the cursor. Outside this band, hover triggers ff/rew scrub.
 const HOVER_DEAD_ZONE_PX = 250;
 const IMAGE_DURATION_MS = 2000; // per image
-const CARD_DURATION_MS = 7000; // tldr / era intro / social cards (more text, more time)
+const CARD_DURATION_MS = 11000; // tldr / era intro / social cards (more text, more time)
 const MAX_VIDEO_DURATION_MS = 15000;
 const CARD_FAST_MULTIPLIER = 3;
 const VIDEO_FAST_MULTIPLIER = 3;

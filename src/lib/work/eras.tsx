@@ -26,6 +26,7 @@ const linkStyle: React.CSSProperties = {
   color: "#ffffff",
   textDecoration: "none",
   display: "inline-block",
+  margin: "2px 2px",
   padding: "0 8px",
   borderRadius: 4,
   background: "#b0b0b0",
