@@ -254,7 +254,7 @@ function renderItem(
             color: "#ffffff",
           }}
         >
-          {era.label}{" "}
+          {era.navLabel ?? era.label}{" "}
           {era.years && (
             <span style={{ color: "rgba(255,255,255,0.5)", marginLeft: "12px" }}>
               {era.years}
