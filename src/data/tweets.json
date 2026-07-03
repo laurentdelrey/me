@@ -7363,7 +7363,7 @@
   },
   {
     "id": "proto-01",
-    "date": "2019-07-15",
+    "date": "2019-07-22",
     "text": "camera toolbelt — beyond capture",
     "media": [
       {
@@ -7382,7 +7382,7 @@
   },
   {
     "id": "proto-02",
-    "date": "2019-09-25",
+    "date": "2019-11-21",
     "text": "quick actions — for power users",
     "media": [
       {
@@ -7409,27 +7409,8 @@
     "hideLink": true
   },
   {
-    "id": "proto-03",
-    "date": "2019-12-05",
-    "text": "camera shortcuts — combine modes in one tap",
-    "media": [
-      {
-        "type": "video",
-        "localFile": "proto-03-camera-shortcuts.mp4",
-        "width": 640,
-        "height": 360,
-        "durationMs": 8450,
-        "blobUrl": "/prototypes/proto-03-camera-shortcuts.mp4",
-        "posterBlobUrl": "/prototypes/thumbs/proto-03-camera-shortcuts-poster.jpg"
-      }
-    ],
-    "favoriteCount": 0,
-    "retweetCount": 0,
-    "hideLink": true
-  },
-  {
     "id": "proto-04",
-    "date": "2020-02-15",
+    "date": "2020-08-03",
     "text": "unifying lens navigation — lens carousel, lens explorer & lens detail views",
     "media": [
       {
@@ -7448,7 +7429,7 @@
   },
   {
     "id": "proto-05",
-    "date": "2020-04-27",
+    "date": "2021-01-13",
     "text": "focus to relight — if brightness from focus isn’t enough",
     "media": [
       {
@@ -7467,7 +7448,7 @@
   },
   {
     "id": "proto-06",
-    "date": "2020-07-08",
+    "date": "2021-04-14",
     "text": "look up — bring recording indicator at the top",
     "media": [
       {
@@ -7486,7 +7467,7 @@
   },
   {
     "id": "proto-07",
-    "date": "2020-09-17",
+    "date": "2021-05-01",
     "text": "custom recording — making your most personal camera",
     "media": [
       {
@@ -7514,7 +7495,7 @@
   },
   {
     "id": "proto-08",
-    "date": "2020-11-28",
+    "date": "2021-06-11",
     "text": "spatial carousel — made in unity",
     "media": [
       {
@@ -7533,7 +7514,7 @@
   },
   {
     "id": "proto-09",
-    "date": "2021-02-08",
+    "date": "2021-07-07",
     "text": "save button — competing with the primary capturing use case",
     "media": [
       {
@@ -7552,7 +7533,7 @@
   },
   {
     "id": "proto-10",
-    "date": "2021-04-20",
+    "date": "2021-09-09",
     "text": "hold for flashback — show the value of visual messaging",
     "media": [
       {
@@ -7571,7 +7552,7 @@
   },
   {
     "id": "proto-11",
-    "date": "2021-07-01",
+    "date": "2021-11-18",
     "text": "friends feed cam — optimized for streaks and replies",
     "media": [
       {
@@ -7590,7 +7571,7 @@
   },
   {
     "id": "proto-12",
-    "date": "2021-09-11",
+    "date": "2021-12-15",
     "text": "friend compass — inspired by covid",
     "media": [
       {
@@ -7609,7 +7590,7 @@
   },
   {
     "id": "proto-13",
-    "date": "2021-11-21",
+    "date": "2022-01-09",
     "text": "group shots — make landscape photos work in portrait",
     "media": [
       {
@@ -7628,7 +7609,7 @@
   },
   {
     "id": "proto-14",
-    "date": "2022-02-01",
+    "date": "2022-04-24",
     "text": "tiny snaps — make the camera feel like a text character",
     "media": [
       {
@@ -7647,7 +7628,7 @@
   },
   {
     "id": "proto-15",
-    "date": "2022-04-14",
+    "date": "2022-06-20",
     "text": "modular calling — detaching calling from chat",
     "media": [
       {
@@ -7666,7 +7647,7 @@
   },
   {
     "id": "proto-16",
-    "date": "2022-06-25",
+    "date": "2022-08-03",
     "text": "snapchat desktop — bring chat and calling to the web",
     "media": [
       {
@@ -7685,7 +7666,7 @@
   },
   {
     "id": "proto-17",
-    "date": "2022-09-04",
+    "date": "2022-10-04",
     "text": "no more tabs — a consolidated feed that surfaces content from the different areas on snap",
     "media": [
       {
@@ -7696,34 +7677,6 @@
         "durationMs": 6400,
         "blobUrl": "/prototypes/proto-17-no-more-tabs.mp4",
         "posterBlobUrl": "/prototypes/thumbs/proto-17-no-more-tabs-poster.jpg"
-      }
-    ],
-    "favoriteCount": 0,
-    "retweetCount": 0,
-    "hideLink": true
-  },
-  {
-    "id": "proto-18",
-    "date": "2022-11-15",
-    "text": "the presence project — vibe with strangers through haptics",
-    "media": [
-      {
-        "type": "video",
-        "localFile": "proto-18-the-presence-project-a.mp4",
-        "width": 640,
-        "height": 360,
-        "durationMs": 4100,
-        "blobUrl": "/prototypes/proto-18-the-presence-project-a.mp4",
-        "posterBlobUrl": "/prototypes/thumbs/proto-18-the-presence-project-a-poster.jpg"
-      },
-      {
-        "type": "video",
-        "localFile": "proto-18-the-presence-project-b.mp4",
-        "width": 320,
-        "height": 692,
-        "durationMs": 13550,
-        "blobUrl": "/prototypes/proto-18-the-presence-project-b.mp4",
-        "posterBlobUrl": "/prototypes/thumbs/proto-18-the-presence-project-b-poster.jpg"
       }
     ],
     "favoriteCount": 0,

@@ -363,7 +363,10 @@ function MediaCard({
     maxWidth: "100%",
     maxHeight: "100%",
     width: "auto",
-    height: "auto",
+    // Fill the stage height so low-res clips scale up to match other assets
+    // instead of rendering at their small intrinsic size (which left a gap
+    // between the caption and a floating, undersized video).
+    height: "100%",
     objectFit: "contain",
     display: "block",
     filter: "drop-shadow(0 20px 60px rgba(0,0,0,0.18))",
