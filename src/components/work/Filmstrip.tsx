@@ -463,7 +463,7 @@ function FilmstripThumb({
   const label =
     item.kind === "eraIntro"
       ? item.eraId === "meta"
-        ? "meta"
+        ? "instagram"
         : item.eraId === "free"
         ? "free ideas"
         : item.eraId === "snap"
