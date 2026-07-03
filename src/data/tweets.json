@@ -7360,5 +7360,374 @@
     ],
     "favoriteCount": 21,
     "retweetCount": 0
+  },
+  {
+    "id": "proto-01",
+    "date": "2019-07-15",
+    "text": "camera toolbelt — beyond capture",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-01-camera-toolbelt.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 24400,
+        "blobUrl": "/prototypes/proto-01-camera-toolbelt.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-01-camera-toolbelt-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-02",
+    "date": "2019-09-25",
+    "text": "quick actions — for power users",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-02-quick-actions-a.mp4",
+        "width": 800,
+        "height": 450,
+        "durationMs": 3200,
+        "blobUrl": "/prototypes/proto-02-quick-actions-a.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-02-quick-actions-a-poster.jpg"
+      },
+      {
+        "type": "video",
+        "localFile": "proto-02-quick-actions-b.mp4",
+        "width": 800,
+        "height": 450,
+        "durationMs": 5450,
+        "blobUrl": "/prototypes/proto-02-quick-actions-b.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-02-quick-actions-b-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-03",
+    "date": "2019-12-05",
+    "text": "camera shortcuts — combine modes in one tap",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-03-camera-shortcuts.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 8450,
+        "blobUrl": "/prototypes/proto-03-camera-shortcuts.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-03-camera-shortcuts-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-04",
+    "date": "2020-02-15",
+    "text": "unifying lens navigation — lens carousel, lens explorer & lens detail views",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-04-unifying-lens-navigation.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 20700,
+        "blobUrl": "/prototypes/proto-04-unifying-lens-navigation.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-04-unifying-lens-navigation-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-05",
+    "date": "2020-04-27",
+    "text": "focus to relight — if brightness from focus isn’t enough",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-05-focus-to-relight.mp4",
+        "width": 320,
+        "height": 692,
+        "durationMs": 4950,
+        "blobUrl": "/prototypes/proto-05-focus-to-relight.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-05-focus-to-relight-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-06",
+    "date": "2020-07-08",
+    "text": "look up — bring recording indicator at the top",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-06-look-up.mp4",
+        "width": 320,
+        "height": 692,
+        "durationMs": 3850,
+        "blobUrl": "/prototypes/proto-06-look-up.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-06-look-up-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-07",
+    "date": "2020-09-17",
+    "text": "custom recording — making your most personal camera",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-07-custom-recording-a.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 5050,
+        "blobUrl": "/prototypes/proto-07-custom-recording-a.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-07-custom-recording-a-poster.jpg"
+      },
+      {
+        "type": "video",
+        "localFile": "proto-07-custom-recording-b.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 4050,
+        "blobUrl": "/prototypes/proto-07-custom-recording-b.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-07-custom-recording-b-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-08",
+    "date": "2020-11-28",
+    "text": "spatial carousel — made in unity",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-08-spatial-carousel.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 4650,
+        "blobUrl": "/prototypes/proto-08-spatial-carousel.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-08-spatial-carousel-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-09",
+    "date": "2021-02-08",
+    "text": "save button — competing with the primary capturing use case",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-09-save-button.mp4",
+        "width": 500,
+        "height": 1084,
+        "durationMs": 2000,
+        "blobUrl": "/prototypes/proto-09-save-button.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-09-save-button-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-10",
+    "date": "2021-04-20",
+    "text": "hold for flashback — show the value of visual messaging",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-10-hold-for-flashback.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 11650,
+        "blobUrl": "/prototypes/proto-10-hold-for-flashback.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-10-hold-for-flashback-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-11",
+    "date": "2021-07-01",
+    "text": "friends feed cam — optimized for streaks and replies",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-11-friends-feed-cam.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 28700,
+        "blobUrl": "/prototypes/proto-11-friends-feed-cam.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-11-friends-feed-cam-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-12",
+    "date": "2021-09-11",
+    "text": "friend compass — inspired by covid",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-12-friend-compass.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 4800,
+        "blobUrl": "/prototypes/proto-12-friend-compass.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-12-friend-compass-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-13",
+    "date": "2021-11-21",
+    "text": "group shots — make landscape photos work in portrait",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-13-group-shots.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 3600,
+        "blobUrl": "/prototypes/proto-13-group-shots.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-13-group-shots-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-14",
+    "date": "2022-02-01",
+    "text": "tiny snaps — make the camera feel like a text character",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-14-tiny-snaps.mp4",
+        "width": 888,
+        "height": 1920,
+        "durationMs": 5350,
+        "blobUrl": "/prototypes/proto-14-tiny-snaps.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-14-tiny-snaps-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-15",
+    "date": "2022-04-14",
+    "text": "modular calling — detaching calling from chat",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-15-modular-calling.mp4",
+        "width": 480,
+        "height": 1040,
+        "durationMs": 11400,
+        "blobUrl": "/prototypes/proto-15-modular-calling.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-15-modular-calling-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-16",
+    "date": "2022-06-25",
+    "text": "snapchat desktop — bring chat and calling to the web",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-16-snapchat-desktop.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 9600,
+        "blobUrl": "/prototypes/proto-16-snapchat-desktop.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-16-snapchat-desktop-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-17",
+    "date": "2022-09-04",
+    "text": "no more tabs — a consolidated feed that surfaces content from the different areas on snap",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-17-no-more-tabs.mp4",
+        "width": 480,
+        "height": 1040,
+        "durationMs": 6400,
+        "blobUrl": "/prototypes/proto-17-no-more-tabs.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-17-no-more-tabs-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
+  },
+  {
+    "id": "proto-18",
+    "date": "2022-11-15",
+    "text": "the presence project — vibe with strangers through haptics",
+    "media": [
+      {
+        "type": "video",
+        "localFile": "proto-18-the-presence-project-a.mp4",
+        "width": 640,
+        "height": 360,
+        "durationMs": 4100,
+        "blobUrl": "/prototypes/proto-18-the-presence-project-a.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-18-the-presence-project-a-poster.jpg"
+      },
+      {
+        "type": "video",
+        "localFile": "proto-18-the-presence-project-b.mp4",
+        "width": 320,
+        "height": 692,
+        "durationMs": 13550,
+        "blobUrl": "/prototypes/proto-18-the-presence-project-b.mp4",
+        "posterBlobUrl": "/prototypes/thumbs/proto-18-the-presence-project-b-poster.jpg"
+      }
+    ],
+    "favoriteCount": 0,
+    "retweetCount": 0,
+    "hideLink": true
   }
 ]

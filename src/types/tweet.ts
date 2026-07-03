@@ -21,4 +21,7 @@ export type Tweet = {
   favoriteCount: number;
   retweetCount: number;
   replies?: string[];
+  // When true, this item is not a real tweet (e.g. a prototype pulled from a
+  // deck), so the timeline shows no outbound x.com link or link icon.
+  hideLink?: boolean;
 };

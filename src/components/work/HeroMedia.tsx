@@ -114,6 +114,52 @@ function HeroCaption({
   widthPx: number;
   url: string;
 }) {
+  const sharedStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: `${widthPx}px`,
+    fontSize: "1rem",
+    lineHeight: 1.5,
+    textDecoration: "none",
+    cursor: "none",
+    opacity: 0,
+    animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
+  } as const;
+  const label = (
+    <span
+      style={{
+        flex: "1 1 auto",
+        minWidth: 0,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      }}
+    >
+      {text}
+    </span>
+  );
+  const keyframes = (
+    <style jsx>{`
+      @keyframes hero-caption-fade-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `}</style>
+  );
+  // No url → not a real tweet (e.g. deck prototype): plain caption, no link icon.
+  if (!url) {
+    return (
+      <div
+        key={itemKey}
+        className="lowercase text-white text-shadow"
+        style={sharedStyle}
+      >
+        {label}
+        {keyframes}
+      </div>
+    );
+  }
   return (
     <a
       key={itemKey}
@@ -121,37 +167,11 @@ function HeroCaption({
       target="_blank"
       rel="noopener noreferrer"
       className="lowercase text-white text-shadow"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        width: `${widthPx}px`,
-        fontSize: "1rem",
-        lineHeight: 1.5,
-        textDecoration: "none",
-        cursor: "none",
-        opacity: 0,
-        animation: "hero-caption-fade-in 0.35s ease-out 0.05s forwards",
-      }}
+      style={sharedStyle}
     >
-      <span
-        style={{
-          flex: "1 1 auto",
-          minWidth: 0,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {text}
-      </span>
+      {label}
       <OpenIcon />
-      <style jsx>{`
-        @keyframes hero-caption-fade-in {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      {keyframes}
     </a>
   );
 }
@@ -380,19 +400,24 @@ function MediaCard({
     />
   );
 
+  const wrapperStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+    cursor: "none",
+  } as const;
+  // No url → not a real tweet (deck prototype): don't wrap in a link.
+  if (!item.url) {
+    return <div style={wrapperStyle}>{media}</div>;
+  }
   return (
     <a
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        height: "100%",
-        cursor: "none",
-      }}
+      style={wrapperStyle}
     >
       {media}
     </a>

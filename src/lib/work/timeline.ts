@@ -87,7 +87,7 @@ export function buildTimeline(
         media: m,
         mediaIndex: mi,
         eraId,
-        url: `https://x.com/laurentdelrey/status/${t.id}`,
+        url: t.hideLink ? "" : `https://x.com/laurentdelrey/status/${t.id}`,
       });
       mi++;
     }
