@@ -5,6 +5,9 @@ export type EraId = "tldr" | "meta" | "free" | "snap" | "tribe" | "hustle" | "lo
 export type Era = {
   id: EraId;
   label: string;
+  // Optional override shown only on the prev/next era skip arrows.
+  // Falls back to `label` when unset.
+  navLabel?: string;
   years: string;
   startDate: [number, number, number]; // [year, month, day]
   location: [number, number]; // [lon, lat]
@@ -71,6 +74,7 @@ export const ERAS: Record<EraId, Era> = {
   meta: {
     id: "meta",
     label: "meta",
+    navLabel: "instagram",
     years: "2025 – ???",
     startDate: [2025, 1, 6],
     location: [-122.1484, 37.4419], // Menlo Park

@@ -17,7 +17,7 @@ function chapterLabel(item: TimelineItem | undefined): string {
   if (!item) return "";
   if (item.kind === "tldr") return "tl;dr";
   if (item.kind === "social") return "@ me";
-  if (item.kind === "eraIntro") return ERAS[item.eraId].label;
+  if (item.kind === "eraIntro") return ERAS[item.eraId].navLabel ?? ERAS[item.eraId].label;
   return "";
 }
 
