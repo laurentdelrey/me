@@ -146,7 +146,7 @@ const SHAPE_TUNE: Record<CloudShape, { noise: number; card: number }> = {
   cube: { noise: 0.03, card: 0.55 },
   smiley: { noise: 0.12, card: 0.58 },
   star: { noise: 0.12, card: 0.6 },
-  about: { noise: 0.1, card: 0.6 },
+  about: { noise: 0.1, card: 0.8 },
 };
 
 export default function CloudScene({
@@ -759,7 +759,10 @@ export default function CloudScene({
       for (const card of cards) {
         const i = card.ordinal;
 
-        const visTarget = card.on ? 1 : 0;
+        const visTarget =
+          card.on && (controls.shape !== "about" || card.seed % 8 === 0)
+            ? 1
+            : 0;
         card.visScale += (visTarget - card.visScale) * 0.12;
 
         // filtered-out cards shrink where they stand — no drifting away;

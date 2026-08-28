@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { tagMatchesFilter, type TagFilter } from "@/lib/work/tags";
 import { STORY_SECTIONS } from "@/lib/work/story";
@@ -21,125 +21,67 @@ function textOn(color: string): string {
   return lum > 150 ? "#000" : "#fff";
 }
 
-// ---- mini dot-matrix icons: tiny clouds shaped like the shapes -------------
+// ---- crisp solid icons, one optical family --------------------------------
 
-type Dot = [number, number, number]; // x, y, opacity
-
-// unified top-left lighting so every icon shares the cube's shaded feel
-function lit(x: number, y: number): number {
-  return Math.min(1, Math.max(0.35, 0.92 - (x + y) / 42));
-}
-
-function starBoundary(theta: number): number {
-  const R = 11;
-  const RIN = 4.8;
-  const m = 10;
-  const seg = (2 * Math.PI) / m;
-  let a = (theta + Math.PI / 2) % seg;
-  if (a < 0) a += seg;
-  const even = Math.floor(((theta + Math.PI / 2) / seg + m * 2) % 2) === 0;
-  const r1 = even ? R : RIN;
-  const r2 = even ? RIN : R;
-  const x1 = r1;
-  const y1 = 0;
-  const x2 = r2 * Math.cos(seg);
-  const y2 = r2 * Math.sin(seg);
-  const denom = (y2 - y1) * Math.cos(a) - (x2 - x1) * Math.sin(a);
-  if (Math.abs(denom) < 1e-6) return r1;
-  return (x1 * y2 - x2 * y1) / denom;
-}
-
-function shapeDots(shape: CloudShape): Dot[] {
-  const pts: Dot[] = [];
-  if (shape === "sphere") {
-    for (let y = -10; y <= 10; y += 2)
-      for (let x = -10; x <= 10; x += 2)
-        if (x * x + y * y <= 100) pts.push([x, y, lit(x, y)]);
-  } else if (shape === "heart") {
-    for (let y = -10; y <= 10; y += 2)
-      for (let x = -10; x <= 10; x += 2) {
-        const nx = x / 9.6;
-        const ny = -y / 9.6 + 0.12;
-        const a = nx * nx + ny * ny - 1;
-        if (a * a * a - nx * nx * ny * ny * ny <= 0)
-          pts.push([x, y, lit(x, y)]);
-      }
-  } else if (shape === "cube") {
-    // front face + two shifted layers for the top and right faces
-    const cols = [-7.9, -5.3, -2.7, -0.1];
-    const rows = [-0.1, 2.5, 5.1, 7.7];
-    for (const y of rows) for (const x of cols) pts.push([x, y, lit(x, y)]);
-    for (let d = 1; d <= 2; d++) {
-      for (const x of cols) pts.push([x + d * 2.4, -0.1 - d * 2.4, 0.55]);
-      for (const y of rows) pts.push([-0.1 + d * 2.4, y - d * 2.4, 0.35]);
-    }
-  } else if (shape === "star") {
-    for (let y = -11; y <= 11; y += 2)
-      for (let x = -11; x <= 11; x += 2) {
-        const r = Math.hypot(x, y);
-        if (r < 0.1 || r <= Math.abs(starBoundary(Math.atan2(y, x))))
-          pts.push([x, y, lit(x, y)]);
-      }
-  } else {
-    // smiley: a lit disc with the eyes and smile carved out
-    for (let y = -10; y <= 10; y += 2)
-      for (let x = -10; x <= 10; x += 2) {
-        if (x * x + y * y > 100) continue;
-        const eye = Math.abs(Math.abs(x) - 3.6) <= 1.2 && y >= -6 && y <= -2;
-        const r = Math.hypot(x, y);
-        const smile = r >= 4.6 && r <= 7.4 && y >= 2.6;
-        if (eye || smile) continue;
-        pts.push([x, y, lit(x, y)]);
-      }
-  }
-  // fixed precision so server and client render byte-identical SVGs
-  return pts.map(([x, y, o]) => [
-    Math.round(x * 100) / 100,
-    Math.round(y * 100) / 100,
-    Math.round(o * 100) / 100,
-  ]);
-}
-
-// Dots shimmer in on load and magnify under the cursor, dock-style.
 function ShapeIcon({ shape }: { shape: CloudShape }) {
-  const dots = useMemo(() => shapeDots(shape), [shape]);
-  const [pt, setPt] = useState<[number, number] | null>(null);
+  const id = useId();
+  if (shape === "sphere") {
+    return (
+      <svg width={20} height={20} viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="8.4" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (shape === "heart") {
+    return (
+      <svg width={20} height={20} viewBox="0 0 20 20">
+        <path
+          fill="currentColor"
+          d="M10 17.4 C4.9 13.7 2.4 10.7 2.4 7.5 C2.4 5.1 4.3 3.2 6.5 3.2 C7.9 3.2 9.3 4 10 5.3 C10.7 4 12.1 3.2 13.5 3.2 C15.7 3.2 17.6 5.1 17.6 7.5 C17.6 10.7 15.1 13.7 10 17.4 Z"
+        />
+      </svg>
+    );
+  }
+  if (shape === "cube") {
+    return (
+      <svg width={20} height={20} viewBox="0 0 20 20">
+        <polygon points="10,1.6 17.6,6 10,10.4 2.4,6" fill="currentColor" />
+        <polygon
+          points="2.4,6 10,10.4 10,18.8 2.4,14.4"
+          fill="currentColor"
+          opacity="0.55"
+        />
+        <polygon
+          points="17.6,6 10,10.4 10,18.8 17.6,14.4"
+          fill="currentColor"
+          opacity="0.3"
+        />
+      </svg>
+    );
+  }
+  if (shape === "star") {
+    return (
+      <svg width={20} height={20} viewBox="0 0 20 20">
+        <polygon points="10.00,1.20 12.17,7.01 18.37,7.28 13.52,11.14 15.17,17.12 10.00,13.70 4.83,17.12 6.48,11.14 1.63,7.28 7.83,7.01" fill="currentColor" />
+      </svg>
+    );
+  }
+  // smiley: eyes and smile knocked out of a solid disc
   return (
-    <svg
-      width={26}
-      height={26}
-      viewBox="-13 -13 26 26"
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setPt([
-          ((e.clientX - r.left) / r.width) * 26 - 13,
-          ((e.clientY - r.top) / r.height) * 26 - 13,
-        ]);
-      }}
-      onMouseLeave={() => setPt(null)}
-    >
-      {dots.map(([x, y, o], i) => {
-        let sc = 1;
-        if (pt) {
-          const d2 = (x - pt[0]) ** 2 + (y - pt[1]) ** 2;
-          sc = 1 + 1.1 * Math.exp(-d2 / 14);
-        }
-        return (
-          <g key={i} transform={`translate(${x} ${y}) scale(${sc.toFixed(2)})`}>
-            <rect
-              x={-0.85}
-              y={-0.85}
-              width={1.7}
-              height={1.7}
-              fill="currentColor"
-              opacity={o}
-              style={{
-                animation: `cloud-dot-in 480ms ease ${(i * 9) % 460}ms backwards`,
-              }}
-            />
-          </g>
-        );
-      })}
+    <svg width={20} height={20} viewBox="0 0 20 20">
+      <mask id={id}>
+        <rect width="20" height="20" fill="#fff" />
+        <circle cx="7" cy="7.9" r="1.15" fill="#000" />
+        <circle cx="13" cy="7.9" r="1.15" fill="#000" />
+        <path
+          d="M6 11.4 Q10 15 14 11.4"
+          stroke="#000"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </mask>
+      <circle cx="10" cy="10" r="8.4" fill="currentColor" mask={`url(#${id})`} />
     </svg>
   );
 }
@@ -195,7 +137,7 @@ export default function CloudExperience({
     if (shape !== "about" || aboutHover !== null) return;
     const t = setInterval(
       () => setAboutAuto((a) => (a + 1) % STORY_SECTIONS.length),
-      3200
+      4200
     );
     return () => clearInterval(t);
   }, [shape, aboutHover]);
@@ -222,6 +164,22 @@ export default function CloudExperience({
 
   const activeFilter = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
   const aboutActive = aboutHover ?? aboutAuto;
+
+  // today first, backwards through time; the press section closes it out
+  const aboutSections = useMemo(() => {
+    const eras = STORY_SECTIONS.slice(0, -1).reverse();
+    return [...eras, STORY_SECTIONS[STORY_SECTIONS.length - 1]];
+  }, []);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // the system reads section by section — keep the one it's on in view
+  useEffect(() => {
+    if (shape !== "about" || aboutHover !== null) return;
+    sectionRefs.current[aboutAuto]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [shape, aboutAuto, aboutHover]);
 
   const cityOf = (item: CloudItem | null) =>
     item ? eras.find((e) => e.id === item.eraId)?.city : undefined;
@@ -276,14 +234,6 @@ export default function CloudExperience({
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: CLOUD_BG }}>
-      <style jsx global>{`
-        @keyframes cloud-dot-in {
-          from {
-            opacity: 0;
-          }
-        }
-      `}</style>
-
       {/* the logo waits center stage while the archive loads, then takes
           its corner as the cloud flies in */}
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -321,33 +271,52 @@ export default function CloudExperience({
       {shape === "about" && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-10">
           <div
-            className="pointer-events-auto max-h-[calc(100vh-270px)] w-[min(500px,calc(100vw-72px))] overflow-y-auto py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="pointer-events-auto max-h-[calc(100vh-230px)] w-[min(540px,calc(100vw-72px))] overflow-y-auto px-1 py-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, transparent, black 56px, black calc(100% - 56px), transparent)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent, black 56px, black calc(100% - 56px), transparent)",
+            }}
             onMouseLeave={() => setAboutHover(null)}
           >
-            {STORY_SECTIONS.map((sec, i) => {
+            {aboutSections.map((sec, i) => {
               const accent = CV.fallback[i % CV.fallback.length];
               const active = aboutActive === i;
               return (
-                <div
+                <motion.div
                   key={i}
+                  ref={(el) => {
+                    sectionRefs.current[i] = el;
+                  }}
                   onMouseEnter={() => setAboutHover(i)}
-                  className="relative mb-2 px-3 py-2 transition-colors duration-300"
+                  animate={{ scale: active ? 1.015 : 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                  className="relative mb-3 px-3.5 py-2.5"
                   style={{
                     border: `1px solid ${active ? accent : "transparent"}`,
+                    transition: "border-color 450ms ease",
                   }}
                 >
-                  {active && (
-                    <span
-                      className="absolute -top-px left-[-1px] -translate-y-full whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
-                      style={{ background: accent, color: textOn(accent) }}
-                    >
-                      {sec.label} · {sec.years} · {sec.city}
-                    </span>
-                  )}
-                  <p className="text-left text-[14px] lowercase leading-[1.75] tracking-[-0.005em] text-[#1f1f23]">
+                  <motion.span
+                    initial={false}
+                    animate={{ opacity: active ? 1 : 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute -top-px left-[-1px] -translate-y-full whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
+                    style={{ background: accent, color: textOn(accent) }}
+                  >
+                    {sec.label} · {sec.years} · {sec.city}
+                  </motion.span>
+                  <p
+                    className={`text-left lowercase tracking-[-0.005em] transition-all duration-500 ${
+                      active
+                        ? "text-[16.5px] leading-[1.75] text-[#141417]"
+                        : "text-[13px] leading-[1.7] text-[#1f1f23]/40"
+                    }`}
+                  >
                     {sec.body}
                   </p>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -375,6 +344,7 @@ export default function CloudExperience({
               key={s.id}
               title={s.title}
               onClick={() => handleShape(s.id)}
+              whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.85 }}
               transition={SPRING}
               className={`cursor-pointer leading-none transition-colors duration-200 ${
@@ -410,7 +380,7 @@ export default function CloudExperience({
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.94 }}
           transition={SPRING}
-          className={`absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none transition-colors duration-200 ${
+          className={`absolute right-4 top-[34px] z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none transition-colors duration-200 ${
             shape === "about" ? LABEL_ON : LABEL_OFF
           }`}
         >
