@@ -18,6 +18,7 @@ export type CloudItem = {
   img: string; // thumbnail / poster
   imgFull: string; // full-res, loaded on focus
   videoUrl?: string; // videos play inline on hover/focus
+  recap?: boolean; // year-end montage — gets extra visual weight
   w: number;
   h: number;
   eraId: string;
@@ -895,7 +896,9 @@ export default function CloudScene({
         }
 
         let scaleTarget =
-          layoutShape === "grid" ? card.gridScale : cardScaleBlend;
+          layoutShape === "grid"
+            ? card.gridScale
+            : cardScaleBlend * (card.item.recap ? 1.35 : 1);
         if (card === focused) {
           const focusH = 2 * 6 * Math.tan(THREE.MathUtils.degToRad(20));
           const focusW = focusH * camera.aspect;
@@ -922,6 +925,8 @@ export default function CloudScene({
         const dist = card.group.position.distanceTo(camera.position);
         card.sortDist += (dist - card.sortDist) * 0.12;
         let ro = (100 - card.sortDist) * 10;
+        // recap montages carry extra weight: they surface above neighbors
+        if (card.item.recap) ro += 12;
         if (card === focused || (card === hovered && !attractMode)) ro += 10000;
         card.frameMesh.renderOrder = ro;
         card.imgMesh.renderOrder = ro + 0.5;
@@ -1010,7 +1015,10 @@ export default function CloudScene({
             c.group.position.z > 0.5
         );
         if (candidates.length) {
-          startAmbient(candidates[Math.floor(Math.random() * candidates.length)]);
+          const recaps = candidates.filter((c) => c.item.recap);
+          const pool =
+            recaps.length && Math.random() < 0.45 ? recaps : candidates;
+          startAmbient(pool[Math.floor(Math.random() * pool.length)]);
         }
       } else if (controls.shape === "about" && ambient.length) {
         for (const slot of [...ambient]) stopAmbient(slot);

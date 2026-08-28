@@ -13,6 +13,16 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
+// Year-end recap videos — montages of many ideas at once. They carry extra
+// visual weight in the cloud so they stay discoverable.
+const RECAP_IDS = new Set([
+  "1476598463068459033", // 2021 recap
+  "1607474472814252032", // 2022 recap
+  "1740048490494046717", // 2023 recap
+  "1870147213441241455", // 2024 images-in-motion recap
+  "1871233348926075021", // 2024 prototypes recap
+]);
+
 // Tweet text in the archive carries HTML entities — decode for display.
 function decodeEntities(s: string): string {
   return s
@@ -66,6 +76,7 @@ export default async function CloudPage() {
       img,
       imgFull,
       videoUrl: m.type === "video" ? m.blobUrl : undefined,
+      recap: RECAP_IDS.has(item.tweetId),
       w: m.width ?? 1,
       h: m.height ?? 1,
       eraId: item.eraId,
