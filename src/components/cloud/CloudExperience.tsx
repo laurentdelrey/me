@@ -365,17 +365,17 @@ export default function CloudExperience({
         }}
       >
         {/* layout pager: ‹ sphere › */}
-        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-1 text-[13px] lowercase leading-none">
+        <div className="group absolute bottom-4 left-4 z-20 flex items-center text-[14px] lowercase leading-none">
           <motion.button
             onClick={() => stepLayout(-1)}
-            whileHover={{ scale: 1.25 }}
+            whileHover={{ scale: 1.2, x: -2 }}
             whileTap={{ scale: 0.8 }}
             transition={SPRING}
-            className={`cursor-pointer px-1.5 text-[18px] ${LABEL_OFF}`}
+            className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
           >
             ‹
           </motion.button>
-          <span className={`relative block h-[14px] w-14 overflow-hidden text-center ${LABEL_ON}`}>
+          <span className="relative block h-[15px] w-16 overflow-hidden text-center text-black/85">
             <AnimatePresence initial={false} custom={pagerDir}>
               <motion.span
                 key={LAYOUTS[layoutIndex].label}
@@ -397,10 +397,10 @@ export default function CloudExperience({
           </span>
           <motion.button
             onClick={() => stepLayout(1)}
-            whileHover={{ scale: 1.25 }}
+            whileHover={{ scale: 1.2, x: 2 }}
             whileTap={{ scale: 0.8 }}
             transition={SPRING}
-            className={`cursor-pointer px-1.5 text-[18px] ${LABEL_OFF}`}
+            className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
           >
             ›
           </motion.button>

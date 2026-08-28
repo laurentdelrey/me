@@ -205,6 +205,9 @@ export default function CloudScene({
       seed: number;
       hoverScale: number;
       visScale: number;
+      gridX: number;
+      gridY: number;
+      gridScale: number;
       introDelay: number;
       introduced: boolean;
       ordinal: number;
@@ -253,6 +256,9 @@ export default function CloudScene({
         seed: i,
         hoverScale: 1,
         visScale: 0,
+        gridX: 0,
+        gridY: 0,
+        gridScale: 0.5,
         introDelay: (rand(i * 11 + 3) + 0.5) * 1300,
         introduced: false,
         ordinal: i,
@@ -523,20 +529,12 @@ export default function CloudScene({
       out.set(px * rr, py * rr + 0.2, rand(ord * 5 + 4) * 0.9);
     }
 
-    // Chronological grid — everything on screen at once.
-    let gridCols = 12;
-    let gridRows = 26;
-    let gridCell = 0.6;
-    let gridScale = 0.3;
-    function gridPos(ord: number, out: THREE.Vector3) {
-      const row = Math.floor(ord / gridCols);
-      const col = ord % gridCols;
-      out.set(
-        (col - (gridCols - 1) / 2) * gridCell,
-        ((gridRows - 1) / 2 - row) * gridCell,
-        rand(ord * 5 + 4) * 0.08
-      );
-    }
+    // Chronological masonry — fixed-width columns, natural aspect ratios,
+    // each card dropped into the shortest column. Scrollable.
+    let gridTop = 4;
+    let gridTotalH = 10;
+    let gridScrollY = 0;
+    let gridScrollVel = 0;
 
     function shapePos(
       shape: Exclude<CloudShape, "about">,
@@ -546,7 +544,6 @@ export default function CloudScene({
       if (shape === "heart") heartPos(ord, out);
       else if (shape === "smiley") smileyPos(ord, out);
       else if (shape === "star") starPos(ord, out);
-      else if (shape === "grid") gridPos(ord, out);
       else spherePos(ord, out);
     }
 
@@ -561,6 +558,7 @@ export default function CloudScene({
     let cardScaleBlend = 1;
     let dragging = false;
     let lastX = 0;
+    let lastY = 0;
     let downX = 0;
     let downY = 0;
     // fit the cloud: never closer than 17, further on narrow (mobile) screens
@@ -640,6 +638,7 @@ export default function CloudScene({
     function onPointerDown(e: PointerEvent) {
       dragging = true;
       lastX = e.clientX;
+      lastY = e.clientY;
       downX = e.clientX;
       downY = e.clientY;
       container?.setPointerCapture(e.pointerId);
@@ -654,8 +653,16 @@ export default function CloudScene({
       );
       if (dragging) {
         const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
         lastX = e.clientX;
-        rotVel = dx * 0.004;
+        lastY = e.clientY;
+        if (controlsRef.current.shape === "grid") {
+          // world units per CSS pixel at the grid plane
+          const perPx = (2 * Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z) / rect.height;
+          gridScrollVel = dy * perPx * 0.55;
+        } else {
+          rotVel = dx * 0.004;
+        }
       }
     }
     function onPointerUp(e: PointerEvent) {
@@ -678,9 +685,16 @@ export default function CloudScene({
       }
     }
 
+    function onWheel(e: WheelEvent) {
+      if (controlsRef.current.shape !== "grid") return;
+      e.preventDefault();
+      gridScrollY += e.deltaY * 0.014;
+    }
+
     container.addEventListener("pointerdown", onPointerDown);
     container.addEventListener("pointermove", onPointerMove);
     container.addEventListener("pointerup", onPointerUp);
+    container.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onKey);
 
     function onResize() {
@@ -724,20 +738,36 @@ export default function CloudScene({
 
       const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
 
-      // chronological grid sized to the visible frustum
+      // chronological masonry: shortest-column packing, scroll for the rest
       if (layoutShape === "grid") {
         const gw = frusH * camera.aspect * 2 * 0.92;
-        const gh = frusH * 2 * 0.82;
-        gridCols = Math.max(1, Math.round(Math.sqrt((visibleCount * gw) / gh)));
-        gridRows = Math.ceil(visibleCount / gridCols);
-        gridCell = Math.min(gw / gridCols, gh / gridRows);
-        gridScale = (gridCell / CARD_MAX) * 0.92;
+        const cols = Math.max(2, Math.round(gw / 1.7));
+        const colW = gw / cols;
+        const cardW = colW * 0.92;
+        const gap = colW * 0.08;
+        const colH: number[] = new Array(cols).fill(0);
+        for (const card of cards) {
+          if (!card.on) continue;
+          const scl = cardW / card.baseW;
+          const h = card.baseH * scl;
+          let c = 0;
+          for (let k = 1; k < cols; k++) if (colH[k] < colH[c]) c = k;
+          card.gridScale = scl;
+          card.gridX = (c - (cols - 1) / 2) * colW;
+          card.gridY = colH[c] + h / 2;
+          colH[c] += h + gap;
+        }
+        gridTotalH = Math.max(...colH);
+        gridTop = frusH * 0.8;
+        gridScrollY += gridScrollVel;
+        gridScrollVel *= 0.92;
+        const maxScroll = Math.max(0, gridTotalH - frusH * 1.55);
+        gridScrollY = THREE.MathUtils.clamp(gridScrollY, 0, maxScroll);
       }
 
       const tune = SHAPE_TUNE[layoutShape];
       noiseBlend += (tune.noise - noiseBlend) * 0.05;
-      const cardTarget = layoutShape === "grid" ? gridScale : tune.card;
-      cardScaleBlend += (cardTarget - cardScaleBlend) * 0.06;
+      cardScaleBlend += (tune.card - cardScaleBlend) * 0.06;
 
       const noiseAmp =
         (0.09 + 0.075 * (1 + Math.sin(time * 0.045 + 2))) * noiseBlend;
@@ -799,7 +829,15 @@ export default function CloudScene({
 
         // filtered-out cards shrink where they stand — no drifting away
         if (card.on) {
-          shapePos(layoutShape, i, shapeV);
+          if (layoutShape === "grid") {
+            shapeV.set(
+              card.gridX,
+              gridTop - card.gridY + gridScrollY,
+              rand(i * 5 + 4) * 0.06
+            );
+          } else {
+            shapePos(layoutShape, i, shapeV);
+          }
           tmpV.copy(shapeV);
 
           // noise on x/y only — z stays layered so cards don't slice through
@@ -812,12 +850,25 @@ export default function CloudScene({
 
           if (card === focused) {
             tmpV.set(0, 0.25, camera.position.z - 6);
+          } else if (
+            card === hovered &&
+            !attractMode &&
+            layoutShape === "grid"
+          ) {
+            // slide expanded edge cards inward so they stay fully on screen
+            const exScale = Math.min(card.gridScale * 2.2, 3.4 / card.baseH, 4.6 / card.baseW);
+            const hw = (card.baseW * exScale) / 2 + 0.15;
+            const hh = (card.baseH * exScale) / 2 + 0.15;
+            const limW = frusH * camera.aspect;
+            tmpV.x = THREE.MathUtils.clamp(tmpV.x, -limW + hw, limW - hw);
+            tmpV.y = THREE.MathUtils.clamp(tmpV.y, -frusH + hh, frusH - hh);
           }
 
           card.group.position.lerp(tmpV, card === focused ? 0.12 : 0.14);
         }
 
-        let scaleTarget = cardScaleBlend;
+        let scaleTarget =
+          layoutShape === "grid" ? card.gridScale : cardScaleBlend;
         if (card === focused) {
           const focusH = 2 * 6 * Math.tan(THREE.MathUtils.degToRad(20));
           const focusW = focusH * camera.aspect;
@@ -826,13 +877,8 @@ export default function CloudScene({
             (focusW * 0.82) / card.baseW
           );
         } else if (card === hovered && !attractMode && layoutShape === "grid") {
-          // grid hover expands to the same on-screen size as a click-expand,
-          // computed for the grid's viewing distance
-          const fH = 2 * 6 * Math.tan(THREE.MathUtils.degToRad(20));
-          const fW = fH * camera.aspect;
-          scaleTarget =
-            Math.min((fH * 0.62) / card.baseH, (fW * 0.82) / card.baseW) *
-            (camera.position.z / 6);
+          // hover blooms to ~2.2 columns, capped to a sane world size
+          scaleTarget = Math.min(card.gridScale * 2.2, 3.4 / card.baseH, 4.6 / card.baseW);
         }
         card.hoverScale += (scaleTarget - card.hoverScale) * 0.12;
         const s = card.hoverScale * card.visScale;
@@ -1023,6 +1069,7 @@ export default function CloudScene({
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
       container.removeEventListener("pointerup", onPointerUp);
+      container.removeEventListener("wheel", onWheel);
       for (const slot of [...ambient]) stopAmbient(slot);
       stopVideo();
       textures.forEach((t) => t.dispose());
