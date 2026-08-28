@@ -11,6 +11,7 @@ export type MediaItem = {
   // serve a tiny payload straight from Blob CDN.
   thumbBlobUrl?: string;
   posterBlobUrl?: string;
+  midBlobUrl?: string; // 640px medium thumb for /cloud
 };
 
 export type Tweet = {

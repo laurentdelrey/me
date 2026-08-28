@@ -53,7 +53,9 @@ export default async function CloudPage() {
     if (item.kind !== "media") continue;
     const m = item.media;
     const img =
-      m.type === "photo" ? m.thumbBlobUrl ?? m.blobUrl : m.posterBlobUrl;
+      m.type === "photo"
+        ? m.midBlobUrl ?? m.thumbBlobUrl ?? m.blobUrl
+        : m.midBlobUrl ?? m.posterBlobUrl;
     if (!img) continue;
     const imgFull = m.type === "photo" ? m.blobUrl ?? img : m.posterBlobUrl ?? img;
     items.push({

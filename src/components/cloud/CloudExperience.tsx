@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Cube, Heart, Smiley, Star } from "@phosphor-icons/react";
-import { motion } from "motion/react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { tagMatchesFilter, type TagFilter } from "@/lib/work/tags";
-import { STORY_SECTIONS } from "@/lib/work/story";
-import StoryText from "./StoryText";
+import { STORY_SECTIONS, type StoryRun } from "@/lib/work/story";
 import CloudScene, {
   CV,
   CLOUD_BG,
@@ -23,27 +21,15 @@ function textOn(color: string): string {
   return lum > 150 ? "#000" : "#fff";
 }
 
-// ---- icons: Phosphor — filled when active, outlined when not --------------
-
-function ShapeIcon({ shape, active }: { shape: CloudShape; active: boolean }) {
-  const weight = active ? "fill" : "regular";
-  const size = 20;
-  if (shape === "sphere") return <Circle size={size} weight={weight} />;
-  if (shape === "heart") return <Heart size={size} weight={weight} />;
-  if (shape === "cube") return <Cube size={size} weight={weight} />;
-  if (shape === "star") return <Star size={size} weight={weight} />;
-  return <Smiley size={size} weight={weight} />;
-}
-
 // Same spring family as the site header: soft, one gentle beat, no cartoon.
 const SPRING = { type: "spring" as const, stiffness: 480, damping: 30, mass: 0.8 };
 
-const SHAPES: { id: CloudShape; title: string }[] = [
-  { id: "sphere", title: "sphere" },
-  { id: "heart", title: "heart" },
-  { id: "cube", title: "cube" },
-  { id: "smiley", title: "smiley" },
-  { id: "star", title: "star" },
+const LAYOUTS: { id: CloudShape; label: string }[] = [
+  { id: "sphere", label: "sphere" },
+  { id: "heart", label: "heart" },
+  { id: "smiley", label: "smiley" },
+  { id: "star", label: "star" },
+  { id: "grid", label: "grid" },
 ];
 
 // Color story: black = the frame/system; each card's annotations take an
@@ -54,8 +40,45 @@ const FILTERS: { id: TagFilter; label: string }[] = [
   { id: "images", label: "images" },
 ];
 
+// Fixed annotation colors per story section — snap yellow, meta blue,
+// everything else distinct.
+const SECTION_COLORS: Record<string, string> = {
+  meta: "#2979ff",
+  "free ideas": "#ff2fae",
+  "snap, inc.": "#ffd400",
+  "a quest called tribe": "#00c853",
+  "hustling for fun": "#ff6d00",
+  "lost in the game": "#7c4dff",
+  "another internet kid": "#00bcd4",
+  "got out there": "#e8442e",
+};
+
 const LABEL_ON = "text-black/80";
 const LABEL_OFF = "text-black/30 hover:text-black/55";
+
+
+function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) {
+  return (
+    <p className="text-left text-[15px] lowercase leading-[1.75] tracking-[-0.005em] text-[#1f1f23]">
+      {runs.map((r, i) =>
+        r.href ? (
+          <a
+            key={i}
+            href={r.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pointer-events-auto underline underline-offset-2 transition-colors hover:text-[color:var(--acc)]"
+            style={{ "--acc": accent, textDecorationColor: accent } as CSSProperties}
+          >
+            {r.t}
+          </a>
+        ) : (
+          <span key={i}>{r.t}</span>
+        )
+      )}
+    </p>
+  );
+}
 
 export default function CloudExperience({
   items,
@@ -71,9 +94,8 @@ export default function CloudExperience({
   const [hoverAccent, setHoverAccent] = useState<string | null>(null);
   const [focused, setFocused] = useState<CloudItem | null>(null);
   const [focusAccent, setFocusAccent] = useState<string | null>(null);
-  // about mode: which story section the annotation system is reading
-  const [aboutAuto, setAboutAuto] = useState(0);
-  const [aboutHover, setAboutHover] = useState<number | null>(null);
+  // loading flipbook: a rapid cycle through the archive
+  const [flip, setFlip] = useState(0);
 
   const controlsRef = useRef<CloudControls>({
     filter: "story",
@@ -82,14 +104,25 @@ export default function CloudExperience({
     started: false,
   });
 
+  // a fresh shuffle of the whole archive every visit
+  const [introItems, setIntroItems] = useState<CloudItem[]>(items);
   useEffect(() => {
-    if (shape !== "about" || aboutHover !== null) return;
-    const t = setInterval(
-      () => setAboutAuto((a) => (a + 1) % STORY_SECTIONS.length),
-      4200
-    );
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setIntroItems(shuffled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // flipbook cycles until the cloud is ready
+  useEffect(() => {
+    if (ready) return;
+    const t = setInterval(() => setFlip((f) => f + 1), 150);
     return () => clearInterval(t);
-  }, [shape, aboutHover]);
+  }, [ready]);
+
 
   // Esc leaves the about page
   useEffect(() => {
@@ -102,9 +135,19 @@ export default function CloudExperience({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shape]);
 
+  const mountAt = useRef(0);
+  useEffect(() => {
+    mountAt.current = performance.now();
+  }, []);
+
+  // let the flipbook play at least 4s before the cloud takes over
   const handleReady = () => {
-    controlsRef.current.started = true;
-    setReady(true);
+    const elapsed = mountAt.current ? performance.now() - mountAt.current : 0;
+    const wait = Math.max(0, 4000 - elapsed);
+    setTimeout(() => {
+      controlsRef.current.started = true;
+      setReady(true);
+    }, wait);
   };
 
   const handleFilter = (f: TagFilter) => {
@@ -117,52 +160,49 @@ export default function CloudExperience({
     controlsRef.current.shape = s;
   };
 
+  // chevron pager over the layouts; remembers the last one during about
+  const lastLayout = useRef<CloudShape>("sphere");
+  useEffect(() => {
+    if (shape !== "about") lastLayout.current = shape;
+  }, [shape]);
+  const layoutIndex = Math.max(
+    0,
+    LAYOUTS.findIndex(
+      (l) => l.id === (shape === "about" ? lastLayout.current : shape)
+    )
+  );
+  const [pagerDir, setPagerDir] = useState(1);
+  const stepLayout = (dir: number) => {
+    setPagerDir(dir);
+    const next = LAYOUTS[(layoutIndex + dir + LAYOUTS.length) % LAYOUTS.length];
+    handleShape(next.id);
+  };
+
+  // ←/→ page through layouts when no card is expanded (the scene uses the
+  // same keys to step through cards while one is focused)
+  useEffect(() => {
+    if (shape === "about" || focused) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") stepLayout(1);
+      else if (e.key === "ArrowLeft") stepLayout(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shape, focused, layoutIndex]);
+
   const count = useMemo(
     () => items.filter((it) => tagMatchesFilter(it.tag, filter)).length,
     [items, filter]
   );
 
   const activeFilter = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
-  const aboutActive = aboutHover ?? aboutAuto;
 
   // today first, backwards through time; the press section closes it out
   const aboutSections = useMemo(() => {
-    const eras = STORY_SECTIONS.slice(0, -1).reverse();
-    return [...eras, STORY_SECTIONS[STORY_SECTIONS.length - 1]];
+    const chronological = STORY_SECTIONS.slice(0, -1).reverse();
+    return [...chronological, STORY_SECTIONS[STORY_SECTIONS.length - 1]];
   }, []);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const aboutScrollRef = useRef<HTMLDivElement | null>(null);
-  const autoScrollUntil = useRef(0);
-
-  // the system reads section by section — keep the one it's on in view
-  useEffect(() => {
-    if (shape !== "about" || aboutHover !== null) return;
-    autoScrollUntil.current = Date.now() + 900;
-    sectionRefs.current[aboutAuto]?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, [shape, aboutAuto, aboutHover]);
-
-  // manual scrolling hands the annotation to whichever section is centered
-  const onAboutScroll = () => {
-    if (Date.now() < autoScrollUntil.current) return;
-    const box = aboutScrollRef.current?.getBoundingClientRect();
-    if (!box) return;
-    const mid = box.top + box.height / 2;
-    let best = 0;
-    let bestD = Infinity;
-    sectionRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const d = Math.abs(r.top + r.height / 2 - mid);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    });
-    setAboutAuto((a) => (a === best ? a : best));
-  };
 
   const cityOf = (item: CloudItem | null) =>
     item ? eras.find((e) => e.id === item.eraId)?.city : undefined;
@@ -217,20 +257,12 @@ export default function CloudExperience({
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ background: CLOUD_BG }}>
-      {/* the logo waits center stage while the archive loads, then takes
-          its corner as the cloud flies in */}
-      {/* eslint-disable-next-line jsx-a11y/alt-text */}
-      <motion.img
-        src="/images/pfp.svg"
+      {/* cropped mark, optically on the 16px grid; sits behind the cards */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute z-[5]"
-        initial={false}
-        animate={
-          ready
-            ? { top: 16, left: 16, x: 0, y: 0, width: 88 }
-            : { top: "50%", left: "50%", x: "-50%", y: "-50%", width: 148 }
-        }
-        transition={{ type: "spring", stiffness: 180, damping: 26 }}
+        className="pointer-events-none absolute left-4 top-4 h-10 w-auto"
       />
 
       <CloudScene
@@ -250,50 +282,64 @@ export default function CloudExperience({
         frameColor={CV.frame}
       />
 
-      {/* about me: the annotation system reads the story, section by section */}
+      {/* loading intro: a rapid flipbook through the archive */}
+      <motion.div
+        className="pointer-events-none absolute left-1/2 top-1/2 z-[8]"
+        style={{ x: "-50%", y: "-50%" }}
+        initial={false}
+        animate={{ opacity: ready ? 0 : 1, scale: ready ? 0.55 : 1 }}
+        transition={{ duration: 0.55, ease: "easeInOut" }}
+      >
+        {!ready && introItems.length > 0 && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={introItems[flip % introItems.length].img}
+            alt=""
+            className="h-auto w-auto"
+            style={{ maxHeight: "min(56vh, 520px)", maxWidth: "min(80vw, 620px)" }}
+          />
+        )}
+      </motion.div>
+
+      {/* about me: the story, annotated era by era */}
       {shape === "about" && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-10">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div
-            ref={aboutScrollRef}
-            onScroll={onAboutScroll}
-            className="pointer-events-auto max-h-[calc(100vh-230px)] w-[min(540px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 py-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="pointer-events-auto max-h-[calc(100vh-160px)] w-[min(540px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-10 pt-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{
               maskImage:
-                "linear-gradient(to bottom, transparent, black 56px, black calc(100% - 56px), transparent)",
+                "linear-gradient(to bottom, transparent, black 28px, black calc(100% - 56px), transparent)",
               WebkitMaskImage:
-                "linear-gradient(to bottom, transparent, black 56px, black calc(100% - 56px), transparent)",
+                "linear-gradient(to bottom, transparent, black 28px, black calc(100% - 56px), transparent)",
             }}
-            onMouseLeave={() => setAboutHover(null)}
           >
             {aboutSections.map((sec, i) => {
-              const accent = CV.fallback[i % CV.fallback.length];
-              const active = aboutActive === i;
+              const accent = SECTION_COLORS[sec.label] ?? CV.fallback[i % 5];
               return (
                 <motion.div
                   key={i}
-                  ref={(el) => {
-                    sectionRefs.current[i] = el;
+                  initial={{ opacity: 0, y: 28 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 220,
+                    damping: 28,
+                    delay: 0.25 + i * 0.08,
                   }}
-                  onMouseEnter={() => setAboutHover(i)}
-                  initial={false}
-                  animate={{ opacity: active ? 1 : 0.42 }}
-                  transition={{ duration: 0.45 }}
-                  className="relative mb-3 px-3.5 py-2.5"
-                  style={{
-                    border: `1px solid ${active ? accent : "transparent"}`,
-                    transition: "border-color 450ms ease",
-                  }}
+                  className="relative mb-8 px-3.5 py-2.5"
+                  style={{ border: `1px solid ${accent}` }}
                 >
-                  <motion.span
-                    initial={false}
-                    animate={{ opacity: active ? 1 : 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute -top-px left-[-1px] max-w-full -translate-y-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
-                    style={{ background: accent, color: textOn(accent) }}
+                  <span
+                    className="absolute -top-px left-[-1px] max-w-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
+                    style={{
+                      background: accent,
+                      color: textOn(accent),
+                      transform: "translateY(-100%)",
+                    }}
                   >
                     {sec.label} · {sec.years} · {sec.city}
-                  </motion.span>
-                  <StoryText runs={sec.runs} active={active} />
+                  </span>
+                  <StoryParagraph runs={sec.runs} accent={accent} />
                 </motion.div>
               );
             })}
@@ -309,27 +355,55 @@ export default function CloudExperience({
         }}
       />
 
-      {/* controls fade in once the cloud is up */}
+      {/* bottom controls hide in about mode — close (top right) is the way out */}
       <motion.div
-        animate={{ opacity: ready ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: ready ? 0.4 : 0 }}
-        style={{ pointerEvents: ready ? undefined : "none" }}
+        initial={false}
+        animate={{ opacity: ready && shape !== "about" ? 1 : 0 }}
+        transition={{ duration: 0.4, delay: ready && shape !== "about" ? 0.3 : 0 }}
+        style={{
+          pointerEvents: ready && shape !== "about" ? undefined : "none",
+        }}
       >
-        {/* shape icons: a stack in the bottom-left corner */}
-        <div className="absolute bottom-4 left-4 z-20 flex flex-col items-center gap-2.5">
-          {SHAPES.map((s) => (
-            <motion.button
-              key={s.id}
-              title={s.title}
-              onClick={() => handleShape(s.id)}
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.85 }}
-              transition={SPRING}
-              className="cursor-pointer leading-none text-black/75 transition-colors duration-200 hover:text-black"
-            >
-              <ShapeIcon shape={s.id} active={shape === s.id} />
-            </motion.button>
-          ))}
+        {/* layout pager: ‹ sphere › */}
+        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-1 text-[13px] lowercase leading-none">
+          <motion.button
+            onClick={() => stepLayout(-1)}
+            whileHover={{ scale: 1.25 }}
+            whileTap={{ scale: 0.8 }}
+            transition={SPRING}
+            className={`cursor-pointer px-1.5 text-[18px] ${LABEL_OFF}`}
+          >
+            ‹
+          </motion.button>
+          <span className={`relative block h-[14px] w-14 overflow-hidden text-center ${LABEL_ON}`}>
+            <AnimatePresence initial={false} custom={pagerDir}>
+              <motion.span
+                key={LAYOUTS[layoutIndex].label}
+                custom={pagerDir}
+                variants={{
+                  enter: (d: number) => ({ x: d * 18, opacity: 0 }),
+                  center: { x: 0, opacity: 1 },
+                  exit: (d: number) => ({ x: d * -18, opacity: 0 }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={SPRING}
+                className="absolute inset-0"
+              >
+                {LAYOUTS[layoutIndex].label}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+          <motion.button
+            onClick={() => stepLayout(1)}
+            whileHover={{ scale: 1.25 }}
+            whileTap={{ scale: 0.8 }}
+            transition={SPRING}
+            className={`cursor-pointer px-1.5 text-[18px] ${LABEL_OFF}`}
+          >
+            ›
+          </motion.button>
         </div>
 
         {/* filters: bare labels, centered */}
@@ -349,20 +423,20 @@ export default function CloudExperience({
             </motion.button>
           ))}
         </div>
-
-        {/* about me: top-right, bare label */}
-        <motion.button
-          onClick={() => handleShape(shape === "about" ? "sphere" : "about")}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.94 }}
-          transition={SPRING}
-          className={`absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none transition-colors duration-200 ${
-            shape === "about" ? LABEL_ON : LABEL_OFF
-          }`}
-        >
-          {shape === "about" ? "close" : "about me"}
-        </motion.button>
       </motion.div>
+
+      {/* about me / close: top-right, bare label */}
+      <motion.button
+        onClick={() => handleShape(shape === "about" ? lastLayout.current : "about")}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
+        transition={SPRING}
+        initial={false}
+        animate={{ opacity: ready ? 1 : 0 }}
+        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+      >
+        {shape === "about" ? "close" : "about me"}
+      </motion.button>
     </div>
   );
 }

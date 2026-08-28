@@ -34,7 +34,7 @@ export type CloudEra = {
   zoom: number;
 };
 
-export type CloudShape = "sphere" | "heart" | "cube" | "smiley" | "star" | "about";
+export type CloudShape = "sphere" | "heart" | "smiley" | "star" | "grid" | "about";
 
 // Mutable control surface written by the UI shell, read by the render loop.
 export type CloudControls = {
@@ -140,13 +140,12 @@ const SPHERE_R = 4.6;
 
 // Per-shape tuning: noise blurs organic shapes but destroys geometric ones,
 // and smaller cards let the silhouette read.
-const SHAPE_TUNE: Record<CloudShape, { noise: number; card: number }> = {
+const SHAPE_TUNE: Record<Exclude<CloudShape, "about">, { noise: number; card: number }> = {
   sphere: { noise: 1, card: 1 },
   heart: { noise: 0.2, card: 0.7 },
-  cube: { noise: 0.03, card: 0.55 },
   smiley: { noise: 0.12, card: 0.58 },
   star: { noise: 0.12, card: 0.6 },
-  about: { noise: 0.1, card: 0.8 },
+  grid: { noise: 0.02, card: 1 },
 };
 
 export default function CloudScene({
@@ -177,7 +176,7 @@ export default function CloudScene({
       0.1,
       120
     );
-    camera.position.z = 17;
+    camera.position.z = 15;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setClearColor(0x000000, 0);
@@ -187,7 +186,11 @@ export default function CloudScene({
     container.appendChild(renderer.domElement);
 
     const geo = new THREE.PlaneGeometry(1, 1);
-    const frameMat = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+    const frameMat = new THREE.MeshBasicMaterial({
+      color: "#ffffff",
+      depthTest: false,
+      depthWrite: false,
+    });
 
     type Card = {
       group: THREE.Group;
@@ -197,10 +200,13 @@ export default function CloudScene({
       item: CloudItem;
       baseColor: THREE.Color;
       thumbTex: THREE.Texture | null;
+      texLoaded: boolean;
       accent: string;
       seed: number;
       hoverScale: number;
       visScale: number;
+      introDelay: number;
+      introduced: boolean;
       ordinal: number;
       on: boolean;
       baseW: number;
@@ -216,7 +222,11 @@ export default function CloudScene({
       const bh = aspect >= 1 ? CARD_MAX / aspect : CARD_MAX;
 
       const placeholder = new THREE.Color("#aeaeb2");
-      const mat = new THREE.MeshBasicMaterial({ color: placeholder.clone() });
+      const mat = new THREE.MeshBasicMaterial({
+        color: placeholder.clone(),
+        depthTest: false,
+        depthWrite: false,
+      });
       const imgMesh = new THREE.Mesh(geo, mat);
       imgMesh.scale.set(bw, bh, 1);
       imgMesh.userData.cardIndex = i;
@@ -228,8 +238,6 @@ export default function CloudScene({
       const group = new THREE.Group();
       group.add(frameMesh);
       group.add(imgMesh);
-      // entrance: drift in from deep space
-      group.position.set(rand(i * 7 + 1) * 20, rand(i * 7 + 2) * 14, -45);
       scene.add(group);
 
       cards.push({
@@ -240,10 +248,13 @@ export default function CloudScene({
         item,
         baseColor: placeholder,
         thumbTex: null,
+        texLoaded: false,
         accent: CV.fallback[i % CV.fallback.length],
         seed: i,
         hoverScale: 1,
-        visScale: 1,
+        visScale: 0,
+        introDelay: (rand(i * 11 + 3) + 0.5) * 1300,
+        introduced: false,
         ordinal: i,
         on: true,
         baseW: bw,
@@ -296,12 +307,14 @@ export default function CloudScene({
             card.mat.map = tex;
             card.baseColor = new THREE.Color("#ffffff");
             card.mat.needsUpdate = true;
+            card.texLoaded = true;
             noteLoaded();
             pump();
           },
           undefined,
           () => {
             inFlight--;
+            card.texLoaded = true;
             noteLoaded();
             pump();
           }
@@ -322,7 +335,7 @@ export default function CloudScene({
         tex.colorSpace = THREE.SRGBColorSpace;
         fullTextures.set(card.item.id, tex);
         // don't clobber a live video texture
-        if (videoCard !== card) {
+        if (videoCard !== card && !isAmbient(card)) {
           card.mat.map = tex;
           card.mat.needsUpdate = true;
         }
@@ -338,6 +351,7 @@ export default function CloudScene({
       if (!videoCard) return;
       const card = videoCard;
       videoCard = null;
+      if (isAmbient(card)) return;
       if (videoEl) {
         videoEl.pause();
         videoEl.removeAttribute("src");
@@ -350,8 +364,48 @@ export default function CloudScene({
       card.mat.needsUpdate = true;
     }
 
+    // ---- ambient videos: a small rotating pool plays inside the shape ----
+    type Ambient = { card: Card; el: HTMLVideoElement; tex: THREE.VideoTexture };
+    const ambient: Ambient[] = [];
+    const AMBIENT_N = 4;
+    let nextAmbientAt = 0;
+
+    function stopAmbient(slot: Ambient) {
+      const idx = ambient.indexOf(slot);
+      if (idx !== -1) ambient.splice(idx, 1);
+      slot.el.pause();
+      slot.el.removeAttribute("src");
+      slot.el.load();
+      slot.tex.dispose();
+      slot.card.mat.map =
+        fullTextures.get(slot.card.item.id) ?? slot.card.thumbTex;
+      slot.card.mat.needsUpdate = true;
+    }
+
+    function startAmbient(card: Card) {
+      if (!card.item.videoUrl) return;
+      const el = document.createElement("video");
+      el.src = card.item.videoUrl;
+      el.muted = true;
+      el.loop = true;
+      el.playsInline = true;
+      el.crossOrigin = "anonymous";
+      el.play().catch(() => {});
+      const tex = new THREE.VideoTexture(el);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      card.mat.map = tex;
+      card.mat.needsUpdate = true;
+      ambient.push({ card, el, tex });
+    }
+
+    function isAmbient(card: Card) {
+      return ambient.some((a) => a.card === card);
+    }
+
     function playVideo(card: Card) {
       if (videoCard === card || !card.item.videoUrl) return;
+      // already playing ambiently — leave it be
+      if (isAmbient(card)) return;
       stopVideo();
       videoCard = card;
       const v = document.createElement("video");
@@ -418,38 +472,6 @@ export default function CloudScene({
       );
     }
 
-    // Cards on the six faces of a cube; rows pulled tight so the faces
-    // read solid instead of striped.
-    function cubePos(ord: number, out: THREE.Vector3) {
-      const S = 3.35;
-      const per = Math.ceil(visibleCount / 6);
-      const f = Math.min(5, Math.floor(ord / per));
-      const j = ord - f * per;
-      const cols = Math.max(1, Math.ceil(Math.sqrt(per)));
-      const rows = Math.max(1, Math.ceil(per / cols));
-      const a = (((j % cols) + 0.5) / cols - 0.5) * 2 * S;
-      const b = ((Math.floor(j / cols) + 0.5) / rows - 0.5) * 2 * S;
-      switch (f) {
-        case 0:
-          out.set(a, b, S);
-          break;
-        case 1:
-          out.set(-a, b, -S);
-          break;
-        case 2:
-          out.set(S, b, -a);
-          break;
-        case 3:
-          out.set(-S, b, a);
-          break;
-        case 4:
-          out.set(a, S, -b);
-          break;
-        default:
-          out.set(a, -S, b);
-      }
-    }
-
     // Classic smiley: outline ring, two oval eyes, a big smile arc.
     function smileyPos(ord: number, out: THREE.Vector3) {
       const R = 4.3;
@@ -483,37 +505,6 @@ export default function CloudScene({
       }
     }
 
-    // Picture-frame border hugging the actual screen edges — the images make
-    // room and the story text sits in the clear middle.
-    let aboutHW = 6.6;
-    let aboutHH = 4.6;
-    function aboutPos(ord: number, out: THREE.Vector3) {
-      const hw = aboutHW;
-      const hh = aboutHH;
-      const P = 4 * (hw + hh);
-      const d = (visibleCount <= 1 ? 0 : ord / visibleCount) * P;
-      let x: number;
-      let y: number;
-      if (d < 2 * hw) {
-        x = -hw + d;
-        y = hh;
-      } else if (d < 2 * hw + 2 * hh) {
-        x = hw;
-        y = hh - (d - 2 * hw);
-      } else if (d < 4 * hw + 2 * hh) {
-        x = hw - (d - 2 * hw - 2 * hh);
-        y = -hh;
-      } else {
-        x = -hw;
-        y = -hh + (d - 4 * hw - 2 * hh);
-      }
-      out.set(
-        x + rand(ord * 13 + 1) * 0.5,
-        y + rand(ord * 13 + 2) * 0.5,
-        rand(ord * 5 + 4) * 0.8
-      );
-    }
-
     // Five-pointed star: sample along the polygon edges, rim-biased fill.
     function starPos(ord: number, out: THREE.Vector3) {
       const R = 4.9;
@@ -532,18 +523,39 @@ export default function CloudScene({
       out.set(px * rr, py * rr + 0.2, rand(ord * 5 + 4) * 0.9);
     }
 
-    function shapePos(shape: CloudShape, ord: number, out: THREE.Vector3) {
+    // Chronological grid — everything on screen at once.
+    let gridCols = 12;
+    let gridRows = 26;
+    let gridCell = 0.6;
+    let gridScale = 0.3;
+    function gridPos(ord: number, out: THREE.Vector3) {
+      const row = Math.floor(ord / gridCols);
+      const col = ord % gridCols;
+      out.set(
+        (col - (gridCols - 1) / 2) * gridCell,
+        ((gridRows - 1) / 2 - row) * gridCell,
+        rand(ord * 5 + 4) * 0.08
+      );
+    }
+
+    function shapePos(
+      shape: Exclude<CloudShape, "about">,
+      ord: number,
+      out: THREE.Vector3
+    ) {
       if (shape === "heart") heartPos(ord, out);
-      else if (shape === "cube") cubePos(ord, out);
       else if (shape === "smiley") smileyPos(ord, out);
       else if (shape === "star") starPos(ord, out);
-      else if (shape === "about") aboutPos(ord, out);
+      else if (shape === "grid") gridPos(ord, out);
       else spherePos(ord, out);
     }
 
     // ---- interaction state ------------------------------------------------
     let effRot = 0.6;
     let rotVel = 0;
+    let layoutShape: Exclude<CloudShape, "about"> = "sphere";
+    let startedAtMs = 0;
+    let aboutBlend = 0;
     let flatBlend = 0; // 1 = flat shape (heart/smiley/about): face camera
     let noiseBlend = 1;
     let cardScaleBlend = 1;
@@ -554,11 +566,11 @@ export default function CloudScene({
     // fit the cloud: never closer than 17, further on narrow (mobile) screens
     function fitZoom() {
       return Math.max(
-        17,
-        6.9 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
+        15,
+        5.9 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
       );
     }
-    let zoomTarget = 17;
+    let zoomTarget = 15;
     zoomTarget = fitZoom();
     camera.position.z = zoomTarget;
     const pointerNdc = new THREE.Vector2(2, 2);
@@ -575,19 +587,21 @@ export default function CloudScene({
     let seenUnfocusToken = controlsRef.current.unfocusToken;
     recomputeOrdinals(seenFilter);
 
-    const raycaster = new THREE.Raycaster();
-
-    function setElevated(card: Card, on: boolean) {
-      card.imgMesh.renderOrder = on ? 10 : 0;
-      card.frameMesh.renderOrder = on ? 9 : 0;
-      card.mat.depthTest = !on;
+    // cards start already in formation, invisible until their texture lands
+    {
+      const v = new THREE.Vector3();
+      for (const c of cards) {
+        spherePos(c.ordinal, v);
+        c.group.position.copy(v);
+        c.group.scale.setScalar(0.0001);
+      }
     }
+
+    const raycaster = new THREE.Raycaster();
 
     function setHovered(next: Card | null) {
       if (next === hovered) return;
-      if (hovered && hovered !== focused) setElevated(hovered, false);
       hovered = next;
-      if (hovered && hovered !== focused && !attractMode) setElevated(hovered, true);
       const id = hovered ? hovered.item.id : null;
       if (id !== lastHoverId) {
         lastHoverId = id;
@@ -600,12 +614,8 @@ export default function CloudScene({
 
     function setFocus(card: Card | null) {
       if (focused === card) return;
-      if (focused) setElevated(focused, false);
       focused = card;
-      if (focused) {
-        setElevated(focused, true);
-        loadFull(focused);
-      }
+      if (focused) loadFull(focused);
       callbacksRef.current.onFocusChange(
         focused ? focused.item : null,
         focused ? focused.accent : null
@@ -695,6 +705,7 @@ export default function CloudScene({
       raf = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.05);
       const time = clock.elapsedTime;
+      const nowMs = performance.now();
       const controls = controlsRef.current;
 
       if (controls.filter !== seenFilter) {
@@ -707,19 +718,36 @@ export default function CloudScene({
         setFocus(null);
       }
 
-      const tune = SHAPE_TUNE[controls.shape];
+      // about keeps the last real layout; the formation just flies off-screen
+      if (controls.shape !== "about") layoutShape = controls.shape;
+      aboutBlend += ((controls.shape === "about" ? 1 : 0) - aboutBlend) * 0.07;
+
+      const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
+
+      // chronological grid sized to the visible frustum
+      if (layoutShape === "grid") {
+        const gw = frusH * camera.aspect * 2 * 0.92;
+        const gh = frusH * 2 * 0.82;
+        gridCols = Math.max(1, Math.round(Math.sqrt((visibleCount * gw) / gh)));
+        gridRows = Math.ceil(visibleCount / gridCols);
+        gridCell = Math.min(gw / gridCols, gh / gridRows);
+        gridScale = (gridCell / CARD_MAX) * 0.92;
+      }
+
+      const tune = SHAPE_TUNE[layoutShape];
       noiseBlend += (tune.noise - noiseBlend) * 0.05;
-      cardScaleBlend += (tune.card - cardScaleBlend) * 0.06;
+      const cardTarget = layoutShape === "grid" ? gridScale : tune.card;
+      cardScaleBlend += (cardTarget - cardScaleBlend) * 0.06;
 
       const noiseAmp =
         (0.09 + 0.075 * (1 + Math.sin(time * 0.045 + 2))) * noiseBlend;
 
       // flat shapes face the camera and sway instead of spin
       const flatTarget =
-        controls.shape === "heart" ||
-        controls.shape === "smiley" ||
-        controls.shape === "star" ||
-        controls.shape === "about"
+        layoutShape === "heart" ||
+        layoutShape === "smiley" ||
+        layoutShape === "star" ||
+        layoutShape === "grid"
           ? 1
           : 0;
       flatBlend += (flatTarget - flatBlend) * 0.06;
@@ -733,19 +761,17 @@ export default function CloudScene({
       rotVel *= 0.94;
 
       const sway =
-        controls.shape === "heart" ||
-        controls.shape === "smiley" ||
-        controls.shape === "star"
+        layoutShape === "heart" ||
+        layoutShape === "smiley" ||
+        layoutShape === "star"
           ? Math.sin(time * 0.35) * 0.15 * flatBlend
           : 0;
       const angle = effRot + sway;
 
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
 
-      // about ring tracks the visible frustum so cards straddle the edges
-      const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
-      aboutHW = frusH * camera.aspect * 0.99;
-      aboutHH = frusH * 0.93;
+      // in about mode the whole formation exits above the frame
+      const yUp = aboutBlend * frusH * 3.2;
 
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
@@ -759,14 +785,21 @@ export default function CloudScene({
       for (const card of cards) {
         const i = card.ordinal;
 
-        // about mode is just the story — every card steps aside
-        const visTarget = card.on && controls.shape !== "about" ? 1 : 0;
+        // cards appear as their thumbnail arrives — no grey tiles — in a
+        // staggered wave that blooms outward from where the flipbook was
+        if (controls.started && !startedAtMs) startedAtMs = nowMs;
+        const due =
+          controls.started && nowMs - startedAtMs >= card.introDelay;
+        const visTarget = card.on && due && card.texLoaded ? 1 : 0;
+        if (visTarget > 0 && !card.introduced) {
+          card.introduced = true;
+          card.group.position.multiplyScalar(0.12);
+        }
         card.visScale += (visTarget - card.visScale) * 0.12;
 
-        // filtered-out cards shrink where they stand — no drifting away;
-        // everything holds in deep space until the loading intro hands over
-        if (card.on && controls.started) {
-          shapePos(controls.shape, i, shapeV);
+        // filtered-out cards shrink where they stand — no drifting away
+        if (card.on) {
+          shapePos(layoutShape, i, shapeV);
           tmpV.copy(shapeV);
 
           // noise on x/y only — z stays layered so cards don't slice through
@@ -775,7 +808,7 @@ export default function CloudScene({
 
           const rx = tmpV.x * cos + tmpV.z * sin;
           const rz = -tmpV.x * sin + tmpV.z * cos;
-          tmpV.set(rx, tmpV.y, rz);
+          tmpV.set(rx, tmpV.y + yUp, rz);
 
           if (card === focused) {
             tmpV.set(0, 0.25, camera.position.z - 6);
@@ -792,14 +825,28 @@ export default function CloudScene({
             (focusH * 0.62) / card.baseH,
             (focusW * 0.82) / card.baseW
           );
-        } else if (card === hovered && !attractMode) {
-          scaleTarget = cardScaleBlend * 1.08;
+        } else if (card === hovered && !attractMode && layoutShape === "grid") {
+          // grid hover expands to the same on-screen size as a click-expand,
+          // computed for the grid's viewing distance
+          const fH = 2 * 6 * Math.tan(THREE.MathUtils.degToRad(20));
+          const fW = fH * camera.aspect;
+          scaleTarget =
+            Math.min((fH * 0.62) / card.baseH, (fW * 0.82) / card.baseW) *
+            (camera.position.z / 6);
         }
         card.hoverScale += (scaleTarget - card.hoverScale) * 0.12;
         const s = card.hoverScale * card.visScale;
         card.group.scale.setScalar(Math.max(0.0001, s));
 
         card.mat.color.copy(card.baseColor);
+
+        // painter's algorithm: nearer cards draw later; the inspected card
+        // always draws on top
+        const dist = card.group.position.distanceTo(camera.position);
+        let ro = (100 - dist) * 10;
+        if (card === focused || (card === hovered && !attractMode)) ro += 10000;
+        card.frameMesh.renderOrder = ro;
+        card.imgMesh.renderOrder = ro + 0.5;
 
         if (card.on && card !== focused && card.visScale > 0.5) {
           proj.copy(card.group.position).project(camera);
@@ -815,13 +862,8 @@ export default function CloudScene({
       }
 
       // ---- hover: real pointer, or idle attract mode ----
-      const nowMs = performance.now();
       const idle =
         controls.started && nowMs - lastMoveAt > 2500 && !dragging && !focused;
-      if (attractMode && !idle && hovered && hovered !== focused) {
-        // user takes over an attract-hovered card: give it the real treatment
-        setElevated(hovered, true);
-      }
       attractMode = idle;
       if (idle) {
         // the cloud inspects itself: cast rays at random screen points so it
@@ -859,6 +901,35 @@ export default function CloudScene({
         : hovered
           ? "pointer"
           : "grab";
+
+      // ambient pool: keep a few videos playing inside the shape, swapping
+      // one slot at a time so bandwidth stays sane
+      if (controls.started && controls.shape !== "about" && nowMs > nextAmbientAt) {
+        nextAmbientAt = nowMs + (ambient.length < AMBIENT_N ? 900 : 6000);
+        // drop slots whose card left the stage
+        for (const slot of [...ambient]) {
+          if (!slot.card.on || slot.card.visScale < 0.5) stopAmbient(slot);
+        }
+        if (ambient.length >= AMBIENT_N && ambient.length > 0) {
+          stopAmbient(ambient[0]);
+        }
+        const candidates = cards.filter(
+          (c) =>
+            c.item.videoUrl &&
+            c.on &&
+            c.visScale > 0.5 &&
+            c.texLoaded &&
+            c !== focused &&
+            c !== videoCard &&
+            !isAmbient(c) &&
+            c.group.position.z > 0.5
+        );
+        if (candidates.length) {
+          startAmbient(candidates[Math.floor(Math.random() * candidates.length)]);
+        }
+      } else if (controls.shape === "about" && ambient.length) {
+        for (const slot of [...ambient]) stopAmbient(slot);
+      }
 
       // inline video: focused card wins, else the hovered one
       const videoTarget =
@@ -915,7 +986,8 @@ export default function CloudScene({
       if (bbox) {
         // in about mode the story is the content — only card boxes, no master frame
         bbox.style.opacity =
-          !controls.started || (controls.shape === "about" && !target)
+          !controls.started ||
+          ((controls.shape === "about" || controls.shape === "grid") && !target)
             ? "0"
             : "1";
         bbox.dataset.mode = focused ? "focus" : hovered ? "card" : "cloud";
@@ -951,6 +1023,7 @@ export default function CloudScene({
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
       container.removeEventListener("pointerup", onPointerUp);
+      for (const slot of [...ambient]) stopAmbient(slot);
       stopVideo();
       textures.forEach((t) => t.dispose());
       fullTextures.forEach((t) => t.dispose());
