@@ -41,6 +41,7 @@ export type CloudControls = {
   filter: TagFilter;
   unfocusToken: number; // bumped → release focused card
   shape: CloudShape;
+  started: boolean; // false until the loading intro hands over
 };
 
 type Props = {
@@ -48,6 +49,8 @@ type Props = {
   controlsRef: MutableRefObject<CloudControls>;
   onHoverItem: (item: CloudItem | null, accent: string | null) => void;
   onFocusChange: (item: CloudItem | null, accent: string | null) => void;
+  // fired once when enough thumbnails are in to raise the curtain
+  onReady: () => void;
   // Rides the master frame's top edge — the page header lives here.
   frameLabel: ReactNode;
   // Anchored under the frame's bottom-right corner — the hovered/focused caption.
@@ -131,7 +134,7 @@ export const CV = {
   fallback: ["#00c853", "#2979ff", "#ff2fae", "#ffc400", "#e8442e"],
 };
 
-const CARD_MAX = 1.5;
+const CARD_MAX = 1.8;
 const FRAME_PAD = 0.014; // hairline edge
 const SPHERE_R = 4.6;
 
@@ -154,12 +157,13 @@ export default function CloudScene({
   frameLabel,
   frameCaption,
   frameColor,
+  onReady,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bboxRef = useRef<HTMLDivElement>(null);
   const chipRefs = useRef<Record<string, HTMLSpanElement | null>>({});
-  const callbacksRef = useRef({ onHoverItem, onFocusChange });
-  callbacksRef.current = { onHoverItem, onFocusChange };
+  const callbacksRef = useRef({ onHoverItem, onFocusChange, onReady });
+  callbacksRef.current = { onHoverItem, onFocusChange, onReady };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -254,6 +258,23 @@ export default function CloudScene({
     let loadCursor = 0;
     let inFlight = 0;
     let disposed = false;
+    let loadedCount = 0;
+    let readyFired = false;
+    const readyThreshold = Math.ceil(cards.length * 0.65);
+    function noteLoaded() {
+      loadedCount++;
+      if (!readyFired && loadedCount >= readyThreshold) {
+        readyFired = true;
+        callbacksRef.current.onReady();
+      }
+    }
+    // don't hold the curtain forever on a slow connection
+    const readyTimeout = setTimeout(() => {
+      if (!readyFired) {
+        readyFired = true;
+        callbacksRef.current.onReady();
+      }
+    }, 6000);
     const textures: THREE.Texture[] = [];
     const fullTextures = new Map<string, THREE.Texture>();
 
@@ -275,11 +296,13 @@ export default function CloudScene({
             card.mat.map = tex;
             card.baseColor = new THREE.Color("#ffffff");
             card.mat.needsUpdate = true;
+            noteLoaded();
             pump();
           },
           undefined,
           () => {
             inFlight--;
+            noteLoaded();
             pump();
           }
         );
@@ -532,7 +555,7 @@ export default function CloudScene({
     function fitZoom() {
       return Math.max(
         17,
-        6.5 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
+        6.9 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
       );
     }
     let zoomTarget = 17;
@@ -739,8 +762,9 @@ export default function CloudScene({
         const visTarget = card.on ? 1 : 0;
         card.visScale += (visTarget - card.visScale) * 0.12;
 
-        // filtered-out cards shrink where they stand — no drifting away
-        if (card.on) {
+        // filtered-out cards shrink where they stand — no drifting away;
+        // everything holds in deep space until the loading intro hands over
+        if (card.on && controls.started) {
           shapePos(controls.shape, i, shapeV);
           tmpV.copy(shapeV);
 
@@ -791,7 +815,8 @@ export default function CloudScene({
 
       // ---- hover: real pointer, or idle attract mode ----
       const nowMs = performance.now();
-      const idle = nowMs - lastMoveAt > 2500 && !dragging && !focused;
+      const idle =
+        controls.started && nowMs - lastMoveAt > 2500 && !dragging && !focused;
       if (attractMode && !idle && hovered && hovered !== focused) {
         // user takes over an attract-hovered card: give it the real treatment
         setElevated(hovered, true);
@@ -889,7 +914,9 @@ export default function CloudScene({
       if (bbox) {
         // in about mode the story is the content — only card boxes, no master frame
         bbox.style.opacity =
-          controls.shape === "about" && !target ? "0" : "1";
+          !controls.started || (controls.shape === "about" && !target)
+            ? "0"
+            : "1";
         bbox.dataset.mode = focused ? "focus" : hovered ? "card" : "cloud";
         bbox.style.borderColor = target ? target.accent : "";
         bbox.style.transform = `translate(${frameRect.x.toFixed(1)}px, ${frameRect.y.toFixed(1)}px)`;
@@ -916,6 +943,7 @@ export default function CloudScene({
 
     return () => {
       disposed = true;
+      clearTimeout(readyTimeout);
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKey);
