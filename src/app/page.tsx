@@ -1,5 +1,101 @@
-// The root page IS the work page — no separate /work route needed.
-// (The old scroll-based homepage implementation was replaced by the
-// filmstrip + timeline design in /work; this re-export makes the root
-// URL serve that instead of requiring /work to be iterated on.)
-export { default } from "./work/page";
+// The cloud IS the homepage. The previous filmstrip home lives on at
+// /work, and the pre-cloud site is preserved on the legacy-home branch.
+import { list } from "@vercel/blob";
+import { buildTimeline } from "@/lib/work/timeline";
+import { ERAS, ERA_ORDER } from "@/lib/work/eras";
+import { getTagForMedia, type TagOverrides } from "@/lib/work/tags";
+import CloudExperience from "@/components/cloud/CloudExperience";
+import type { CloudItem, CloudEra } from "@/components/cloud/CloudScene";
+
+export const revalidate = 300;
+
+// Year-end recap videos — montages of many ideas at once. They carry extra
+// visual weight in the cloud so they stay discoverable.
+const RECAP_IDS = new Set([
+  "1476598463068459033", // 2021 recap
+  "1607474472814252032", // 2022 recap
+  "1740048490494046717", // 2023 recap
+  "1870147213441241455", // 2024 images-in-motion recap
+  "1871233348926075021", // 2024 prototypes recap
+]);
+
+// Tweet text in the archive carries HTML entities — decode for display.
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'");
+}
+
+// Same graceful blob reads as the dashboard APIs — locally without a blob
+// token these just fall back to defaults.
+async function readBlobJson<T>(path: string): Promise<T | null> {
+  try {
+    const { blobs } = await list({ prefix: path, limit: 1 });
+    const match = blobs.find((b) => b.pathname === path);
+    if (!match) return null;
+    const res = await fetch(match.url, { cache: "no-store" });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const [hiddenData, tagsData] = await Promise.all([
+    readBlobJson<{ ids?: string[] }>("dashboard/hidden.json"),
+    readBlobJson<{ overrides?: TagOverrides }>("dashboard/tags.json"),
+  ]);
+  const hidden = new Set(hiddenData?.ids ?? []);
+  const overrides: TagOverrides = tagsData?.overrides ?? {};
+
+  const timeline = buildTimeline(hidden);
+
+  const items: CloudItem[] = [];
+  for (const item of timeline) {
+    if (item.kind !== "media") continue;
+    const m = item.media;
+    const img =
+      m.type === "photo"
+        ? m.midBlobUrl ?? m.thumbBlobUrl ?? m.blobUrl
+        : m.midBlobUrl ?? m.posterBlobUrl;
+    if (!img) continue;
+    const imgFull = m.type === "photo" ? m.blobUrl ?? img : m.posterBlobUrl ?? img;
+    items.push({
+      id: `${item.tweetId}:${item.mediaIndex}`,
+      date: item.date,
+      text: decodeEntities(item.text.split("\n")[0]).slice(0, 140),
+      url: item.url,
+      img,
+      imgFull,
+      videoUrl: m.type === "video" ? m.blobUrl : undefined,
+      recap: RECAP_IDS.has(item.tweetId),
+      w: m.width ?? 1,
+      h: m.height ?? 1,
+      eraId: item.eraId,
+      tag: getTagForMedia(item.tweetId, item.mediaIndex, m, overrides),
+    });
+  }
+
+  // Oldest → newest so time flows along the spiral.
+  items.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+  // Era metadata for the rail + minimap, newest first (matches the site).
+  const eras: CloudEra[] = [...ERA_ORDER]
+    .reverse()
+    .filter((id) => items.some((it) => it.eraId === id))
+    .map((id) => ({
+      id,
+      label: ERAS[id].label,
+      years: ERAS[id].years,
+      color: ERAS[id].color,
+      city: ERAS[id].city,
+      center: ERAS[id].location,
+      zoom: ERAS[id].zoom,
+    }));
+
+  return <CloudExperience items={items} eras={eras} />;
+}
