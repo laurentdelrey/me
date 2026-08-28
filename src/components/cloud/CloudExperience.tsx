@@ -416,13 +416,13 @@ export default function CloudExperience({
             <motion.div
               key="pager"
               className="flex items-center"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{
                 opacity: 1,
                 y: 0,
-                transition: { type: "spring", stiffness: 300, damping: 26 },
+                transition: { type: "spring", stiffness: 170, damping: 24 },
               }}
-              exit={{ opacity: 0, y: 6, transition: { duration: 0.12 } }}
+              exit={{ opacity: 0, y: 4, transition: { duration: 0.12 } }}
             >
               <motion.button
                 onClick={() => stepLayout(-1)}
@@ -474,8 +474,12 @@ export default function CloudExperience({
         <motion.div
           className="absolute bottom-4 left-1/2 z-20 flex h-7 -translate-x-1/2 items-center gap-5"
           initial={false}
-          animate={{ opacity: pickerOpen ? 0 : 1 }}
-          transition={{ duration: 0.2 }}
+          animate={{ opacity: pickerOpen ? 0 : 1, y: pickerOpen ? 6 : 0 }}
+          transition={
+            pickerOpen
+              ? { duration: 0.15 }
+              : { type: "spring", stiffness: 170, damping: 24 }
+          }
           style={{ pointerEvents: pickerOpen ? "none" : undefined }}
         >
           {FILTERS.map((f) => (
@@ -499,7 +503,6 @@ export default function CloudExperience({
       {/* about me / close: top-right, bare label */}
       <motion.button
         onClick={() => handleShape(shape === "about" ? lastLayout.current : "about")}
-        whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.94 }}
         transition={SPRING}
         initial={false}
