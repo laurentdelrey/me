@@ -206,6 +206,7 @@ export default function CloudScene({
       introDelay: number;
       introduced: boolean;
       introBlend: number;
+      sortDist: number;
       ordinal: number;
       on: boolean;
       baseW: number;
@@ -269,6 +270,7 @@ export default function CloudScene({
         introDelay: (rand(i * 11 + 3) + 0.5) * 1300,
         introduced: false,
         introBlend: 0,
+        sortDist: 15,
         ordinal: i,
         on: true,
         baseW: bw,
@@ -747,7 +749,7 @@ export default function CloudScene({
 
       // about keeps the last real layout; the formation just flies off-screen
       if (controls.shape !== "about") layoutShape = controls.shape;
-      aboutBlend += ((controls.shape === "about" ? 1 : 0) - aboutBlend) * 0.07;
+      aboutBlend += ((controls.shape === "about" ? 1 : 0) - aboutBlend) * 0.11;
 
       const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
 
@@ -814,8 +816,11 @@ export default function CloudScene({
 
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
 
-      // in about mode the whole formation exits above the frame
-      const yUp = aboutBlend * frusH * 3.2;
+      // in about mode the whole formation exits above the frame; the grid is
+      // taller than the screen, so it must travel its full height plus margin
+      const yUp =
+        aboutBlend *
+        (layoutShape === "grid" ? gridTotalH + frusH * 2.5 : frusH * 3.2);
 
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
@@ -908,9 +913,11 @@ export default function CloudScene({
           card.introBlend;
 
         // painter's algorithm: nearer cards draw later; the inspected card
-        // always draws on top
+        // always draws on top. The sort key is smoothed so near-ties don't
+        // flicker order back and forth while the cloud rotates.
         const dist = card.group.position.distanceTo(camera.position);
-        let ro = (100 - dist) * 10;
+        card.sortDist += (dist - card.sortDist) * 0.12;
+        let ro = (100 - card.sortDist) * 10;
         if (card === focused || (card === hovered && !attractMode)) ro += 10000;
         card.frameMesh.renderOrder = ro;
         card.imgMesh.renderOrder = ro + 0.5;
@@ -930,8 +937,15 @@ export default function CloudScene({
 
       // ---- hover: real pointer, or idle attract mode ----
       const idle =
-        controls.started && nowMs - lastMoveAt > 2500 && !dragging && !focused;
+        controls.started &&
+        controls.shape !== "about" &&
+        nowMs - lastMoveAt > 2500 &&
+        !dragging &&
+        !focused;
       attractMode = idle;
+      if (controls.shape === "about" && hovered && hovered !== focused) {
+        setHovered(null);
+      }
       if (idle) {
         // the cloud inspects itself: cast rays at random screen points so it
         // only annotates cards a real cursor could actually hover
@@ -950,7 +964,7 @@ export default function CloudScene({
             }
           }
         }
-      } else if (pointerActive) {
+      } else if (pointerActive && controls.shape !== "about") {
         raycaster.setFromCamera(pointerNdc, camera);
         const hits = raycaster.intersectObjects(pickMeshes, false);
         let next: Card | null = null;
