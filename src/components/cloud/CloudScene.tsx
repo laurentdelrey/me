@@ -580,7 +580,7 @@ export default function CloudScene({
     function fitZoom() {
       return Math.max(
         15,
-        5.9 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
+        4.8 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
       );
     }
     let zoomTarget = 15;

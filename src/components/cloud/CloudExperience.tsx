@@ -379,7 +379,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-4 left-4 z-20 flex h-7 items-center text-[14px] lowercase leading-none"
+          className="absolute bottom-14 left-4 z-20 flex h-7 items-center text-[15px] lowercase leading-none sm:bottom-4"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -429,13 +429,13 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: -2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[19px] text-black/35 transition-colors hover:text-black"
               >
                 ‹
               </motion.button>
               <button
                 onClick={() => setPickerOpen(true)}
-                className="relative block h-[15px] w-16 cursor-pointer overflow-hidden text-center text-black/85"
+                className="relative block h-[17px] w-[70px] cursor-pointer overflow-hidden text-center text-black/85"
               >
                 <AnimatePresence initial={false} custom={pagerDir}>
                   <motion.span
@@ -461,7 +461,7 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: 2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[19px] text-black/35 transition-colors hover:text-black"
               >
                 ›
               </motion.button>
@@ -470,15 +470,21 @@ export default function CloudExperience({
           </AnimatePresence>
         </div>
 
-        {/* filters: bare labels, centered */}
-        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
+        {/* filters: bare labels, centered; step aside while the picker is open */}
+        <motion.div
+          className="absolute bottom-4 left-1/2 z-20 flex h-7 -translate-x-1/2 items-center gap-5"
+          initial={false}
+          animate={{ opacity: pickerOpen ? 0 : 1 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: pickerOpen ? "none" : undefined }}
+        >
           {FILTERS.map((f) => (
             <motion.button
               key={f.id}
               onClick={() => handleFilter(f.id)}
               whileTap={{ scale: 0.92 }}
               transition={SPRING}
-              className={`cursor-pointer text-[13px] lowercase leading-none transition-colors duration-200 ${
+              className={`cursor-pointer text-[15px] lowercase leading-none transition-colors duration-200 ${
                 filter === f.id
                   ? "text-black/85"
                   : "text-black/35 hover:text-black/70"
@@ -487,7 +493,7 @@ export default function CloudExperience({
               {f.label}
             </motion.button>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* about me / close: top-right, bare label */}
@@ -498,7 +504,7 @@ export default function CloudExperience({
         transition={SPRING}
         initial={false}
         animate={{ opacity: ready ? 1 : 0 }}
-        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[15px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         {shape === "about" ? "close" : "about me"}
       </motion.button>
