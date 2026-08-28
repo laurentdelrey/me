@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { tagMatchesFilter, type TagFilter } from "@/lib/work/tags";
 import { STORY_SECTIONS } from "@/lib/work/story";
+import StoryText from "./StoryText";
 import CloudScene, {
   CV,
   CLOUD_BG,
@@ -21,52 +22,90 @@ function textOn(color: string): string {
   return lum > 150 ? "#000" : "#fff";
 }
 
-// ---- crisp solid icons, one optical family --------------------------------
+// ---- crisp icons: filled when active, outlined when not -------------------
 
-function ShapeIcon({ shape }: { shape: CloudShape }) {
+function ShapeIcon({ shape, active }: { shape: CloudShape; active: boolean }) {
   const id = useId();
+  const stroke = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinejoin: "round" as const,
+    strokeLinecap: "round" as const,
+  };
   if (shape === "sphere") {
     return (
       <svg width={20} height={20} viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="8.4" fill="currentColor" />
+        {active ? (
+          <circle cx="10" cy="10" r="8.4" fill="currentColor" />
+        ) : (
+          <circle cx="10" cy="10" r="7.6" {...stroke} />
+        )}
       </svg>
     );
   }
   if (shape === "heart") {
+    const d =
+      "M10 17.4 C4.9 13.7 2.4 10.7 2.4 7.5 C2.4 5.1 4.3 3.2 6.5 3.2 C7.9 3.2 9.3 4 10 5.3 C10.7 4 12.1 3.2 13.5 3.2 C15.7 3.2 17.6 5.1 17.6 7.5 C17.6 10.7 15.1 13.7 10 17.4 Z";
     return (
       <svg width={20} height={20} viewBox="0 0 20 20">
-        <path
-          fill="currentColor"
-          d="M10 17.4 C4.9 13.7 2.4 10.7 2.4 7.5 C2.4 5.1 4.3 3.2 6.5 3.2 C7.9 3.2 9.3 4 10 5.3 C10.7 4 12.1 3.2 13.5 3.2 C15.7 3.2 17.6 5.1 17.6 7.5 C17.6 10.7 15.1 13.7 10 17.4 Z"
-        />
+        {active ? <path fill="currentColor" d={d} /> : <path {...stroke} d={d} />}
       </svg>
     );
   }
   if (shape === "cube") {
     return (
       <svg width={20} height={20} viewBox="0 0 20 20">
-        <polygon points="10,1.6 17.6,6 10,10.4 2.4,6" fill="currentColor" />
-        <polygon
-          points="2.4,6 10,10.4 10,18.8 2.4,14.4"
-          fill="currentColor"
-          opacity="0.55"
-        />
-        <polygon
-          points="17.6,6 10,10.4 10,18.8 17.6,14.4"
-          fill="currentColor"
-          opacity="0.3"
-        />
+        {active ? (
+          <>
+            <polygon points="10,1.6 17.6,6 10,10.4 2.4,6" fill="currentColor" />
+            <polygon
+              points="2.4,6 10,10.4 10,18.8 2.4,14.4"
+              fill="currentColor"
+              opacity="0.55"
+            />
+            <polygon
+              points="17.6,6 10,10.4 10,18.8 17.6,14.4"
+              fill="currentColor"
+              opacity="0.3"
+            />
+          </>
+        ) : (
+          <>
+            <polygon
+              points="10,2.2 17,6.2 17,13.8 10,17.8 3,13.8 3,6.2"
+              {...stroke}
+            />
+            <path d="M3 6.2 L10 10.2 L17 6.2 M10 10.2 L10 17.8" {...stroke} />
+          </>
+        )}
       </svg>
     );
   }
   if (shape === "star") {
+    const pts =
+      "10.00,1.20 12.17,7.01 18.37,7.28 13.52,11.14 15.17,17.12 10.00,13.70 4.83,17.12 6.48,11.14 1.63,7.28 7.83,7.01";
     return (
       <svg width={20} height={20} viewBox="0 0 20 20">
-        <polygon points="10.00,1.20 12.17,7.01 18.37,7.28 13.52,11.14 15.17,17.12 10.00,13.70 4.83,17.12 6.48,11.14 1.63,7.28 7.83,7.01" fill="currentColor" />
+        {active ? (
+          <polygon points={pts} fill="currentColor" />
+        ) : (
+          <polygon points={pts} {...stroke} />
+        )}
       </svg>
     );
   }
-  // smiley: eyes and smile knocked out of a solid disc
+  // smiley
+  if (!active) {
+    return (
+      <svg width={20} height={20} viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="7.6" {...stroke} />
+        <circle cx="7.2" cy="8" r="0.95" fill="currentColor" />
+        <circle cx="12.8" cy="8" r="0.95" fill="currentColor" />
+        <path d="M6.6 11.4 Q10 14.4 13.4 11.4" {...stroke} />
+      </svg>
+    );
+  }
   return (
     <svg width={20} height={20} viewBox="0 0 20 20">
       <mask id={id}>
@@ -142,6 +181,17 @@ export default function CloudExperience({
     return () => clearInterval(t);
   }, [shape, aboutHover]);
 
+  // Esc leaves the about page
+  useEffect(() => {
+    if (shape !== "about") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleShape("sphere");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shape]);
+
   const handleReady = () => {
     controlsRef.current.started = true;
     setReady(true);
@@ -171,15 +221,38 @@ export default function CloudExperience({
     return [...eras, STORY_SECTIONS[STORY_SECTIONS.length - 1]];
   }, []);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const aboutScrollRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollUntil = useRef(0);
 
   // the system reads section by section — keep the one it's on in view
   useEffect(() => {
     if (shape !== "about" || aboutHover !== null) return;
+    autoScrollUntil.current = Date.now() + 900;
     sectionRefs.current[aboutAuto]?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
   }, [shape, aboutAuto, aboutHover]);
+
+  // manual scrolling hands the annotation to whichever section is centered
+  const onAboutScroll = () => {
+    if (Date.now() < autoScrollUntil.current) return;
+    const box = aboutScrollRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const mid = box.top + box.height / 2;
+    let best = 0;
+    let bestD = Infinity;
+    sectionRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const d = Math.abs(r.top + r.height / 2 - mid);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    });
+    setAboutAuto((a) => (a === best ? a : best));
+  };
 
   const cityOf = (item: CloudItem | null) =>
     item ? eras.find((e) => e.id === item.eraId)?.city : undefined;
@@ -244,7 +317,7 @@ export default function CloudExperience({
         initial={false}
         animate={
           ready
-            ? { top: 8, left: 8, x: 0, y: 0, width: 88 }
+            ? { top: 16, left: 16, x: 0, y: 0, width: 88 }
             : { top: "50%", left: "50%", x: "-50%", y: "-50%", width: 148 }
         }
         transition={{ type: "spring", stiffness: 180, damping: 26 }}
@@ -271,7 +344,9 @@ export default function CloudExperience({
       {shape === "about" && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-10">
           <div
-            className="pointer-events-auto max-h-[calc(100vh-230px)] w-[min(540px,calc(100vw-72px))] overflow-y-auto px-1 py-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            ref={aboutScrollRef}
+            onScroll={onAboutScroll}
+            className="pointer-events-auto max-h-[calc(100vh-230px)] w-[min(540px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 py-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent, black 56px, black calc(100% - 56px), transparent)",
@@ -290,8 +365,9 @@ export default function CloudExperience({
                     sectionRefs.current[i] = el;
                   }}
                   onMouseEnter={() => setAboutHover(i)}
-                  animate={{ scale: active ? 1.015 : 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                  initial={false}
+                  animate={{ opacity: active ? 1 : 0.42 }}
+                  transition={{ duration: 0.45 }}
                   className="relative mb-3 px-3.5 py-2.5"
                   style={{
                     border: `1px solid ${active ? accent : "transparent"}`,
@@ -302,20 +378,12 @@ export default function CloudExperience({
                     initial={false}
                     animate={{ opacity: active ? 1 : 0 }}
                     transition={{ duration: 0.4 }}
-                    className="absolute -top-px left-[-1px] -translate-y-full whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
+                    className="absolute -top-px left-[-1px] max-w-full -translate-y-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
                     style={{ background: accent, color: textOn(accent) }}
                   >
                     {sec.label} · {sec.years} · {sec.city}
                   </motion.span>
-                  <p
-                    className={`text-left lowercase tracking-[-0.005em] transition-all duration-500 ${
-                      active
-                        ? "text-[16.5px] leading-[1.75] text-[#141417]"
-                        : "text-[13px] leading-[1.7] text-[#1f1f23]/40"
-                    }`}
-                  >
-                    {sec.body}
-                  </p>
+                  <StoryText runs={sec.runs} active={active} />
                 </motion.div>
               );
             })}
@@ -347,17 +415,15 @@ export default function CloudExperience({
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.85 }}
               transition={SPRING}
-              className={`cursor-pointer leading-none transition-colors duration-200 ${
-                shape === s.id ? LABEL_ON : "text-black/25 hover:text-black/50"
-              }`}
+              className="cursor-pointer leading-none text-black/75 transition-colors duration-200 hover:text-black"
             >
-              <ShapeIcon shape={s.id} />
+              <ShapeIcon shape={s.id} active={shape === s.id} />
             </motion.button>
           ))}
         </div>
 
         {/* filters: bare labels, centered */}
-        <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
+        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
           {FILTERS.map((f) => (
             <motion.button
               key={f.id}
@@ -380,11 +446,11 @@ export default function CloudExperience({
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.94 }}
           transition={SPRING}
-          className={`absolute right-4 top-[34px] z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none transition-colors duration-200 ${
+          className={`absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[13px] lowercase leading-none transition-colors duration-200 ${
             shape === "about" ? LABEL_ON : LABEL_OFF
           }`}
         >
-          about me
+          {shape === "about" ? "close" : "about me"}
         </motion.button>
       </motion.div>
     </div>
