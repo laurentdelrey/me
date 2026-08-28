@@ -102,10 +102,13 @@ export default function CloudExperience({
     unfocusToken: 0,
     shape: "sphere",
     started: false,
+    introHeroId: null,
   });
 
   // a fresh shuffle of the whole archive every visit
   const [introItems, setIntroItems] = useState<CloudItem[]>(items);
+  const introItemsRef = useRef<CloudItem[]>(items);
+  const flipRef = useRef(0);
   useEffect(() => {
     const shuffled = [...items];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -113,13 +116,21 @@ export default function CloudExperience({
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     setIntroItems(shuffled);
+    introItemsRef.current = shuffled;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // flipbook cycles until the cloud is ready
   useEffect(() => {
     if (ready) return;
-    const t = setInterval(() => setFlip((f) => f + 1), 150);
+    const t = setInterval(
+      () =>
+        setFlip((f) => {
+          flipRef.current = f + 1;
+          return f + 1;
+        }),
+      150
+    );
     return () => clearInterval(t);
   }, [ready]);
 
@@ -145,6 +156,10 @@ export default function CloudExperience({
     const elapsed = mountAt.current ? performance.now() - mountAt.current : 0;
     const wait = Math.max(0, 4000 - elapsed);
     setTimeout(() => {
+      const list = introItemsRef.current;
+      controlsRef.current.introHeroId = list.length
+        ? list[flipRef.current % list.length].id
+        : null;
       controlsRef.current.started = true;
       setReady(true);
     }, wait);
@@ -297,8 +312,8 @@ export default function CloudExperience({
         className="pointer-events-none absolute left-1/2 top-1/2 z-[8]"
         style={{ x: "-50%", y: "-50%" }}
         initial={false}
-        animate={{ opacity: ready ? 0 : 1, scale: ready ? 0.55 : 1 }}
-        transition={{ duration: 0.55, ease: "easeInOut" }}
+        animate={{ opacity: ready ? 0 : 1 }}
+        transition={{ duration: 0.08 }}
       >
         {!ready && introItems.length > 0 && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -340,12 +355,8 @@ export default function CloudExperience({
                   style={{ border: `1px solid ${accent}` }}
                 >
                   <span
-                    className="absolute -top-px left-[-1px] max-w-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
-                    style={{
-                      background: accent,
-                      color: textOn(accent),
-                      transform: "translateY(-100%)",
-                    }}
+                    className="absolute bottom-[calc(100%-1px)] left-[-1px] max-w-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
+                    style={{ background: accent, color: textOn(accent) }}
                   >
                     {sec.label} · {sec.years} · {sec.city}
                   </span>

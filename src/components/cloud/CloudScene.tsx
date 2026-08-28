@@ -43,6 +43,7 @@ export type CloudControls = {
   unfocusToken: number; // bumped → release focused card
   shape: CloudShape;
   started: boolean; // false until the loading intro hands over
+  introHeroId: string | null; // the flipbook's last frame becomes this card
 };
 
 type Props = {
@@ -568,6 +569,8 @@ export default function CloudScene({
     let rotVel = 0;
     let layoutShape: Exclude<CloudShape, "about"> = "sphere";
     let startedAtMs = 0;
+    let heroCard: Card | null = null;
+    let heroUntilMs = 0;
     let aboutBlend = 0;
     let flatBlend = 0; // 1 = flat shape (heart/smiley/about): face camera
     let noiseBlend = 1;
@@ -821,6 +824,39 @@ export default function CloudScene({
 
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
 
+      // the moment the intro hands over, the flipbook's final frame becomes a
+      // real card at the same spot and size, then glides into formation
+      if (controls.started && !startedAtMs) {
+        startedAtMs = nowMs;
+        const hero = controls.introHeroId
+          ? cards.find((c) => c.item.id === controls.introHeroId)
+          : undefined;
+        if (hero) {
+          heroCard = hero;
+          heroUntilMs = nowMs + 1600;
+          // the hero owns the first beat; everyone else waits a moment
+          for (const c of cards) if (c !== hero) c.introDelay += 450;
+          const H = container!.clientHeight;
+          const W = container!.clientWidth;
+          const dispH = Math.min(
+            0.56 * H,
+            520,
+            Math.min(0.8 * W, 620) * (hero.baseH / hero.baseW)
+          );
+          const worldH =
+            2 * 6 * Math.tan(THREE.MathUtils.degToRad(20)) * (dispH / H);
+          hero.introDelay = 0;
+          hero.introduced = true;
+          hero.introBlend = 1;
+          hero.visScale = 1;
+          hero.hoverScale = worldH / hero.baseH;
+          hero.group.position.set(0, 0, camera.position.z - 6);
+          hero.group.scale.setScalar(hero.hoverScale);
+          hero.mat.opacity = 1;
+          (hero.frameMesh.material as THREE.MeshBasicMaterial).opacity = 1;
+        }
+      }
+
       // in about mode the whole formation exits above the frame; the grid is
       // taller than the screen, so it must travel its full height plus margin
       const yUp =
@@ -839,9 +875,6 @@ export default function CloudScene({
       for (const card of cards) {
         const i = card.ordinal;
 
-        // cards appear as their thumbnail arrives — no grey tiles — in a
-        // staggered wave that blooms outward from where the flipbook was
-        if (controls.started && !startedAtMs) startedAtMs = nowMs;
         const due =
           controls.started && nowMs - startedAtMs >= card.introDelay;
         const visTarget = card.on && due && card.texLoaded ? 1 : 0;
@@ -892,7 +925,11 @@ export default function CloudScene({
             tmpV.y = THREE.MathUtils.clamp(tmpV.y, -frusH + hh, frusH - hh);
           }
 
-          card.group.position.lerp(tmpV, card === focused ? 0.12 : 0.14);
+          const isHero = card === heroCard && nowMs < heroUntilMs;
+          card.group.position.lerp(
+            tmpV,
+            card === focused ? 0.12 : isHero ? 0.045 : 0.14
+          );
         }
 
         let scaleTarget =
@@ -910,7 +947,9 @@ export default function CloudScene({
           // hover blooms to ~2.2 columns, capped to a sane world size
           scaleTarget = Math.min(card.gridScale * 2.2, 3.4 / card.baseH, 4.6 / card.baseW);
         }
-        card.hoverScale += (scaleTarget - card.hoverScale) * 0.12;
+        card.hoverScale +=
+          (scaleTarget - card.hoverScale) *
+          (card === heroCard && nowMs < heroUntilMs ? 0.045 : 0.12);
         const s = card.hoverScale * card.visScale;
         card.group.scale.setScalar(Math.max(0.0001, s));
 
