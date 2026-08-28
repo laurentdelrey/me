@@ -470,18 +470,8 @@ export default function CloudExperience({
           </AnimatePresence>
         </div>
 
-        {/* filters: bare labels, centered; step aside while the picker is open */}
-        <motion.div
-          className="absolute bottom-4 left-1/2 z-20 flex h-7 -translate-x-1/2 items-center gap-5"
-          initial={false}
-          animate={{ opacity: pickerOpen ? 0 : 1, y: pickerOpen ? 6 : 0 }}
-          transition={
-            pickerOpen
-              ? { duration: 0.15 }
-              : { type: "spring", stiffness: 170, damping: 24 }
-          }
-          style={{ pointerEvents: pickerOpen ? "none" : undefined }}
-        >
+        {/* filters: bare labels, centered */}
+        <div className="absolute bottom-4 left-1/2 z-20 flex h-7 -translate-x-1/2 items-center gap-5">
           {FILTERS.map((f) => (
             <motion.button
               key={f.id}
@@ -497,7 +487,7 @@ export default function CloudExperience({
               {f.label}
             </motion.button>
           ))}
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* about me / close: top-right, bare label */}
