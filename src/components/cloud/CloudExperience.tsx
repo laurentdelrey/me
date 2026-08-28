@@ -172,6 +172,16 @@ export default function CloudExperience({
     )
   );
   const [pagerDir, setPagerDir] = useState(1);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!pickerRef.current?.contains(e.target as Node)) setPickerOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [pickerOpen]);
   const stepLayout = (dir: number) => {
     setPagerDir(dir);
     const next = LAYOUTS[(layoutIndex + dir + LAYOUTS.length) % LAYOUTS.length];
@@ -364,46 +374,100 @@ export default function CloudExperience({
           pointerEvents: ready && shape !== "about" ? undefined : "none",
         }}
       >
-        {/* layout pager: ‹ sphere › */}
-        <div className="group absolute bottom-4 left-4 z-20 flex items-center text-[14px] lowercase leading-none">
-          <motion.button
-            onClick={() => stepLayout(-1)}
-            whileHover={{ scale: 1.2, x: -2 }}
-            whileTap={{ scale: 0.8 }}
-            transition={SPRING}
-            className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
-          >
-            ‹
-          </motion.button>
-          <span className="relative block h-[15px] w-16 overflow-hidden text-center text-black/85">
-            <AnimatePresence initial={false} custom={pagerDir}>
-              <motion.span
-                key={LAYOUTS[layoutIndex].label}
-                custom={pagerDir}
-                variants={{
-                  enter: (d: number) => ({ x: d * 18, opacity: 0 }),
-                  center: { x: 0, opacity: 1 },
-                  exit: (d: number) => ({ x: d * -18, opacity: 0 }),
-                }}
-                initial="enter"
-                animate="center"
-                exit="exit"
+        {/* layout picker: chevrons closed, unfolds into the full list */}
+        <div
+          ref={pickerRef}
+          onMouseEnter={() => setPickerOpen(true)}
+          onMouseLeave={() => setPickerOpen(false)}
+          className="absolute bottom-4 left-4 z-20 flex h-7 items-center text-[14px] lowercase leading-none"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+          {pickerOpen ? (
+            <motion.div key="list" className="flex items-center gap-4 px-1">
+              {LAYOUTS.map((l, idx) => (
+                <motion.button
+                  key={l.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0, transition: { ...SPRING, delay: idx * 0.035 } }}
+                  exit={{
+                    opacity: 0,
+                    y: 6,
+                    transition: {
+                      ...SPRING,
+                      delay: (LAYOUTS.length - 1 - idx) * 0.03,
+                    },
+                  }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => {
+                    handleShape(l.id);
+                    setPickerOpen(false);
+                  }}
+                  className={`cursor-pointer transition-colors duration-200 ${
+                    l.id === LAYOUTS[layoutIndex].id
+                      ? "text-black/85"
+                      : "text-black/35 hover:text-black/70"
+                  }`}
+                >
+                  {l.label}
+                </motion.button>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="pager"
+              className="flex items-center"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                transition: { type: "spring", stiffness: 300, damping: 26 },
+              }}
+              exit={{ opacity: 0, y: 6, transition: { duration: 0.12 } }}
+            >
+              <motion.button
+                onClick={() => stepLayout(-1)}
+                whileHover={{ scale: 1.2, x: -2 }}
+                whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="absolute inset-0"
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
               >
-                {LAYOUTS[layoutIndex].label}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-          <motion.button
-            onClick={() => stepLayout(1)}
-            whileHover={{ scale: 1.2, x: 2 }}
-            whileTap={{ scale: 0.8 }}
-            transition={SPRING}
-            className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
-          >
-            ›
-          </motion.button>
+                ‹
+              </motion.button>
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="relative block h-[15px] w-16 cursor-pointer overflow-hidden text-center text-black/85"
+              >
+                <AnimatePresence initial={false} custom={pagerDir}>
+                  <motion.span
+                    key={LAYOUTS[layoutIndex].label}
+                    custom={pagerDir}
+                    variants={{
+                      enter: (d: number) => ({ x: d * 18, opacity: 0 }),
+                      center: { x: 0, opacity: 1 },
+                      exit: (d: number) => ({ x: d * -18, opacity: 0 }),
+                    }}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={SPRING}
+                    className="absolute inset-0"
+                  >
+                    {LAYOUTS[layoutIndex].label}
+                  </motion.span>
+                </AnimatePresence>
+              </button>
+              <motion.button
+                onClick={() => stepLayout(1)}
+                whileHover={{ scale: 1.2, x: 2 }}
+                whileTap={{ scale: 0.8 }}
+                transition={SPRING}
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[17px] text-black/35 transition-colors hover:text-black"
+              >
+                ›
+              </motion.button>
+            </motion.div>
+          )}
+          </AnimatePresence>
         </div>
 
         {/* filters: bare labels, centered */}
@@ -412,11 +476,12 @@ export default function CloudExperience({
             <motion.button
               key={f.id}
               onClick={() => handleFilter(f.id)}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.94 }}
+              whileTap={{ scale: 0.92 }}
               transition={SPRING}
               className={`cursor-pointer text-[13px] lowercase leading-none transition-colors duration-200 ${
-                filter === f.id ? LABEL_ON : LABEL_OFF
+                filter === f.id
+                  ? "text-black/85"
+                  : "text-black/35 hover:text-black/70"
               }`}
             >
               {f.label}

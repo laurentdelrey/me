@@ -186,11 +186,6 @@ export default function CloudScene({
     container.appendChild(renderer.domElement);
 
     const geo = new THREE.PlaneGeometry(1, 1);
-    const frameMat = new THREE.MeshBasicMaterial({
-      color: "#ffffff",
-      depthTest: false,
-      depthWrite: false,
-    });
 
     type Card = {
       group: THREE.Group;
@@ -210,6 +205,7 @@ export default function CloudScene({
       gridScale: number;
       introDelay: number;
       introduced: boolean;
+      introBlend: number;
       ordinal: number;
       on: boolean;
       baseW: number;
@@ -229,12 +225,23 @@ export default function CloudScene({
         color: placeholder.clone(),
         depthTest: false,
         depthWrite: false,
+        transparent: true,
+        opacity: 0,
       });
       const imgMesh = new THREE.Mesh(geo, mat);
       imgMesh.scale.set(bw, bh, 1);
       imgMesh.userData.cardIndex = i;
 
-      const frameMesh = new THREE.Mesh(geo, frameMat);
+      const frameMesh = new THREE.Mesh(
+        geo,
+        new THREE.MeshBasicMaterial({
+          color: "#ffffff",
+          depthTest: false,
+          depthWrite: false,
+          transparent: true,
+          opacity: 0,
+        })
+      );
       frameMesh.scale.set(bw + FRAME_PAD, bh + FRAME_PAD, 1);
       frameMesh.position.z = -0.006;
 
@@ -261,6 +268,7 @@ export default function CloudScene({
         gridScale: 0.5,
         introDelay: (rand(i * 11 + 3) + 0.5) * 1300,
         introduced: false,
+        introBlend: 0,
         ordinal: i,
         on: true,
         baseW: bw,
@@ -529,8 +537,13 @@ export default function CloudScene({
       out.set(px * rr, py * rr + 0.2, rand(ord * 5 + 4) * 0.9);
     }
 
-    // Chronological masonry — fixed-width columns, natural aspect ratios,
-    // each card dropped into the shortest column. Scrollable.
+    // Masonry — fixed-width columns, natural aspect ratios, each card
+    // dropped into the shortest column, in a fresh random order per visit.
+    const gridShuffle = cards.map((_, i) => i);
+    for (let i = gridShuffle.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gridShuffle[i], gridShuffle[j]] = [gridShuffle[j], gridShuffle[i]];
+    }
     let gridTop = 4;
     let gridTotalH = 10;
     let gridScrollY = 0;
@@ -746,7 +759,8 @@ export default function CloudScene({
         const cardW = colW * 0.92;
         const gap = colW * 0.08;
         const colH: number[] = new Array(cols).fill(0);
-        for (const card of cards) {
+        for (const idx of gridShuffle) {
+          const card = cards[idx];
           if (!card.on) continue;
           const scl = cardW / card.baseW;
           const h = card.baseH * scl;
@@ -823,7 +837,11 @@ export default function CloudScene({
         const visTarget = card.on && due && card.texLoaded ? 1 : 0;
         if (visTarget > 0 && !card.introduced) {
           card.introduced = true;
-          card.group.position.multiplyScalar(0.12);
+          card.visScale = 1; // no scale-up: it fades in at full size
+          card.group.position.multiplyScalar(0.9);
+        }
+        if (card.introduced) {
+          card.introBlend += (1 - card.introBlend) * 0.055;
         }
         card.visScale += (visTarget - card.visScale) * 0.12;
 
@@ -885,6 +903,9 @@ export default function CloudScene({
         card.group.scale.setScalar(Math.max(0.0001, s));
 
         card.mat.color.copy(card.baseColor);
+        card.mat.opacity = card.introBlend;
+        (card.frameMesh.material as THREE.MeshBasicMaterial).opacity =
+          card.introBlend;
 
         // painter's algorithm: nearer cards draw later; the inspected card
         // always draws on top
@@ -1074,8 +1095,10 @@ export default function CloudScene({
       stopVideo();
       textures.forEach((t) => t.dispose());
       fullTextures.forEach((t) => t.dispose());
-      cards.forEach((c) => c.mat.dispose());
-      frameMat.dispose();
+      cards.forEach((c) => {
+        c.mat.dispose();
+        (c.frameMesh.material as THREE.Material).dispose();
+      });
       geo.dispose();
       renderer.dispose();
       container.removeChild(renderer.domElement);
