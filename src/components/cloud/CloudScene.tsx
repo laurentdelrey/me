@@ -759,10 +759,8 @@ export default function CloudScene({
       for (const card of cards) {
         const i = card.ordinal;
 
-        const visTarget =
-          card.on && (controls.shape !== "about" || card.seed % 8 === 0)
-            ? 1
-            : 0;
+        // about mode is just the story — every card steps aside
+        const visTarget = card.on && controls.shape !== "about" ? 1 : 0;
         card.visScale += (visTarget - card.visScale) * 0.12;
 
         // filtered-out cards shrink where they stand — no drifting away;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Circle, Cube, Heart, Smiley, Star } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { tagMatchesFilter, type TagFilter } from "@/lib/work/tags";
 import { STORY_SECTIONS } from "@/lib/work/story";
@@ -22,107 +23,16 @@ function textOn(color: string): string {
   return lum > 150 ? "#000" : "#fff";
 }
 
-// ---- crisp icons: filled when active, outlined when not -------------------
+// ---- icons: Phosphor — filled when active, outlined when not --------------
 
 function ShapeIcon({ shape, active }: { shape: CloudShape; active: boolean }) {
-  const id = useId();
-  const stroke = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.5,
-    strokeLinejoin: "round" as const,
-    strokeLinecap: "round" as const,
-  };
-  if (shape === "sphere") {
-    return (
-      <svg width={20} height={20} viewBox="0 0 20 20">
-        {active ? (
-          <circle cx="10" cy="10" r="8.4" fill="currentColor" />
-        ) : (
-          <circle cx="10" cy="10" r="7.6" {...stroke} />
-        )}
-      </svg>
-    );
-  }
-  if (shape === "heart") {
-    const d =
-      "M10 17.4 C4.9 13.7 2.4 10.7 2.4 7.5 C2.4 5.1 4.3 3.2 6.5 3.2 C7.9 3.2 9.3 4 10 5.3 C10.7 4 12.1 3.2 13.5 3.2 C15.7 3.2 17.6 5.1 17.6 7.5 C17.6 10.7 15.1 13.7 10 17.4 Z";
-    return (
-      <svg width={20} height={20} viewBox="0 0 20 20">
-        {active ? <path fill="currentColor" d={d} /> : <path {...stroke} d={d} />}
-      </svg>
-    );
-  }
-  if (shape === "cube") {
-    return (
-      <svg width={20} height={20} viewBox="0 0 20 20">
-        {active ? (
-          <>
-            <polygon points="10,1.6 17.6,6 10,10.4 2.4,6" fill="currentColor" />
-            <polygon
-              points="2.4,6 10,10.4 10,18.8 2.4,14.4"
-              fill="currentColor"
-              opacity="0.55"
-            />
-            <polygon
-              points="17.6,6 10,10.4 10,18.8 17.6,14.4"
-              fill="currentColor"
-              opacity="0.3"
-            />
-          </>
-        ) : (
-          <>
-            <polygon
-              points="10,2.2 17,6.2 17,13.8 10,17.8 3,13.8 3,6.2"
-              {...stroke}
-            />
-            <path d="M3 6.2 L10 10.2 L17 6.2 M10 10.2 L10 17.8" {...stroke} />
-          </>
-        )}
-      </svg>
-    );
-  }
-  if (shape === "star") {
-    const pts =
-      "10.00,1.20 12.17,7.01 18.37,7.28 13.52,11.14 15.17,17.12 10.00,13.70 4.83,17.12 6.48,11.14 1.63,7.28 7.83,7.01";
-    return (
-      <svg width={20} height={20} viewBox="0 0 20 20">
-        {active ? (
-          <polygon points={pts} fill="currentColor" />
-        ) : (
-          <polygon points={pts} {...stroke} />
-        )}
-      </svg>
-    );
-  }
-  // smiley
-  if (!active) {
-    return (
-      <svg width={20} height={20} viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="7.6" {...stroke} />
-        <circle cx="7.2" cy="8" r="0.95" fill="currentColor" />
-        <circle cx="12.8" cy="8" r="0.95" fill="currentColor" />
-        <path d="M6.6 11.4 Q10 14.4 13.4 11.4" {...stroke} />
-      </svg>
-    );
-  }
-  return (
-    <svg width={20} height={20} viewBox="0 0 20 20">
-      <mask id={id}>
-        <rect width="20" height="20" fill="#fff" />
-        <circle cx="7" cy="7.9" r="1.15" fill="#000" />
-        <circle cx="13" cy="7.9" r="1.15" fill="#000" />
-        <path
-          d="M6 11.4 Q10 15 14 11.4"
-          stroke="#000"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </mask>
-      <circle cx="10" cy="10" r="8.4" fill="currentColor" mask={`url(#${id})`} />
-    </svg>
-  );
+  const weight = active ? "fill" : "regular";
+  const size = 20;
+  if (shape === "sphere") return <Circle size={size} weight={weight} />;
+  if (shape === "heart") return <Heart size={size} weight={weight} />;
+  if (shape === "cube") return <Cube size={size} weight={weight} />;
+  if (shape === "star") return <Star size={size} weight={weight} />;
+  return <Smiley size={size} weight={weight} />;
 }
 
 // Same spring family as the site header: soft, one gentle beat, no cartoon.
