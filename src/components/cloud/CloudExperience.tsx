@@ -359,9 +359,9 @@ export default function CloudExperience({
 
       {/* bottom fade so the controls always sit on clear grey */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-40"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-64"
         style={{
-          background: `linear-gradient(to top, ${CLOUD_BG} 30%, transparent)`,
+          background: `linear-gradient(to top, ${CLOUD_BG} 38%, transparent)`,
         }}
       />
 
@@ -379,7 +379,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-14 left-4 z-20 flex h-7 items-center text-[15px] lowercase leading-none sm:bottom-4"
+          className="absolute bottom-[52px] left-1/2 z-20 flex h-7 -translate-x-1/2 items-center text-[15px] lowercase leading-none"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -391,10 +391,10 @@ export default function CloudExperience({
                   animate={{ opacity: 1, y: 0, transition: { ...SPRING, delay: idx * 0.035 } }}
                   exit={{
                     opacity: 0,
-                    y: 6,
+                    y: 4,
                     transition: {
-                      ...SPRING,
-                      delay: (LAYOUTS.length - 1 - idx) * 0.03,
+                      duration: 0.12,
+                      delay: (LAYOUTS.length - 1 - idx) * 0.018,
                     },
                   }}
                   whileTap={{ scale: 0.92 }}

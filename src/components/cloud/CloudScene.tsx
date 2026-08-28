@@ -672,9 +672,11 @@ export default function CloudScene({
         lastX = e.clientX;
         lastY = e.clientY;
         if (controlsRef.current.shape === "grid") {
-          // world units per CSS pixel at the grid plane
+          // content follows the finger 1:1; velocity carries the momentum
           const perPx = (2 * Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z) / rect.height;
-          gridScrollVel = dy * perPx * 0.55;
+          const d = -dy * perPx;
+          gridScrollY += d;
+          gridScrollVel = d;
         } else {
           rotVel = dx * 0.004;
         }
@@ -775,8 +777,10 @@ export default function CloudScene({
         }
         gridTotalH = Math.max(...colH);
         gridTop = frusH * 0.8;
-        gridScrollY += gridScrollVel;
-        gridScrollVel *= 0.92;
+        if (!dragging) {
+          gridScrollY += gridScrollVel;
+          gridScrollVel *= 0.94;
+        }
         const maxScroll = Math.max(0, gridTotalH - frusH * 1.55);
         gridScrollY = THREE.MathUtils.clamp(gridScrollY, 0, maxScroll);
       }
