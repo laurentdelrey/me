@@ -60,7 +60,7 @@ const LABEL_OFF = "text-black/30 hover:text-black/55";
 
 function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) {
   return (
-    <p className="text-left text-[19px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
+    <p className="text-left text-[17px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
       {runs.map((r, i) =>
         r.href ? (
           <a
@@ -253,7 +253,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-4 top-3.5 h-[52px] w-auto sm:top-4 sm:h-10"
+        className="pointer-events-none absolute left-4 top-3.5 h-[52px] w-auto"
       />
 
       <CloudScene
@@ -344,7 +344,7 @@ export default function CloudExperience({
               : { duration: 0.2 }
           }
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-[62px] left-1/2 z-20 flex h-9 items-center text-[19px] lowercase leading-none"
+          className="absolute bottom-[62px] left-1/2 z-20 flex h-9 items-center text-[17px] lowercase leading-none"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -396,11 +396,11 @@ export default function CloudExperience({
                 transition={SPRING}
                 className="grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
               >
-                <CaretLeft size={17} weight="bold" />
+                <CaretLeft size={15} weight="bold" />
               </motion.button>
               <button
                 onClick={() => setPickerOpen(true)}
-                className="relative block h-[22px] w-[88px] cursor-pointer overflow-hidden text-center text-black/85"
+                className="relative block h-[20px] w-[80px] cursor-pointer overflow-hidden text-center text-black/85"
               >
                 <AnimatePresence initial={false} custom={pagerDir}>
                   <motion.span
@@ -428,7 +428,7 @@ export default function CloudExperience({
                 transition={SPRING}
                 className="grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
               >
-                <CaretRight size={17} weight="bold" />
+                <CaretRight size={15} weight="bold" />
               </motion.button>
             </motion.div>
           )}
@@ -460,7 +460,7 @@ export default function CloudExperience({
                     }
                   : { duration: 0.2 }
               }
-              className={`cursor-pointer text-[19px] lowercase leading-none transition-colors duration-200 ${
+              className={`cursor-pointer text-[17px] lowercase leading-none transition-colors duration-200 ${
                 filter === f.id
                   ? "text-black/85"
                   : "text-black/35 hover:text-black/70"
@@ -483,7 +483,7 @@ export default function CloudExperience({
             ? { type: "spring", stiffness: 210, damping: 26, delay: 0.5 }
             : { duration: 0.25 }
         }
-        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[19px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         {shape === "about" ? "close" : "about me"}
       </motion.button>
