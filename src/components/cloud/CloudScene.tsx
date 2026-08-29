@@ -781,6 +781,8 @@ export default function CloudScene({
       aboutBlend += ((controls.shape === "about" ? 1 : 0) - aboutBlend) * 0.11;
 
       const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
+      // portrait: sink the formation a touch so the logo row breathes
+      const yDown = camera.aspect < 0.8 ? -frusH * 0.08 : 0;
 
       // chronological masonry: shortest-column packing, scroll for the rest
       if (layoutShape === "grid") {
@@ -966,7 +968,7 @@ export default function CloudScene({
 
           const rx = tmpV.x * cos + tmpV.z * sin;
           const rz = -tmpV.x * sin + tmpV.z * cos;
-          tmpV.set(rx, tmpV.y + yUp, rz);
+          tmpV.set(rx, tmpV.y + yUp + yDown, rz);
 
           if (card === focused) {
             tmpV.set(0, 0.25, camera.position.z - 6);
