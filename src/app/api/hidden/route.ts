@@ -41,7 +41,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = (await req.json()) as { id?: string; hidden?: boolean };
-  if (!body.id || typeof body.hidden !== "boolean") {
+  if (
+    !body.id ||
+    typeof body.id !== "string" ||
+    body.id.length > 64 ||
+    typeof body.hidden !== "boolean"
+  ) {
     return NextResponse.json(
       { error: "Expected { id: string, hidden: boolean }" },
       { status: 400 }
@@ -51,7 +56,7 @@ export async function POST(req: Request) {
   const set = new Set(current.ids);
   if (body.hidden) set.add(body.id);
   else set.delete(body.id);
-  const ids = Array.from(set);
+  const ids = Array.from(set).slice(0, 2000);
   await writeHidden(ids);
   return NextResponse.json({ ids });
 }

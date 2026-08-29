@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     id?: string;
     tag?: TagValue | "auto" | null;
   };
-  if (!body.id) {
+  if (!body.id || typeof body.id !== "string" || body.id.length > 64) {
     return NextResponse.json(
       { error: "Expected { id: string, tag: 'prototype'|'image'|'both'|'auto' }" },
       { status: 400 }
@@ -72,6 +72,9 @@ export async function POST(req: Request) {
       { error: "Invalid tag value" },
       { status: 400 }
     );
+  }
+  if (Object.keys(next).length > 2000) {
+    return NextResponse.json({ error: "Too many overrides" }, { status: 400 });
   }
   await writeTags(next);
   return NextResponse.json({ overrides: next });

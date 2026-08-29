@@ -8,10 +8,18 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const password = process.env.DASHBOARD_PASSWORD;
-  if (!password) return NextResponse.next();
+  if (!password) {
+    // fail open only in local dev — production without the env var stays locked
+    if (process.env.NODE_ENV === "development") return NextResponse.next();
+    return new NextResponse("Not configured", { status: 401 });
+  }
 
-  // Allow public read on /api/hidden so /work can fetch the list without auth.
-  if (req.nextUrl.pathname === "/api/hidden" && req.method === "GET") {
+  // Allow public reads so the site can fetch the lists without auth.
+  if (
+    (req.nextUrl.pathname === "/api/hidden" ||
+      req.nextUrl.pathname === "/api/tags") &&
+    req.method === "GET"
+  ) {
     return NextResponse.next();
   }
 
@@ -34,5 +42,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/work/dashboard", "/api/hidden"],
+  matcher: ["/work/dashboard", "/api/hidden", "/api/tags"],
 };
