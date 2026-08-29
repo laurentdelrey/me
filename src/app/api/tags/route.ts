@@ -4,6 +4,10 @@ import { put, list } from "@vercel/blob";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Object keys we never accept as ids — assigning these can corrupt the JSON
+// map or touch the prototype chain.
+const RESERVED = new Set(["__proto__", "constructor", "prototype"]);
+
 const BLOB_PATH = "dashboard/tags.json";
 
 // Only stores OVERRIDES of the heuristic (photo→image, video→prototype).
@@ -40,16 +44,26 @@ async function writeTags(overrides: Record<string, TagValue>): Promise<void> {
 export async function GET() {
   const data = await readTags();
   return NextResponse.json(data, {
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "public, max-age=30" },
   });
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as {
+  let body;
+  try {
+    body = (await req.json()) as {
     id?: string;
     tag?: TagValue | "auto" | null;
   };
-  if (!body.id || typeof body.id !== "string" || body.id.length > 64) {
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (
+    !body.id ||
+    typeof body.id !== "string" ||
+    body.id.length > 64 ||
+    RESERVED.has(body.id)
+  ) {
     return NextResponse.json(
       { error: "Expected { id: string, tag: 'prototype'|'image'|'both'|'auto' }" },
       { status: 400 }
