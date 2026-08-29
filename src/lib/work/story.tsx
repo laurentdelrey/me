@@ -17,7 +17,7 @@ export const STORY_SECTIONS: StorySection[] = [
     city: "suburbs of paris",
     runs: [
       {
-        t: "born and raised in paris, france. i started designing at 16 on a cracked version of photoshop cs2 — my first gigs were terrible logos & websites for my counter strike friends. aim, msn or mirc: the early days of remote work.",
+        t: "born and raised in paris, france. i started designing at 16 on a cracked version of photoshop cs2. my first gigs were terrible logos & websites for my counter strike friends. aim, msn or mirc: the early days of remote work.",
       },
     ],
   },
@@ -41,7 +41,7 @@ export const STORY_SECTIONS: StorySection[] = [
     years: "2012 – 2014",
     city: "paris, france",
     runs: [
-      { t: "then came the side projects — an " },
+      { t: "then came the side projects: an " },
       { t: "ironic fan brand", href: "https://www.instagram.com/balencyoga/" },
       { t: " inspired by balenciaga, the missing " },
       {
@@ -54,7 +54,7 @@ export const STORY_SECTIONS: StorySection[] = [
         href: "https://twitter.com/laurentdelrey/status/1009135685960232961",
       },
       {
-        t: " on the ethereum network — and the one that blew up the most, a controversial email-based app called ",
+        t: " on the ethereum network, and the one that blew up the most, a controversial email-based app called ",
       },
       { t: "leak", href: "https://twitter.com/justleakit" },
       { t: "." },
@@ -71,7 +71,7 @@ export const STORY_SECTIONS: StorySection[] = [
       { t: "sequoia capital", href: "https://www.sequoiacap.com/#" },
       { t: " and " },
       { t: "kpcb", href: "https://www.kleinerperkins.com/" },
-      { t: " — a " },
+      { t: ": a " },
       { t: "messaging app", href: "https://www.producthunt.com/posts/tribe-2-0" },
       { t: ", a " },
       { t: "calling app", href: "https://www.producthunt.com/posts/tribe-calls" },
@@ -100,7 +100,7 @@ export const STORY_SECTIONS: StorySection[] = [
       { t: "on apr 1 2021 i started sharing " },
       { t: "free ideas", href: "https://twitter.com/laurentdelrey" },
       {
-        t: " organically on twitter/x — the first was an april fool and i kept going, using interface elements and internet brands to express my emotions and ideas.",
+        t: " organically on twitter/x. the first was an april fool and i kept going, using interface elements and internet brands to express my emotions and ideas.",
       },
     ],
   },
@@ -120,8 +120,16 @@ export const STORY_SECTIONS: StorySection[] = [
       { t: "instagram", href: "https://www.instagram.com" },
       { t: " to focus on " },
       { t: "threads", href: "https://www.threads.net/@laurentdelrey" },
+      { t: "." },
+    ],
+  },
+  {
+    label: "today",
+    years: "2026",
+    city: "los angeles, ca",
+    runs: [
       {
-        t: ". today i'm a designer living in los angeles, ca — designing different types of things for the internet, from tiny controversial experiments to larger-scale consumer products.",
+        t: "i'm a designer living in los angeles, ca, designing different types of things for the internet, from tiny controversial experiments to larger-scale consumer products.",
       },
     ],
   },
@@ -130,7 +138,7 @@ export const STORY_SECTIONS: StorySection[] = [
     years: "2014 – 2017",
     city: "the internet",
     runs: [
-      { t: "some of it got out there — fast company, apple, google, time, " },
+      { t: "some of it got out there: fast company, apple, google, time, " },
       { t: "techcrunch", href: "https://techcrunch.com/2016/10/12/augmented-chat/" },
       { t: ", " },
       { t: "complex", href: "https://www.youtube.com/watch?v=EnwRu20HOTQ" },

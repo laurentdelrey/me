@@ -44,6 +44,7 @@ const FILTERS: { id: TagFilter; label: string }[] = [
 // Fixed annotation colors per story section — snap yellow, meta blue,
 // everything else distinct.
 const SECTION_COLORS: Record<string, string> = {
+  today: "#26262b",
   meta: "#2979ff",
   "free ideas": "#ff2fae",
   "snap, inc.": "#ffd400",
@@ -343,10 +344,40 @@ export default function CloudExperience({
       <div
         className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-64"
         style={{
-          ...(shape === "about" ? { height: 0 } : null),
+          ...(shape === "about" ? { height: 110 } : null),
           background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
         }}
       />
+
+      {/* about: twitter/x + threads under the story */}
+      {shape === "about" && (
+        <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-6">
+          {(
+            [
+              ["twitter/x", "https://twitter.com/laurentdelrey"],
+              ["threads", "https://www.threads.net/@laurentdelrey"],
+            ] as const
+          ).map(([label, href], i) => (
+            <motion.a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 240,
+                damping: 26,
+                delay: 0.6 + i * 0.07,
+              }}
+              className="text-[17px] lowercase leading-none text-black/45 transition-colors duration-200 hover:text-black"
+            >
+              {label}
+            </motion.a>
+          ))}
+        </div>
+      )}
 
       {/* bottom controls hide in about mode — close (top right) is the way out */}
       <div>

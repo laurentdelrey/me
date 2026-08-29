@@ -717,9 +717,13 @@ export default function CloudScene({
       dragging = false;
       const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
       if (moved >= 5) return;
+      // while a card is expanded, any tap dismisses it — no accidental jumps
+      if (focused) {
+        setFocus(null);
+        return;
+      }
       const hit = pickAt(e.clientX, e.clientY);
-      if (hit && hit !== focused) setFocus(hit);
-      else setFocus(null);
+      if (hit) setFocus(hit);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setFocus(null);
