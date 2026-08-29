@@ -272,7 +272,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-4 top-3.5 h-[52px] w-auto"
+        className="pointer-events-none absolute left-[30px] top-3.5 h-[52px] w-auto sm:left-4"
       />
 
       <CloudScene
@@ -337,7 +337,7 @@ export default function CloudExperience({
       {/* bottom fade so the controls always sit on clear grey; in about mode
           there are no controls, so it drops low and lets the story breathe */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[160px] transition-[height] duration-500 ease-out sm:h-64"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-64"
         style={{
           ...(shape === "about" ? { height: 0 } : null),
           background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
@@ -352,7 +352,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-3.5 left-4 z-20 sm:bottom-5 sm:left-5"
+          className="absolute bottom-5 left-[30px] z-20 sm:left-5"
         >
         <motion.div
           initial={false}
@@ -461,7 +461,7 @@ export default function CloudExperience({
         {/* filters: centered under the picker on mobile, bottom-right on desktop */}
         <div
           style={{ pointerEvents: filtersShown ? undefined : "none" }}
-          className="absolute bottom-3.5 right-4 z-20 flex h-9 items-center gap-6 sm:bottom-5 sm:right-6"
+          className="absolute bottom-5 right-[30px] z-20 flex h-9 items-center gap-6 sm:right-6"
         >
           {FILTERS.map((f, idx) => (
             <motion.button
