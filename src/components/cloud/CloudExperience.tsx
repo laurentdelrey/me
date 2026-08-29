@@ -487,7 +487,7 @@ export default function CloudExperience({
             ? { type: "spring", stiffness: 210, damping: 26, delay: 0.5 }
             : { duration: 0.25 }
         }
-        className="absolute right-6 top-[30px] z-20 cursor-pointer sm:right-4 sm:top-4 whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-[30px] top-[30px] z-20 cursor-pointer sm:right-4 sm:top-4 whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         {shape === "about" ? "close" : "about me"}
       </motion.button>
