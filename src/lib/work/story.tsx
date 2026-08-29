@@ -41,7 +41,7 @@ export const STORY_SECTIONS: StorySection[] = [
     years: "2012 – 2014",
     city: "paris, france",
     runs: [
-      { t: "then came the side projects: an " },
+      { t: "a stretch of side projects: an " },
       { t: "ironic fan brand", href: "https://www.instagram.com/balencyoga/" },
       { t: " inspired by balenciaga, the missing " },
       {
@@ -57,6 +57,35 @@ export const STORY_SECTIONS: StorySection[] = [
         t: " on the ethereum network, and the one that blew up the most, a controversial email-based app called ",
       },
       { t: "leak", href: "https://twitter.com/justleakit" },
+      { t: ". covered by " },
+      {
+        t: "the washington post",
+        href: "https://www.washingtonpost.com/news/the-intersect/wp/2014/07/29/a-new-app-will-let-you-send-anonymous-e-mail-to-anyone-which-sounds-like-a-disaster-waiting-to-happen/",
+      },
+      { t: ", " },
+      { t: "bbc", href: "https://twitter.com/MarxMedia/status/497380416501084160" },
+      { t: ", " },
+      {
+        t: "vice",
+        href: "https://motherboard.vice.com/en_us/article/qkvjjq/why-anonymous-messaging-services-are-full-of-bitching-and-flirting",
+      },
+      { t: ", " },
+      {
+        t: "the next web",
+        href: "https://thenextweb.com/socialmedia/2014/07/28/leak-lets-send-nearly-anonymous-emails-friends-family-enemies/",
+      },
+      { t: ", " },
+      { t: "mashable", href: "http://mashable.com/2014/08/04/leak-anonymous-email/" },
+      { t: ", " },
+      {
+        t: "vogue",
+        href: "https://www.vogue.ru/fashion/news/balencyoga_gibkiy_otvet_balenciaga/",
+      },
+      { t: " and " },
+      {
+        t: "hypebeast",
+        href: "https://hypebeast.kr/2017/7/balencyoga-balenciaga-parody-collection",
+      },
       { t: "." },
     ],
   },
@@ -77,7 +106,11 @@ export const STORY_SECTIONS: StorySection[] = [
       { t: "calling app", href: "https://www.producthunt.com/posts/tribe-calls" },
       { t: " and a " },
       { t: "gaming app", href: "https://www.producthunt.com/posts/tribe-games" },
-      { t: "." },
+      { t: ". featured by " },
+      { t: "techcrunch", href: "https://techcrunch.com/2016/10/12/augmented-chat/" },
+      { t: " and " },
+      { t: "complex", href: "https://www.youtube.com/watch?v=EnwRu20HOTQ" },
+      { t: ", recognized by apple, google, fast company and time." },
     ],
   },
   {
@@ -85,10 +118,10 @@ export const STORY_SECTIONS: StorySection[] = [
     years: "2018 – 2023",
     city: "venice, ca",
     runs: [
-      { t: "i then joined the core product design team at " },
+      { t: "i was part of the core product design team at " },
       { t: "snapchat", href: "https://www.snap.com/" },
       {
-        t: ", a small pioneer group of inventors who disrupted the space, honored to contribute to chat, calling, minis and the camera.",
+        t: ", a small pioneer group of inventors who disrupted the space. i focused on the core experience, snapping and chatting, and also worked on calling, minis and the camera.",
       },
     ],
   },
@@ -110,7 +143,7 @@ export const STORY_SECTIONS: StorySection[] = [
     city: "menlo park, ca",
     runs: [
       {
-        t: "i joined meta to slide back into designing social products: after a year tinkering with internal and external models in the ",
+        t: "i joined meta to slide back into designing social products. after a year tinkering with internal and external models in the ",
       },
       {
         t: "superintelligent lab",
@@ -131,47 +164,6 @@ export const STORY_SECTIONS: StorySection[] = [
       {
         t: "i'm a designer living in los angeles, ca, designing different types of things for the internet, from tiny controversial experiments to larger-scale consumer products.",
       },
-    ],
-  },
-  {
-    label: "got out there",
-    years: "2014 – 2017",
-    city: "the internet",
-    runs: [
-      { t: "some of it got out there: fast company, apple, google, time, " },
-      { t: "techcrunch", href: "https://techcrunch.com/2016/10/12/augmented-chat/" },
-      { t: ", " },
-      { t: "complex", href: "https://www.youtube.com/watch?v=EnwRu20HOTQ" },
-      { t: ", " },
-      { t: "bbc", href: "https://twitter.com/MarxMedia/status/497380416501084160" },
-      { t: ", " },
-      {
-        t: "vice",
-        href: "https://motherboard.vice.com/en_us/article/qkvjjq/why-anonymous-messaging-services-are-full-of-bitching-and-flirting",
-      },
-      { t: ", " },
-      {
-        t: "the next web",
-        href: "https://thenextweb.com/socialmedia/2014/07/28/leak-lets-send-nearly-anonymous-emails-friends-family-enemies/",
-      },
-      { t: ", " },
-      {
-        t: "vogue",
-        href: "https://www.vogue.ru/fashion/news/balencyoga_gibkiy_otvet_balenciaga/",
-      },
-      { t: ", " },
-      {
-        t: "hypebeast",
-        href: "https://hypebeast.kr/2017/7/balencyoga-balenciaga-parody-collection",
-      },
-      { t: ", " },
-      {
-        t: "the washington post",
-        href: "https://www.washingtonpost.com/news/the-intersect/wp/2014/07/29/a-new-app-will-let-you-send-anonymous-e-mail-to-anyone-which-sounds-like-a-disaster-waiting-to-happen/",
-      },
-      { t: " and " },
-      { t: "mashable", href: "http://mashable.com/2014/08/04/leak-anonymous-email/" },
-      { t: "." },
     ],
   },
 ];

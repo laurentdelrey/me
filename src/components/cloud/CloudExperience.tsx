@@ -52,7 +52,6 @@ const SECTION_COLORS: Record<string, string> = {
   "hustling for fun": "#ff6d00",
   "lost in the game": "#7c4dff",
   "another internet kid": "#00bcd4",
-  "got out there": "#e8442e",
 };
 
 const LABEL_ON = "text-black/80";
@@ -209,11 +208,8 @@ export default function CloudExperience({
     return () => clearTimeout(t);
   }, [controlsShown]);
 
-  // today first, backwards through time; the press section closes it out
-  const aboutSections = useMemo(() => {
-    const chronological = STORY_SECTIONS.slice(0, -1).reverse();
-    return [...chronological, STORY_SECTIONS[STORY_SECTIONS.length - 1]];
-  }, []);
+  // today first, backwards through time; press links live in each section
+  const aboutSections = useMemo(() => [...STORY_SECTIONS].reverse(), []);
 
   const cityOf = (item: CloudItem | null) =>
     item ? eras.find((e) => e.id === item.eraId)?.city : undefined;
@@ -342,7 +338,7 @@ export default function CloudExperience({
       {/* bottom fade so the controls always sit on clear grey; in about mode
           there are no controls, so it drops low and lets the story breathe */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-64"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-44"
         style={{
           ...(shape === "about" ? { height: 110 } : null),
           background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
