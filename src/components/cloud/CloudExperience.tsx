@@ -277,12 +277,12 @@ export default function CloudExperience({
       {shape === "about" && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div
-            className="pointer-events-auto max-h-[calc(100vh-160px)] w-[min(600px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-10 pt-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="pointer-events-auto max-h-[calc(100vh-48px)] w-[min(600px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-28 pt-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{
               maskImage:
-                "linear-gradient(to bottom, transparent, black 28px, black calc(100% - 56px), transparent)",
+                "linear-gradient(to bottom, transparent, black 110px, black calc(100% - 110px), transparent)",
               WebkitMaskImage:
-                "linear-gradient(to bottom, transparent, black 28px, black calc(100% - 56px), transparent)",
+                "linear-gradient(to bottom, transparent, black 110px, black calc(100% - 110px), transparent)",
             }}
           >
             {aboutSections.map((sec, i) => {
@@ -320,7 +320,7 @@ export default function CloudExperience({
       <div
         className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] transition-[height] duration-500 ease-out"
         style={{
-          height: shape === "about" ? 88 : 256,
+          height: shape === "about" ? 0 : 256,
           background: `linear-gradient(to top, ${CLOUD_BG} 38%, transparent)`,
         }}
       />
