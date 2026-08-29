@@ -272,7 +272,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-[30px] top-3.5 h-[52px] w-auto sm:left-4"
+        className="pointer-events-none absolute left-[30px] top-[30px] h-[52px] w-auto sm:left-4 sm:top-4"
       />
 
       <CloudScene
@@ -317,16 +317,20 @@ export default function CloudExperience({
                     damping: 28,
                     delay: 0.25 + i * 0.08,
                   }}
-                  className="relative mb-8 px-3.5 py-2.5"
-                  style={{ border: `1px solid ${accent}` }}
+                  className="mb-8"
                 >
                   <span
-                    className="absolute bottom-[calc(100%-1px)] left-[-1px] max-w-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
+                    className="block w-fit max-w-full truncate whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight"
                     style={{ background: accent, color: textOn(accent) }}
                   >
                     {sec.label} · {sec.years} · {sec.city}
                   </span>
-                  <StoryParagraph runs={sec.runs} accent={accent} />
+                  <div
+                    className="px-3.5 py-2.5"
+                    style={{ border: `1px solid ${accent}` }}
+                  >
+                    <StoryParagraph runs={sec.runs} accent={accent} />
+                  </div>
                 </motion.div>
               );
             })}
