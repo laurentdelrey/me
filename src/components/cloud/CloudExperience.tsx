@@ -73,8 +73,8 @@ function MorphLabel({ text }: { text: string }) {
               y: 0,
               transition: {
                 type: "spring",
-                stiffness: 480,
-                damping: 30,
+                stiffness: 420,
+                damping: 38,
                 delay: i * 0.018,
               },
             }}
