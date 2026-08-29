@@ -782,7 +782,7 @@ export default function CloudScene({
 
       const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
       // portrait: sink the formation a touch so the logo row breathes
-      const yDown = camera.aspect < 0.8 ? -frusH * 0.03 : 0;
+      const yDown = camera.aspect < 0.8 ? -frusH * 0.05 : 0;
 
       // chronological masonry: shortest-column packing, scroll for the rest
       if (layoutShape === "grid") {
