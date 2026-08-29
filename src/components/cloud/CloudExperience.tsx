@@ -296,7 +296,7 @@ export default function CloudExperience({
       {shape === "about" && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div
-            className="pointer-events-auto max-h-[calc(100vh-48px)] w-[min(600px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-28 pt-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="pointer-events-auto max-h-[calc(100%-48px)] w-[min(600px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-28 pt-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent, black 110px, black calc(100% - 110px), transparent)",
