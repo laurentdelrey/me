@@ -318,10 +318,10 @@ export default function CloudExperience({
       {/* bottom fade so the controls always sit on clear grey; in about mode
           there are no controls, so it drops low and lets the story breathe */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] transition-[height] duration-500 ease-out"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[200px] transition-[height] duration-500 ease-out sm:h-64"
         style={{
-          height: shape === "about" ? 0 : 256,
-          background: `linear-gradient(to top, ${CLOUD_BG} 38%, transparent)`,
+          ...(shape === "about" ? { height: 0 } : null),
+          background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
         }}
       />
 
@@ -333,7 +333,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-[62px] left-1/2 z-20 -translate-x-1/2 sm:bottom-5 sm:left-5 sm:translate-x-0"
+          className="absolute bottom-[54px] left-1/2 z-20 -translate-x-1/2 sm:bottom-5 sm:left-5 sm:translate-x-0"
         >
         <motion.div
           initial={false}
@@ -442,7 +442,7 @@ export default function CloudExperience({
         {/* filters: centered under the picker on mobile, bottom-right on desktop */}
         <div
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-4 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6 sm:bottom-5 sm:left-auto sm:right-6 sm:translate-x-0"
+          className="absolute bottom-3.5 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6 sm:bottom-5 sm:left-auto sm:right-6 sm:translate-x-0"
         >
           {FILTERS.map((f, idx) => (
             <motion.button
