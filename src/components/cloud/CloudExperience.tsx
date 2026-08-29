@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { tagMatchesFilter, type TagFilter } from "@/lib/work/tags";
 import { STORY_SECTIONS, type StoryRun } from "@/lib/work/story";
 import CloudScene, {
@@ -59,7 +60,7 @@ const LABEL_OFF = "text-black/30 hover:text-black/55";
 
 function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) {
   return (
-    <p className="text-left text-[22px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
+    <p className="text-left text-[19px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
       {runs.map((r, i) =>
         r.href ? (
           <a
@@ -276,7 +277,7 @@ export default function CloudExperience({
       {shape === "about" && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div
-            className="pointer-events-auto max-h-[calc(100vh-160px)] w-[min(640px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-10 pt-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="pointer-events-auto max-h-[calc(100vh-160px)] w-[min(600px,calc(100vw-72px))] overflow-y-auto overflow-x-hidden px-1 pb-10 pt-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{
               maskImage:
                 "linear-gradient(to bottom, transparent, black 28px, black calc(100% - 56px), transparent)",
@@ -341,7 +342,7 @@ export default function CloudExperience({
               : { duration: 0.2 }
           }
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-[62px] left-1/2 z-20 flex h-9 items-center text-[22px] lowercase leading-none"
+          className="absolute bottom-[62px] left-1/2 z-20 flex h-9 items-center text-[19px] lowercase leading-none"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -391,13 +392,13 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: -2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-9 w-9 cursor-pointer place-items-center pb-0.5 text-[27px] text-black/35 transition-colors hover:text-black"
+                className="grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
               >
-                ‹
+                <CaretLeft size={17} weight="bold" />
               </motion.button>
               <button
                 onClick={() => setPickerOpen(true)}
-                className="relative block h-[25px] w-[100px] cursor-pointer overflow-hidden text-center text-black/85"
+                className="relative block h-[22px] w-[88px] cursor-pointer overflow-hidden text-center text-black/85"
               >
                 <AnimatePresence initial={false} custom={pagerDir}>
                   <motion.span
@@ -423,9 +424,9 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: 2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-9 w-9 cursor-pointer place-items-center pb-0.5 text-[27px] text-black/35 transition-colors hover:text-black"
+                className="grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
               >
-                ›
+                <CaretRight size={17} weight="bold" />
               </motion.button>
             </motion.div>
           )}
@@ -433,28 +434,31 @@ export default function CloudExperience({
         </motion.div>
 
         {/* filters: bare labels, centered */}
-        <motion.div
-          initial={false}
-          animate={{
-            opacity: controlsShown ? 1 : 0,
-            y: controlsShown ? 0 : 22,
-            x: "-50%",
-          }}
-          transition={
-            controlsShown
-              ? { type: "spring", stiffness: 210, damping: 26, delay: 0.58 }
-              : { duration: 0.2 }
-          }
+        <div
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-4 left-1/2 z-20 flex h-9 items-center gap-6"
+          className="absolute bottom-4 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6"
         >
-          {FILTERS.map((f) => (
+          {FILTERS.map((f, idx) => (
             <motion.button
               key={f.id}
               onClick={() => handleFilter(f.id)}
               whileTap={{ scale: 0.92 }}
-              transition={SPRING}
-              className={`cursor-pointer text-[22px] lowercase leading-none transition-colors duration-200 ${
+              initial={false}
+              animate={{
+                opacity: controlsShown ? 1 : 0,
+                y: controlsShown ? 0 : 18,
+              }}
+              transition={
+                controlsShown
+                  ? {
+                      type: "spring",
+                      stiffness: 240,
+                      damping: 26,
+                      delay: 0.55 + idx * 0.07,
+                    }
+                  : { duration: 0.2 }
+              }
+              className={`cursor-pointer text-[19px] lowercase leading-none transition-colors duration-200 ${
                 filter === f.id
                   ? "text-black/85"
                   : "text-black/35 hover:text-black/70"
@@ -463,7 +467,7 @@ export default function CloudExperience({
               {f.label}
             </motion.button>
           ))}
-        </motion.div>
+        </div>
       </div>
 
       {/* about me / close: top-right, bare label */}
@@ -477,7 +481,7 @@ export default function CloudExperience({
             ? { type: "spring", stiffness: 210, damping: 26, delay: 0.5 }
             : { duration: 0.25 }
         }
-        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[22px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[19px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         {shape === "about" ? "close" : "about me"}
       </motion.button>
