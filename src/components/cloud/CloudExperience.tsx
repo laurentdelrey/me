@@ -444,7 +444,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-3.5 left-[30px] z-20 sm:bottom-5 sm:left-5"
+          className="absolute bottom-3.5 left-[30px] z-20 sm:bottom-5 sm:left-6"
         >
         <motion.div
           initial={false}
@@ -513,7 +513,7 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: -2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
+                className="-ml-[5px] grid h-8 w-8 cursor-pointer place-items-center text-black/35 transition-colors hover:text-black"
               >
                 <CaretLeft size={15} weight="bold" />
               </motion.button>
@@ -606,7 +606,7 @@ export default function CloudExperience({
             ? { type: "spring", stiffness: 210, damping: 26, delay: 0.5 }
             : { duration: 0.25 }
         }
-        className="absolute right-[30px] top-[30px] z-20 cursor-pointer sm:right-4 sm:top-4 whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-[30px] top-[30px] z-20 cursor-pointer sm:right-6 sm:top-4 whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         <MorphLabel text={shape === "about" ? "close" : "about me"} />
       </motion.button>
