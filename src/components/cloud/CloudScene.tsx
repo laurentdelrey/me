@@ -283,6 +283,10 @@ export default function CloudScene({
     // ---- texture loading --------------------------------------------------
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
+    // recap montages load first: the intro's final frame needs one ready
+    const loadQueue = [...cards].sort(
+      (a, b) => Number(b.item.recap) - Number(a.item.recap)
+    );
     let loadCursor = 0;
     let inFlight = 0;
     let disposed = false;
@@ -307,8 +311,8 @@ export default function CloudScene({
     const fullTextures = new Map<string, THREE.Texture>();
 
     function pump() {
-      while (inFlight < 6 && loadCursor < cards.length && !disposed) {
-        const card = cards[loadCursor++];
+      while (inFlight < 6 && loadCursor < loadQueue.length && !disposed) {
+        const card = loadQueue[loadCursor++];
         inFlight++;
         loader.load(
           card.item.img,
@@ -876,6 +880,14 @@ export default function CloudScene({
       // the rest of the cloud blooms in behind it
       if (controls.started && !startedAtMs) {
         startedAtMs = nowMs;
+        // the flipbook's last frame is a year-end recap: swap one in for the
+        // final beat so the card sailing into the sphere is a playing montage
+        const recaps = cards.filter(
+          (c) => c.item.recap && c.on && c.texLoaded && c.thumbTex
+        );
+        if (recaps.length) {
+          introCard = recaps[Math.floor(Math.random() * recaps.length)];
+        }
         if (introCard) {
           heroCard = introCard;
           heroUntilMs = nowMs + 1600;
@@ -908,6 +920,12 @@ export default function CloudScene({
           heroCard.introBlend = 1;
           heroCard.visScale = 1;
           heroCard.hoverScale = introScaleFor(heroCard);
+          heroCard.group.position.set(0, 0, camera.position.z - 6);
+          heroCard.group.scale.setScalar(heroCard.hoverScale);
+          heroCard.mat.opacity = 1;
+          if (heroCard.item.videoUrl && !isAmbient(heroCard)) {
+            startAmbient(heroCard);
+          }
         }
       }
 
