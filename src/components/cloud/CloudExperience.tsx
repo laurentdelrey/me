@@ -327,16 +327,19 @@ export default function CloudExperience({
 
       {/* bottom controls hide in about mode — close (top right) is the way out */}
       <div>
-        {/* layout picker: chevrons closed, unfolds into the full list */}
-        <motion.div
+        {/* layout picker: centered above the filters on mobile, anchored
+            bottom-left on desktop; chevrons closed, unfolds into the list */}
+        <div
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
+          className="absolute bottom-[62px] left-1/2 z-20 -translate-x-1/2 sm:bottom-5 sm:left-5 sm:translate-x-0"
+        >
+        <motion.div
           initial={false}
           animate={{
             opacity: controlsShown ? 1 : 0,
             y: controlsShown ? 0 : 22,
-            x: "-50%",
           }}
           transition={
             controlsShown
@@ -344,7 +347,7 @@ export default function CloudExperience({
               : { duration: 0.2 }
           }
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-[62px] left-1/2 z-20 flex h-9 items-center text-[17px] lowercase leading-none"
+          className="flex h-9 items-center text-[17px] lowercase leading-none"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -434,11 +437,12 @@ export default function CloudExperience({
           )}
           </AnimatePresence>
         </motion.div>
+        </div>
 
-        {/* filters: bare labels, centered */}
+        {/* filters: centered under the picker on mobile, bottom-right on desktop */}
         <div
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-4 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6"
+          className="absolute bottom-4 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6 sm:bottom-5 sm:left-auto sm:right-6 sm:translate-x-0"
         >
           {FILTERS.map((f, idx) => (
             <motion.button
