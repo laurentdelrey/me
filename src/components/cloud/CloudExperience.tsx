@@ -59,7 +59,7 @@ const LABEL_OFF = "text-black/30 hover:text-black/55";
 
 function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) {
   return (
-    <p className="text-left text-[15px] lowercase leading-[1.75] tracking-[-0.005em] text-[#1f1f23]">
+    <p className="text-left text-[17px] lowercase leading-[1.75] tracking-[-0.005em] text-[#1f1f23]">
       {runs.map((r, i) =>
         r.href ? (
           <a
@@ -335,7 +335,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-[52px] left-1/2 z-20 flex h-7 -translate-x-1/2 items-center text-[15px] lowercase leading-none"
+          className="absolute bottom-[52px] left-1/2 z-20 flex h-7 -translate-x-1/2 items-center text-[17px] lowercase leading-none"
         >
           <AnimatePresence mode="wait" initial={false}>
           {pickerOpen ? (
@@ -385,7 +385,7 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: -2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[19px] text-black/35 transition-colors hover:text-black"
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[21px] text-black/35 transition-colors hover:text-black"
               >
                 ‹
               </motion.button>
@@ -417,7 +417,7 @@ export default function CloudExperience({
                 whileHover={{ scale: 1.2, x: 2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={SPRING}
-                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[19px] text-black/35 transition-colors hover:text-black"
+                className="grid h-7 w-7 cursor-pointer place-items-center pb-px text-[21px] text-black/35 transition-colors hover:text-black"
               >
                 ›
               </motion.button>
@@ -434,7 +434,7 @@ export default function CloudExperience({
               onClick={() => handleFilter(f.id)}
               whileTap={{ scale: 0.92 }}
               transition={SPRING}
-              className={`cursor-pointer text-[15px] lowercase leading-none transition-colors duration-200 ${
+              className={`cursor-pointer text-[17px] lowercase leading-none transition-colors duration-200 ${
                 filter === f.id
                   ? "text-black/85"
                   : "text-black/35 hover:text-black/70"
@@ -453,7 +453,7 @@ export default function CloudExperience({
         transition={SPRING}
         initial={false}
         animate={{ opacity: ready ? 1 : 0 }}
-        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[15px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
+        className="absolute right-4 top-4 z-20 cursor-pointer whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
         {shape === "about" ? "close" : "about me"}
       </motion.button>

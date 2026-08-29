@@ -109,7 +109,8 @@
     background: #b0b0b0; /* fallback to avoid flash before map draws */
     color: #ffffff;
     font-family: 'PP Neue Montreal', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 400;
+    /* PP Neue Montreal reads lighter than Inter — medium is the new regular */
+    font-weight: 500;
     font-size: 1.125rem; /* 18px */
     line-height: 1.6;
     overflow-x: hidden;
