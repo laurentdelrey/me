@@ -43,7 +43,6 @@ export type CloudControls = {
   unfocusToken: number; // bumped → release focused card
   shape: CloudShape;
   started: boolean; // false until the loading intro hands over
-  introHeroId: string | null; // the flipbook's last frame becomes this card
 };
 
 type Props = {
@@ -571,6 +570,30 @@ export default function CloudScene({
     let startedAtMs = 0;
     let heroCard: Card | null = null;
     let heroUntilMs = 0;
+    // The loading flipbook lives inside the scene: the real card meshes take
+    // turns front and center, so the last frame simply glides into formation.
+    const introOrder = cards.filter((c) => !c.item.videoUrl);
+    for (let i = introOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [introOrder[i], introOrder[j]] = [introOrder[j], introOrder[i]];
+    }
+    let introIdx = -1;
+    let introCard: Card | null = null;
+    let introSwapAt = 0;
+    // matches the old DOM flipbook's display size: min(56vh, 520px) tall,
+    // min(80vw, 620px) wide, natural aspect, on the focused-card plane
+    function introScaleFor(card: Card) {
+      const H = container!.clientHeight;
+      const W = container!.clientWidth;
+      const dispH = Math.min(
+        0.56 * H,
+        520,
+        Math.min(0.8 * W, 620) * (card.baseH / card.baseW)
+      );
+      const worldH =
+        2 * 6 * Math.tan(THREE.MathUtils.degToRad(20)) * (dispH / H);
+      return worldH / card.baseH;
+    }
     let aboutBlend = 0;
     let flatBlend = 0; // 1 = flat shape (heart/smiley/about): face camera
     let noiseBlend = 1;
@@ -824,36 +847,35 @@ export default function CloudScene({
 
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
 
-      // the moment the intro hands over, the flipbook's final frame becomes a
-      // real card at the same spot and size, then glides into formation
+      // flipbook: until the handover the scene cycles cards front and center
+      if (!controls.started && nowMs >= introSwapAt && introOrder.length) {
+        introSwapAt = nowMs + 150;
+        for (let k = 1; k <= introOrder.length; k++) {
+          const idx = (introIdx + k) % introOrder.length;
+          const c = introOrder[idx];
+          if (c.texLoaded && c.thumbTex) {
+            introIdx = idx;
+            introCard = c;
+            break;
+          }
+        }
+      }
+
+      // the handover: whichever card is on screen right now IS the hero — it
+      // never swaps meshes, it just glides from center into formation while
+      // the rest of the cloud blooms in behind it
       if (controls.started && !startedAtMs) {
         startedAtMs = nowMs;
-        const hero = controls.introHeroId
-          ? cards.find((c) => c.item.id === controls.introHeroId)
-          : undefined;
-        if (hero) {
-          heroCard = hero;
+        if (introCard) {
+          heroCard = introCard;
           heroUntilMs = nowMs + 1600;
           // the hero owns the first beat; everyone else waits a moment
-          for (const c of cards) if (c !== hero) c.introDelay += 450;
-          const H = container!.clientHeight;
-          const W = container!.clientWidth;
-          const dispH = Math.min(
-            0.56 * H,
-            520,
-            Math.min(0.8 * W, 620) * (hero.baseH / hero.baseW)
-          );
-          const worldH =
-            2 * 6 * Math.tan(THREE.MathUtils.degToRad(20)) * (dispH / H);
-          hero.introDelay = 0;
-          hero.introduced = true;
-          hero.introBlend = 1;
-          hero.visScale = 1;
-          hero.hoverScale = worldH / hero.baseH;
-          hero.group.position.set(0, 0, camera.position.z - 6);
-          hero.group.scale.setScalar(hero.hoverScale);
-          hero.mat.opacity = 1;
-          (hero.frameMesh.material as THREE.MeshBasicMaterial).opacity = 1;
+          for (const c of cards) if (c !== heroCard) c.introDelay += 450;
+          heroCard.introDelay = 0;
+          heroCard.introduced = true;
+          heroCard.introBlend = 1;
+          heroCard.visScale = 1;
+          heroCard.hoverScale = introScaleFor(heroCard);
         }
       }
 
@@ -874,6 +896,21 @@ export default function CloudScene({
 
       for (const card of cards) {
         const i = card.ordinal;
+
+        // pre-handover: one card at a time, front and center, no frame yet
+        if (!controls.started) {
+          if (card === introCard) {
+            card.group.position.set(0, 0, camera.position.z - 6);
+            card.group.scale.setScalar(introScaleFor(card));
+            card.mat.opacity = 1;
+            card.imgMesh.renderOrder = 100000;
+          } else {
+            card.group.scale.setScalar(0.0001);
+            card.mat.opacity = 0;
+          }
+          (card.frameMesh.material as THREE.MeshBasicMaterial).opacity = 0;
+          continue;
+        }
 
         const due =
           controls.started && nowMs - startedAtMs >= card.introDelay;

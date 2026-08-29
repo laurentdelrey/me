@@ -94,45 +94,13 @@ export default function CloudExperience({
   const [hoverAccent, setHoverAccent] = useState<string | null>(null);
   const [focused, setFocused] = useState<CloudItem | null>(null);
   const [focusAccent, setFocusAccent] = useState<string | null>(null);
-  // loading flipbook: a rapid cycle through the archive
-  const [flip, setFlip] = useState(0);
 
   const controlsRef = useRef<CloudControls>({
     filter: "story",
     unfocusToken: 0,
     shape: "sphere",
     started: false,
-    introHeroId: null,
   });
-
-  // a fresh shuffle of the whole archive every visit
-  const [introItems, setIntroItems] = useState<CloudItem[]>(items);
-  const introItemsRef = useRef<CloudItem[]>(items);
-  const flipRef = useRef(0);
-  useEffect(() => {
-    const shuffled = [...items];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    setIntroItems(shuffled);
-    introItemsRef.current = shuffled;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // flipbook cycles until the cloud is ready
-  useEffect(() => {
-    if (ready) return;
-    const t = setInterval(
-      () =>
-        setFlip((f) => {
-          flipRef.current = f + 1;
-          return f + 1;
-        }),
-      150
-    );
-    return () => clearInterval(t);
-  }, [ready]);
 
 
   // Esc leaves the about page
@@ -151,15 +119,11 @@ export default function CloudExperience({
     mountAt.current = performance.now();
   }, []);
 
-  // let the flipbook play at least 4s before the cloud takes over
+  // let the in-scene flipbook play at least 4s before the cloud takes over
   const handleReady = () => {
     const elapsed = mountAt.current ? performance.now() - mountAt.current : 0;
     const wait = Math.max(0, 4000 - elapsed);
     setTimeout(() => {
-      const list = introItemsRef.current;
-      controlsRef.current.introHeroId = list.length
-        ? list[flipRef.current % list.length].id
-        : null;
       controlsRef.current.started = true;
       setReady(true);
     }, wait);
@@ -306,25 +270,6 @@ export default function CloudExperience({
         frameCaption={frameCaption}
         frameColor={CV.frame}
       />
-
-      {/* loading intro: a rapid flipbook through the archive */}
-      <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 z-[8]"
-        style={{ x: "-50%", y: "-50%" }}
-        initial={false}
-        animate={{ opacity: ready ? 0 : 1 }}
-        transition={{ duration: 0.08 }}
-      >
-        {!ready && introItems.length > 0 && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={introItems[flip % introItems.length].img}
-            alt=""
-            className="h-auto w-auto"
-            style={{ maxHeight: "min(56vh, 520px)", maxWidth: "min(80vw, 620px)" }}
-          />
-        )}
-      </motion.div>
 
       {/* about me: the story, annotated era by era */}
       {shape === "about" && (
