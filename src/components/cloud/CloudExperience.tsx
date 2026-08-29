@@ -273,7 +273,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-[30px] top-[30px] h-[52px] w-auto sm:left-4 sm:top-4"
+        className="pointer-events-none absolute left-[30px] top-[30px] h-[52px] w-auto sm:left-6 sm:top-4"
       />
 
       <CloudScene
