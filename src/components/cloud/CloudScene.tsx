@@ -870,6 +870,30 @@ export default function CloudScene({
           heroCard = introCard;
           heroUntilMs = nowMs + 1600;
           heroCard.introDelay = 0;
+          // park the hero on the slot nearest front-and-center, so it
+          // settles into the sphere right where it already is
+          if (heroCard.on) {
+            const ca = Math.cos(effRot);
+            const sa = Math.sin(effRot);
+            let best: Card | null = null;
+            let bestScore = -Infinity;
+            for (const c of cards) {
+              if (!c.on) continue;
+              spherePos(c.ordinal, tmpV);
+              const rx = tmpV.x * ca + tmpV.z * sa;
+              const rz = -tmpV.x * sa + tmpV.z * ca;
+              const score = rz - (Math.abs(rx) + Math.abs(tmpV.y)) * 1.5;
+              if (score > bestScore) {
+                bestScore = score;
+                best = c;
+              }
+            }
+            if (best && best !== heroCard) {
+              const o = best.ordinal;
+              best.ordinal = heroCard.ordinal;
+              heroCard.ordinal = o;
+            }
+          }
           heroCard.introduced = true;
           heroCard.introBlend = 1;
           heroCard.visScale = 1;
