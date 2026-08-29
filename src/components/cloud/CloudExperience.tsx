@@ -253,7 +253,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-4 top-4 h-10 w-auto"
+        className="pointer-events-none absolute left-4 top-3.5 h-[52px] w-auto sm:top-4 sm:h-10"
       />
 
       <CloudScene
@@ -315,10 +315,12 @@ export default function CloudExperience({
         </div>
       )}
 
-      {/* bottom fade so the controls always sit on clear grey */}
+      {/* bottom fade so the controls always sit on clear grey; in about mode
+          there are no controls, so it drops low and lets the story breathe */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-64"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] transition-[height] duration-500 ease-out"
         style={{
+          height: shape === "about" ? 88 : 256,
           background: `linear-gradient(to top, ${CLOUD_BG} 38%, transparent)`,
         }}
       />
