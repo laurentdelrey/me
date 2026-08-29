@@ -869,8 +869,6 @@ export default function CloudScene({
         if (introCard) {
           heroCard = introCard;
           heroUntilMs = nowMs + 1600;
-          // the hero owns the first beat; everyone else waits a moment
-          for (const c of cards) if (c !== heroCard) c.introDelay += 450;
           heroCard.introDelay = 0;
           heroCard.introduced = true;
           heroCard.introBlend = 1;
