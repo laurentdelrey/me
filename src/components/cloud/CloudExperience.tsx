@@ -457,7 +457,7 @@ export default function CloudExperience({
               </motion.button>
               <button
                 onClick={() => setPickerOpen(true)}
-                className="relative block h-[20px] w-[80px] cursor-pointer overflow-hidden text-center text-black/85"
+                className="relative block h-[20px] w-[64px] cursor-pointer overflow-hidden text-center text-black/85"
               >
                 <AnimatePresence initial={false} custom={pagerDir}>
                   <motion.span
