@@ -354,8 +354,8 @@ export default function CloudExperience({
         <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-6">
           {(
             [
-              ["twitter/x", "https://twitter.com/laurentdelrey"],
-              ["threads", "https://www.threads.net/@laurentdelrey"],
+              ["twitter/x", "https://x.com/laurentdelrey"],
+              ["threads", "https://threads.com/laurentdelrey"],
             ] as const
           ).map(([label, href], i) => (
             <motion.a

@@ -110,6 +110,8 @@
     color: #ffffff;
     font-family: 'Neue Haas Display', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 400;
+    /* optical midpoint between Roman and Medium */
+    -webkit-text-stroke: 0.25px currentColor;
     font-size: 1.125rem; /* 18px */
     line-height: 1.6;
     overflow-x: hidden;
