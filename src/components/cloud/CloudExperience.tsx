@@ -306,7 +306,7 @@ export default function CloudExperience({
       <img
         src="/images/pfp-mark.svg"
         alt="laurent del rey"
-        className="pointer-events-none absolute left-[30px] top-[30px] h-[52px] w-auto sm:left-6 sm:top-4"
+        className="pointer-events-none absolute left-[30px] top-[25px] h-[52px] w-auto sm:left-6 sm:top-4"
       />
 
       <CloudScene
@@ -420,7 +420,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-5 left-[30px] z-20 sm:left-5"
+          className="absolute bottom-3.5 left-[30px] z-20 sm:bottom-5 sm:left-5"
         >
         <motion.div
           initial={false}
@@ -534,7 +534,7 @@ export default function CloudExperience({
         {/* filters: centered under the picker on mobile, bottom-right on desktop */}
         <div
           style={{ pointerEvents: filtersShown ? undefined : "none" }}
-          className="absolute bottom-5 right-[30px] z-20 flex h-9 items-center gap-6 sm:right-6"
+          className="absolute bottom-3.5 right-[30px] z-20 flex h-9 items-center gap-6 sm:bottom-5 sm:right-6"
         >
           {FILTERS.map((f, idx) => (
             <motion.button
