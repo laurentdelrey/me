@@ -62,7 +62,9 @@ function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) 
   return (
     <p className="text-left text-[17px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
       {runs.map((r, i) =>
-        r.href ? (
+        r.br ? (
+          <br key={i} />
+        ) : r.href ? (
           <a
             key={i}
             href={r.href}
@@ -341,7 +343,7 @@ export default function CloudExperience({
         className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-44"
         style={{
           ...(shape === "about" ? { height: 110 } : null),
-          background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
+          background: `linear-gradient(to top, ${CLOUD_BG} 30%, rgba(191,191,191,0.85) 50%, rgba(191,191,191,0.55) 68%, rgba(191,191,191,0.25) 84%, rgba(191,191,191,0))`,
         }}
       />
 
@@ -352,6 +354,7 @@ export default function CloudExperience({
             [
               ["twitter/x", "https://x.com/laurentdelrey"],
               ["threads", "https://threads.com/laurentdelrey"],
+              ["telegram", "https://t.me/laurentdelrey"],
             ] as const
           ).map(([label, href], i) => (
             <motion.a

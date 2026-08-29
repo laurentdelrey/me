@@ -1,7 +1,7 @@
 // The homepage era texts, blended into one story (oldest → today), as plain
 // text runs so the about page can lay them out with pretext and animate the
 // re-wrap word by word. A run with an href renders as a link.
-export type StoryRun = { t: string; href?: string };
+export type StoryRun = { t: string; href?: string; br?: boolean };
 
 export type StorySection = {
   label: string;
@@ -57,7 +57,9 @@ export const STORY_SECTIONS: StorySection[] = [
         t: " on the ethereum network, and the one that blew up the most, a controversial email-based app called ",
       },
       { t: "leak", href: "https://twitter.com/justleakit" },
-      { t: ". covered by " },
+      { t: "." },
+      { t: "", br: true },
+      { t: "covered by " },
       {
         t: "the washington post",
         href: "https://www.washingtonpost.com/news/the-intersect/wp/2014/07/29/a-new-app-will-let-you-send-anonymous-e-mail-to-anyone-which-sounds-like-a-disaster-waiting-to-happen/",
@@ -106,7 +108,9 @@ export const STORY_SECTIONS: StorySection[] = [
       { t: "calling app", href: "https://www.producthunt.com/posts/tribe-calls" },
       { t: " and a " },
       { t: "gaming app", href: "https://www.producthunt.com/posts/tribe-games" },
-      { t: ". featured by " },
+      { t: "." },
+      { t: "", br: true },
+      { t: "featured by " },
       { t: "techcrunch", href: "https://techcrunch.com/2016/10/12/augmented-chat/" },
       { t: " and " },
       { t: "complex", href: "https://www.youtube.com/watch?v=EnwRu20HOTQ" },
