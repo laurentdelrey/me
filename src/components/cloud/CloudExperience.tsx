@@ -188,6 +188,25 @@ export default function CloudExperience({
 
   const activeFilter = FILTERS.find((f) => f.id === filter) ?? FILTERS[0];
   const controlsShown = ready && shape !== "about";
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const sync = () => setIsNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const filtersShown = controlsShown && !(pickerOpen && isNarrow);
+  // the big 0.55s reveal delay is for the first entrance only — after that,
+  // stepping aside for the picker snaps back quickly
+  const revealedOnce = useRef(false);
+  useEffect(() => {
+    if (!controlsShown) return;
+    const t = setTimeout(() => {
+      revealedOnce.current = true;
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [controlsShown]);
 
   // today first, backwards through time; the press section closes it out
   const aboutSections = useMemo(() => {
@@ -318,7 +337,7 @@ export default function CloudExperience({
       {/* bottom fade so the controls always sit on clear grey; in about mode
           there are no controls, so it drops low and lets the story breathe */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[200px] transition-[height] duration-500 ease-out sm:h-64"
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[160px] transition-[height] duration-500 ease-out sm:h-64"
         style={{
           ...(shape === "about" ? { height: 0 } : null),
           background: `linear-gradient(to top, ${CLOUD_BG} 50%, transparent)`,
@@ -333,7 +352,7 @@ export default function CloudExperience({
           ref={pickerRef}
           onMouseEnter={() => setPickerOpen(true)}
           onMouseLeave={() => setPickerOpen(false)}
-          className="absolute bottom-[54px] left-1/2 z-20 -translate-x-1/2 sm:bottom-5 sm:left-5 sm:translate-x-0"
+          className="absolute bottom-3.5 left-4 z-20 sm:bottom-5 sm:left-5"
         >
         <motion.div
           initial={false}
@@ -441,8 +460,8 @@ export default function CloudExperience({
 
         {/* filters: centered under the picker on mobile, bottom-right on desktop */}
         <div
-          style={{ pointerEvents: controlsShown ? undefined : "none" }}
-          className="absolute bottom-3.5 left-1/2 z-20 flex h-9 -translate-x-1/2 items-center gap-6 sm:bottom-5 sm:left-auto sm:right-6 sm:translate-x-0"
+          style={{ pointerEvents: filtersShown ? undefined : "none" }}
+          className="absolute bottom-3.5 right-4 z-20 flex h-9 items-center gap-6 sm:bottom-5 sm:right-6"
         >
           {FILTERS.map((f, idx) => (
             <motion.button
@@ -451,18 +470,21 @@ export default function CloudExperience({
               whileTap={{ scale: 0.92 }}
               initial={false}
               animate={{
-                opacity: controlsShown ? 1 : 0,
-                y: controlsShown ? 0 : 18,
+                opacity: filtersShown ? 1 : 0,
+                y: filtersShown ? 0 : 14,
               }}
               transition={
-                controlsShown
+                filtersShown
                   ? {
                       type: "spring",
                       stiffness: 240,
                       damping: 26,
-                      delay: 0.55 + idx * 0.07,
+                      delay: (revealedOnce.current ? 0.06 : 0.55) + idx * 0.06,
                     }
-                  : { duration: 0.2 }
+                  : {
+                      duration: 0.14,
+                      delay: (FILTERS.length - 1 - idx) * 0.025,
+                    }
               }
               className={`cursor-pointer text-[17px] lowercase leading-none transition-colors duration-200 ${
                 filter === f.id
