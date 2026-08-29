@@ -205,6 +205,30 @@ export default function CloudExperience({
     handleShape(next.id);
   };
 
+  // idle showcase: left alone, the cloud steps through its formations on
+  // its own — any interaction hands control back
+  const lastActivity = useRef(0);
+  useEffect(() => {
+    lastActivity.current = performance.now();
+    const poke = () => {
+      lastActivity.current = performance.now();
+    };
+    const events = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"] as const;
+    for (const e of events) window.addEventListener(e, poke);
+    return () => {
+      for (const e of events) window.removeEventListener(e, poke);
+    };
+  }, []);
+  useEffect(() => {
+    if (!ready || shape === "about" || pickerOpen || focused) return;
+    const t = setInterval(() => {
+      if (document.hidden) return;
+      if (performance.now() - lastActivity.current > 10000) stepLayout(1);
+    }, 8000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, shape, pickerOpen, focused, layoutIndex]);
+
   // ←/→ page through layouts when no card is expanded (the scene uses the
   // same keys to step through cards while one is focused)
   useEffect(() => {
