@@ -3,6 +3,7 @@ import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://laurent.fyi"),
   title: "laurent del rey - internet designer",
   description: "this is my journey",
   openGraph: {
