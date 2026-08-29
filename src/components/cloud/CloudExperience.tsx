@@ -58,12 +58,47 @@ const LABEL_ON = "text-black/80";
 const LABEL_OFF = "text-black/30 hover:text-black/55";
 
 
+// Character-level label morph: unchanged characters hold still, the rest
+// cascade out and in with a subtle spring.
+function MorphLabel({ text }: { text: string }) {
+  return (
+    <span className="inline-flex overflow-hidden">
+      <AnimatePresence mode="popLayout" initial={false}>
+        {text.split("").map((ch, i) => (
+          <motion.span
+            key={`${ch}-${i}`}
+            initial={{ opacity: 0, y: 11 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: {
+                type: "spring",
+                stiffness: 480,
+                damping: 30,
+                delay: i * 0.018,
+              },
+            }}
+            exit={{
+              opacity: 0,
+              y: -11,
+              transition: { duration: 0.13, delay: i * 0.012 },
+            }}
+            className="inline-block whitespace-pre"
+          >
+            {ch}
+          </motion.span>
+        ))}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 function StoryParagraph({ runs, accent }: { runs: StoryRun[]; accent: string }) {
   return (
     <p className="text-left text-[17px] lowercase leading-[1.6] tracking-[-0.008em] text-[#1f1f23]">
       {runs.map((r, i) =>
         r.br ? (
-          <br key={i} />
+          <span key={i} aria-hidden className="block h-2" />
         ) : r.href ? (
           <a
             key={i}
@@ -342,7 +377,6 @@ export default function CloudExperience({
       <div
         className="pointer-events-none absolute bottom-0 left-0 right-0 z-[15] h-[130px] transition-[height] duration-500 ease-out sm:h-44"
         style={{
-          ...(shape === "about" ? { height: 110 } : null),
           background: `linear-gradient(to top, ${CLOUD_BG} 30%, rgba(191,191,191,0.85) 50%, rgba(191,191,191,0.55) 68%, rgba(191,191,191,0.25) 84%, rgba(191,191,191,0))`,
         }}
       />
@@ -396,7 +430,12 @@ export default function CloudExperience({
           }}
           transition={
             controlsShown
-              ? { type: "spring", stiffness: 210, damping: 26, delay: 0.45 }
+              ? {
+                  type: "spring",
+                  stiffness: 210,
+                  damping: 26,
+                  delay: revealedOnce.current ? 0.05 : 0.45,
+                }
               : { duration: 0.2 }
           }
           style={{ pointerEvents: controlsShown ? undefined : "none" }}
@@ -513,7 +552,7 @@ export default function CloudExperience({
                       type: "spring",
                       stiffness: 240,
                       damping: 26,
-                      delay: (revealedOnce.current ? 0.06 : 0.55) + idx * 0.06,
+                      delay: (revealedOnce.current ? 0.22 : 0.55) + idx * 0.07,
                     }
                   : {
                       duration: 0.14,
@@ -545,7 +584,7 @@ export default function CloudExperience({
         }
         className="absolute right-[30px] top-[30px] z-20 cursor-pointer sm:right-4 sm:top-4 whitespace-nowrap text-[17px] lowercase leading-none text-black/80 transition-colors duration-200 hover:text-black"
       >
-        {shape === "about" ? "close" : "about me"}
+        <MorphLabel text={shape === "about" ? "close" : "about me"} />
       </motion.button>
     </div>
   );
