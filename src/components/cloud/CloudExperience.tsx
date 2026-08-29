@@ -37,7 +37,7 @@ const LAYOUTS: { id: CloudShape; label: string }[] = [
 // accent sampled from its own image. The labels stay bare and neutral.
 const FILTERS: { id: TagFilter; label: string }[] = [
   { id: "story", label: "all" },
-  { id: "prototypes", label: "prototypes" },
+  { id: "prototypes", label: "apps" },
   { id: "images", label: "images" },
 ];
 
