@@ -8,6 +8,7 @@
    that want the SaaS palette (currently /work/dashboard) opt in explicitly
    with `bg-background text-foreground` on their root element. */
 @theme inline {
+  --font-sans: 'PP Neue Montreal', -apple-system, BlinkMacSystemFont, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -58,10 +59,34 @@
 
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter.ttc') format('truetype-collection');
+  font-family: 'PP Neue Montreal';
+  src: url('/fonts/ppneuemontreal-book.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fonts/ppneuemontreal-medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fonts/ppneuemontreal-bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fonts/ppneuemontreal-italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
   font-display: swap;
 }
 
@@ -83,7 +108,7 @@
   body {
     background: #b0b0b0; /* fallback to avoid flash before map draws */
     color: #ffffff;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'PP Neue Montreal', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 400;
     font-size: 1.125rem; /* 18px */
     line-height: 1.6;
