@@ -682,6 +682,10 @@ export default function CloudScene({
     }
 
     function onPointerDown(e: PointerEvent) {
+      // clicks on overlay links/labels (the caption ↗, the header) belong to
+      // the DOM — don't capture the pointer or the <a> never gets its click,
+      // which would swallow the link and dismiss the card instead
+      if (e.target !== renderer.domElement) return;
       dragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
@@ -718,6 +722,8 @@ export default function CloudScene({
       }
     }
     function onPointerUp(e: PointerEvent) {
+      // a release on an overlay link is the DOM's to handle, not a canvas tap
+      if (e.target !== renderer.domElement && !dragging) return;
       dragging = false;
       const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
       if (moved >= 5) return;
