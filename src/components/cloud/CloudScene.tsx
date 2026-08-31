@@ -599,6 +599,7 @@ export default function CloudScene({
       return worldH / card.baseH;
     }
     let aboutBlend = 0;
+    let lastHoverRayAt = 0; // throttle the (expensive) hover raycast
     let flatBlend = 0; // 1 = flat shape (heart/smiley/about): face camera
     let noiseBlend = 1;
     let cardScaleBlend = 1;
@@ -1108,10 +1109,17 @@ export default function CloudScene({
             }
           }
         }
-      } else if (pointerActive && controls.shape !== "about" && !focused) {
-        // while a card is expanded, hover is meaningless — skipping the
-        // 307-mesh raycast (and its hover-driven re-renders) every frame keeps
-        // the scene smooth as the pointer moves
+      } else if (
+        pointerActive &&
+        controls.shape !== "about" &&
+        !focused &&
+        nowMs - lastHoverRayAt > 45
+      ) {
+        // hover detection raycasts all 307 meshes — heavy, and it does not
+        // need 60Hz. Throttling to ~22Hz keeps hover responsive while freeing
+        // the frames in between (a card expanded skips it entirely, since
+        // hover is then meaningless).
+        lastHoverRayAt = nowMs;
         raycaster.setFromCamera(pointerNdc, camera);
         const hits = raycaster.intersectObjects(pickMeshes, false);
         let next: Card | null = null;
@@ -1212,7 +1220,9 @@ export default function CloudScene({
         // supplies the smoothness, so extra frame-smoothing here just makes
         // the annotation lag behind the expanding image. Only the free-floating
         // cloud-bounds mode wants the gentle glide.
-        const k = focused ? 1 : target ? 0.6 : 0.22;
+        // focused card is pinned, so snap to it; a hovered card rides the
+        // rotating cloud, so track it gently to avoid jitter
+        const k = focused ? 1 : target ? 0.35 : 0.22;
         frameRect.x += (tx - frameRect.x) * k;
         frameRect.y += (ty - frameRect.y) * k;
         frameRect.w += (tw - frameRect.w) * k;
