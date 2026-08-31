@@ -1205,7 +1205,11 @@ export default function CloudScene({
       if (!frameRect.init) {
         Object.assign(frameRect, { x: tx, y: ty, w: tw, h: th, init: true });
       } else {
-        const k = 0.22;
+        // Locked to a card, track it tightly — the card's own ease already
+        // supplies the smoothness, so extra frame-smoothing here just makes
+        // the annotation lag behind the expanding image. Only the free-floating
+        // cloud-bounds mode wants the gentle glide.
+        const k = target ? 0.6 : 0.22;
         frameRect.x += (tx - frameRect.x) * k;
         frameRect.y += (ty - frameRect.y) * k;
         frameRect.w += (tw - frameRect.w) * k;
