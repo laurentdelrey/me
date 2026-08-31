@@ -160,7 +160,10 @@ export default function CloudScene({
   onReady,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const bboxRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
+  const captionRef = useRef<HTMLDivElement>(null);
   const chipRefs = useRef<Record<string, HTMLSpanElement | null>>({});
   const callbacksRef = useRef({ onHoverItem, onFocusChange, onReady });
   callbacksRef.current = { onHoverItem, onFocusChange, onReady };
@@ -171,12 +174,13 @@ export default function CloudScene({
 
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(
-      40,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      120
-    );
+    // the container can be 0×0 at mount (hidden pane/tab) — a NaN aspect here
+    // would poison the camera forever, so fall back to square until resize
+    const initialAspect =
+      container.clientHeight > 0 && container.clientWidth > 0
+        ? container.clientWidth / container.clientHeight
+        : 1;
+    const camera = new THREE.PerspectiveCamera(40, initialAspect, 0.1, 120);
     camera.position.z = 15;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -610,6 +614,7 @@ export default function CloudScene({
     let downY = 0;
     // fit the cloud: never closer than 17, further on narrow (mobile) screens
     function fitZoom() {
+      if (!Number.isFinite(camera.aspect) || camera.aspect <= 0) return 15;
       return Math.max(
         15,
         3.9 / (Math.tan(THREE.MathUtils.degToRad(20)) * camera.aspect)
@@ -762,12 +767,17 @@ export default function CloudScene({
 
     function onResize() {
       if (!container) return;
+      // a hidden pane reports 0×0 — keep the last good camera state
+      if (container.clientWidth <= 0 || container.clientHeight <= 0) return;
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
       zoomTarget = fitZoom();
     }
     window.addEventListener("resize", onResize);
+    // window resize doesn't fire when only the container changes size
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(container);
 
     // ---- animation loop ---------------------------------------------------
     const shapeV = new THREE.Vector3();
@@ -776,6 +786,13 @@ export default function CloudScene({
     let raf = 0;
     let frameCount = 0;
     const frameRect = { x: 0, y: 0, w: 0, h: 0, init: false };
+    const framePrev = { x: 0, y: 0, w: 0, h: 0 };
+    // When the frame jumps to a new target it glides there once, briefly;
+    // while locked on it tracks exactly, frame for frame.
+    let frameTarget: Card | null | undefined = undefined;
+    const frameGlideFrom = { x: 0, y: 0, w: 0, h: 0 };
+    let frameGlideStart = -1e9;
+    const FRAME_GLIDE_MS = 160;
     const clock = new THREE.Clock();
 
     function animate() {
@@ -869,6 +886,9 @@ export default function CloudScene({
           : 0;
       const angle = effRot + sway;
 
+      // a NaN/Infinity zoom (from a zero-size layout pass) would never recover
+      // through the lerp — snap back to a sane distance instead
+      if (!Number.isFinite(camera.position.z)) camera.position.z = fitZoom();
       camera.position.z += (zoomTarget - camera.position.z) * 0.08;
 
       // flipbook: until the handover the scene cycles cards front and center
@@ -1215,31 +1235,100 @@ export default function CloudScene({
       }
       if (!frameRect.init) {
         Object.assign(frameRect, { x: tx, y: ty, w: tw, h: th, init: true });
+        frameTarget = target;
       } else {
-        // Locked to a card, track it tightly — the card's own ease already
-        // supplies the smoothness, so extra frame-smoothing here just makes
-        // the annotation lag behind the expanding image. Only the free-floating
-        // cloud-bounds mode wants the gentle glide.
-        // focused card is pinned, so snap to it; a hovered card rides the
-        // rotating cloud, so track it gently to avoid jitter
-        const k = focused ? 1 : target ? 0.35 : 0.22;
-        frameRect.x += (tx - frameRect.x) * k;
-        frameRect.y += (ty - frameRect.y) * k;
-        frameRect.w += (tw - frameRect.w) * k;
-        frameRect.h += (th - frameRect.h) * k;
+        if (target !== frameTarget) {
+          // new target: glide once from wherever the frame is right now
+          frameTarget = target;
+          Object.assign(frameGlideFrom, frameRect);
+          frameGlideStart = nowMs;
+        }
+        if (target) {
+          // Locked to a card, track its rect exactly — the card's own ease
+          // (position/scale lerp) already supplies all the smoothness, and any
+          // extra smoothing here makes the annotations trail the expanding or
+          // collapsing image. The short ease-out only bridges target switches.
+          const t = Math.min(1, (nowMs - frameGlideStart) / FRAME_GLIDE_MS);
+          const e = 1 - (1 - t) * (1 - t) * (1 - t);
+          frameRect.x = frameGlideFrom.x + (tx - frameGlideFrom.x) * e;
+          frameRect.y = frameGlideFrom.y + (ty - frameGlideFrom.y) * e;
+          frameRect.w = frameGlideFrom.w + (tw - frameGlideFrom.w) * e;
+          frameRect.h = frameGlideFrom.h + (th - frameGlideFrom.h) * e;
+        } else {
+          // free-floating cloud bounds want the gentle drift
+          const k = 0.22;
+          frameRect.x += (tx - frameRect.x) * k;
+          frameRect.y += (ty - frameRect.y) * k;
+          frameRect.w += (tw - frameRect.w) * k;
+          frameRect.h += (th - frameRect.h) * k;
+        }
       }
-      if (bbox) {
+      const overlay = overlayRef.current;
+      if (overlay && bbox) {
+        const mode = focused ? "focus" : hovered ? "card" : "cloud";
+        // The overlay can't have both at once: fractional positions blur the
+        // 10px mono glyphs, whole-pixel positions turn the scene's slow 3D
+        // drift into visible 1px stepping next to the subpixel-smooth tiles.
+        // Split it by motion: while the frame moves fast, use raw subpixel
+        // positions (blur is invisible in motion); when it settles or drifts
+        // slowly, snap to DEVICE pixels — raster-aligned (crisp) but half or a
+        // third of a CSS pixel per step on retina, so the drift stays fluid.
+        const speed =
+          Math.abs(frameRect.x - framePrev.x) +
+          Math.abs(frameRect.y - framePrev.y) +
+          Math.abs(frameRect.w - framePrev.w) +
+          Math.abs(frameRect.h - framePrev.h);
+        Object.assign(framePrev, frameRect);
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const q = (v: number) =>
+          speed > 2 ? Math.round(v * 100) / 100 : Math.round(v * dpr) / dpr;
+        const ox = q(frameRect.x);
+        const oy = q(frameRect.y);
+        const ow = q(Math.max(0, frameRect.w));
+        const oh = q(Math.max(0, frameRect.h));
+
+        // Each tag is its own composited layer moved only by transform, so
+        // motion never waits on layout of the border box. All size reads
+        // happen before any style writes to avoid forced reflow mid-frame.
+        const place = (el: HTMLElement | null, px: number, py: number) => {
+          if (el) el.style.transform = `translate3d(${q(px)}px, ${q(py)}px, 0)`;
+        };
+        // tags sit flush with the frame's outer edges and overlap the 1px
+        // border line, exactly like the old inset-box layout did. Sizes come
+        // from getBoundingClientRect — offsetWidth/Height round to integers,
+        // and that rounding error is visible now that the tags are pixel-crisp.
+        const label = labelRef.current;
+        if (label) {
+          const lh = label.getBoundingClientRect().height;
+          if (mode === "cloud") place(label, ox + 96, oy - lh / 2);
+          else place(label, ox, oy + 1 - lh);
+        }
+        const caption = captionRef.current;
+        if (caption)
+          place(caption, ox + ow - caption.getBoundingClientRect().width, oy + oh - 1);
+        const chipAt = (k: string, ax: number, ay: number, fx: number) => {
+          const c = chipRefs.current[k];
+          if (!c) return;
+          const r = c.getBoundingClientRect();
+          place(c, ax - r.width * fx, ay - r.height / 2);
+        };
+        chipAt("rotate", ox, oy, 1 / 3);
+        chipAt("noise", ox + ow, oy, 2 / 3);
+        chipAt("zoom", ox, oy + oh, 1 / 3);
+        chipAt("shape", ox + ow / 2, oy + oh, 1 / 2);
+        chipAt("depth", ox + ow, oy + oh, 2 / 3);
+
         // in about mode the story is the content — only card boxes, no master frame
-        bbox.style.opacity =
+        overlay.style.opacity =
           !controls.started ||
           ((controls.shape === "about" || controls.shape === "grid") && !target)
             ? "0"
             : "1";
-        bbox.dataset.mode = focused ? "focus" : hovered ? "card" : "cloud";
+        overlay.dataset.mode = mode;
         bbox.style.borderColor = target ? target.accent : "";
-        bbox.style.transform = `translate(${frameRect.x.toFixed(1)}px, ${frameRect.y.toFixed(1)}px)`;
-        bbox.style.width = `${Math.max(0, frameRect.w).toFixed(1)}px`;
-        bbox.style.height = `${Math.max(0, frameRect.h).toFixed(1)}px`;
+        bbox.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+        bbox.style.width = `${ow}px`;
+        bbox.style.height = `${oh}px`;
 
         if (frameCount % 5 === 0) {
           const deg = ((THREE.MathUtils.radToDeg(effRot) % 360) + 360) % 360;
@@ -1263,6 +1352,7 @@ export default function CloudScene({
       disposed = true;
       clearTimeout(readyTimeout);
       cancelAnimationFrame(raf);
+      resizeObserver.disconnect();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKey);
       container.removeEventListener("pointerdown", onPointerDown);
@@ -1284,8 +1374,12 @@ export default function CloudScene({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
+  // Every tag lives at the overlay origin and is moved only by an integer
+  // translate3d written in the render loop — no percentage offsets (they put
+  // glyphs between pixels and blur the text) and no layout coupling to the
+  // border box (which would relayout + repaint the text every frame).
   const chip =
-    "cloud-value-chip pointer-events-none absolute whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight text-white";
+    "cloud-value-chip pointer-events-none absolute left-0 top-0 will-change-transform whitespace-nowrap px-1.5 py-0.5 font-mono text-[10px] leading-tight text-white";
 
   return (
     <div
@@ -1298,69 +1392,67 @@ export default function CloudScene({
           transition: opacity 180ms ease, background 300ms ease;
           background: var(--cvframe);
         }
+        .cloud-overlay {
+          transition: opacity 300ms ease;
+        }
         .cloud-bbox {
           border: 1px solid var(--cvframe);
-          transition: border-color 300ms ease, opacity 300ms ease;
+          transition: border-color 300ms ease;
         }
-        .cloud-bbox[data-mode="card"] .cloud-value-chip,
-        .cloud-bbox[data-mode="focus"] .cloud-value-chip {
+        .cloud-overlay[data-mode="card"] .cloud-value-chip,
+        .cloud-overlay[data-mode="focus"] .cloud-value-chip {
           opacity: 0;
-        }
-        /* header rides the top edge; card mode: tag flush left, its bottom
-           sitting exactly on the frame's top line */
-        .cloud-frame-label {
-          left: 6rem;
-          transform: translateY(-50%);
-        }
-        .cloud-bbox[data-mode="card"] .cloud-frame-label,
-        .cloud-bbox[data-mode="focus"] .cloud-frame-label {
-          left: -1px;
-          transform: translateY(-100%);
-        }
-        /* caption tag hangs under the bottom-right corner */
-        .cloud-frame-caption {
-          right: -1px;
-          top: 100%;
         }
       `}</style>
 
       {/* annotation frame: tracks the cloud, snaps to hovered/focused card */}
-      <div ref={bboxRef} className="cloud-bbox pointer-events-none absolute left-0 top-0">
-        <div className="cloud-frame-label pointer-events-auto absolute top-0">
+      <div
+        ref={overlayRef}
+        className="cloud-overlay pointer-events-none absolute inset-0"
+        style={{ opacity: 0 }}
+      >
+        <div
+          ref={bboxRef}
+          className="cloud-bbox absolute left-0 top-0 will-change-transform"
+        />
+        <div
+          ref={labelRef}
+          className="pointer-events-auto absolute left-0 top-0 will-change-transform"
+        >
           {frameLabel}
         </div>
-        <div className="cloud-frame-caption pointer-events-none absolute">
+        <div ref={captionRef} className="absolute left-0 top-0 will-change-transform">
           {frameCaption}
         </div>
         <span
           ref={(el) => {
             chipRefs.current["rotate"] = el;
           }}
-          className={`${chip} left-0 top-0 -translate-x-1/3 -translate-y-1/2`}
+          className={chip}
         />
         <span
           ref={(el) => {
             chipRefs.current["noise"] = el;
           }}
-          className={`${chip} right-0 top-0 -translate-y-1/2 translate-x-1/3`}
+          className={chip}
         />
         <span
           ref={(el) => {
             chipRefs.current["zoom"] = el;
           }}
-          className={`${chip} bottom-0 left-0 -translate-x-1/3 translate-y-1/2`}
+          className={chip}
         />
         <span
           ref={(el) => {
             chipRefs.current["shape"] = el;
           }}
-          className={`${chip} bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2`}
+          className={chip}
         />
         <span
           ref={(el) => {
             chipRefs.current["depth"] = el;
           }}
-          className={`${chip} bottom-0 right-0 translate-x-1/3 translate-y-1/2`}
+          className={chip}
         />
       </div>
     </div>
