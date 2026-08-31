@@ -1108,7 +1108,10 @@ export default function CloudScene({
             }
           }
         }
-      } else if (pointerActive && controls.shape !== "about") {
+      } else if (pointerActive && controls.shape !== "about" && !focused) {
+        // while a card is expanded, hover is meaningless — skipping the
+        // 307-mesh raycast (and its hover-driven re-renders) every frame keeps
+        // the scene smooth as the pointer moves
         raycaster.setFromCamera(pointerNdc, camera);
         const hits = raycaster.intersectObjects(pickMeshes, false);
         let next: Card | null = null;
@@ -1209,7 +1212,7 @@ export default function CloudScene({
         // supplies the smoothness, so extra frame-smoothing here just makes
         // the annotation lag behind the expanding image. Only the free-floating
         // cloud-bounds mode wants the gentle glide.
-        const k = target ? 0.6 : 0.22;
+        const k = focused ? 1 : target ? 0.6 : 0.22;
         frameRect.x += (tx - frameRect.x) * k;
         frameRect.y += (ty - frameRect.y) * k;
         frameRect.w += (tw - frameRect.w) * k;
