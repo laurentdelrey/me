@@ -790,6 +790,9 @@ export default function CloudScene({
 
       // about keeps the last real layout; the formation just flies off-screen
       if (controls.shape !== "about") layoutShape = controls.shape;
+      // entering about dismisses any expanded card — it must not linger
+      // behind the story
+      if (controls.shape === "about" && focused) setFocus(null);
       aboutBlend += ((controls.shape === "about" ? 1 : 0) - aboutBlend) * 0.11;
 
       const frusH = Math.tan(THREE.MathUtils.degToRad(20)) * camera.position.z;
