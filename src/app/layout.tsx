@@ -10,6 +10,15 @@ export const metadata: Metadata = {
     title: "laurent del rey - internet designer",
     description: "this is my journey",
     type: "website",
+    videos: [
+      {
+        url: "https://laurent.fyi/videos/og.mp4",
+        secureUrl: "https://laurent.fyi/videos/og.mp4",
+        type: "video/mp4",
+        width: 824,
+        height: 720,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
